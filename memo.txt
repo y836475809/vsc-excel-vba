@@ -1,0 +1,9 @@
+https://future-architect.github.io/articles/20221124a/
+https://github.com/microsoft/vscode-extension-samples/tree/main/lsp-sample
+https://code.visualstudio.com/api/language-extensions/language-server-extension-guide
+https://qiita.com/Ikuyadeu/items/98458f9ab760d09660ff
+https://qiita.com/www-tacos/items/23e63c4572c9f52b9825
+https://github.com/vscodejp/vscode-language-server-template
+https://qiita.com/vain0x/items/d050fe7c8b342ed2004e
+https://zenn.dev/takl/books/0fe11c6e177223
+https://github.com/OmniSharp/csharp-language-server-protocol

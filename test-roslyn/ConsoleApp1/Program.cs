@@ -52,13 +52,46 @@ public class TestClass2
 }
 ";
 
-var code = @"using System;
+var code_class_mod = @"using System;
+public class TestClass
+{
+     public int TetsMethod(int value){
+        return value;
+    }
+     public string TetsMethodStr(string value){
+        return value;
+    }
+}
+public class TestClass2
+{
+  /// <summary>
+  /// サンプルコード21
+  /// </summary>
+  /// <param name='hoge'>第１引数</param>
+  /// <param name='fuga'>第２引数</param>
+  /// <returns>関数の結果</returns>
+     public int TetsMethodMod(int value){
+        return value;
+    }
+  /// <summary>
+  /// サンプルコード22
+  /// </summary>
+  /// <param name='hoge'>第１引数</param>
+  /// <param name='fuga'>第２引数</param>
+  /// <returns>関数の結果</returns>
+     public string TetsMethodStrMod(string value){
+        return value;
+    }
+}
+";
+
+            var code = @"using System;
 public class MyClass
 {
     public static void MyMethod(int value)
     {
         var aa_b = new TestClass2();
-        aa_b.
+        aa_b.Tets
     }
 }";
             var projectInfo = ProjectInfo.Create(ProjectId.CreateNewId(), VersionStamp.Create(), "MyProject", "MyProject", LanguageNames.CSharp).
@@ -69,9 +102,10 @@ public class MyClass
 
             var project = workspace.AddProject(projectInfo);
             //SourceText sourcetext = SourceText.From(code);
-            workspace.AddDocument(project.Id, "TestC.cs", SourceText.From(code_class));
+
+            var doc_class = workspace.AddDocument(project.Id, "TestC.cs", SourceText.From(code_class));
             var document = workspace.AddDocument(project.Id, "MyFile.cs", SourceText.From(code));
-            var position = code.LastIndexOf("aa_b.") + 5;
+            var position = code.LastIndexOf("aa_b.Tets") + 9;
             var completionService = CompletionService.GetService(document);
             //Microsoft.CodeAnalysis.Options.DocumentOptionSet dopset;
             //dopset.
@@ -112,6 +146,69 @@ public class MyClass
                     Console.WriteLine();
                 }
                 var ppp = 0;
+            }
+            Console.WriteLine("-------------------");
+            {
+                //SourceText sourceText = SourceText.From(code_class_mod);
+                //Solution newSolution = doc_class.Project.Solution.WithDocumentText(doc_class.Id, sourceText);
+                var doc = workspace.CurrentSolution.GetDocument(doc_class.Id);
+                var np = doc.WithText(SourceText.From(code_class_mod)).Project;
+                np = np.GetDocument(document.Id).WithText(SourceText.From(code)).Project;
+                //Document doc = project.GetDocument(doc_class.Id);
+                //var ndoc = doc_class;
+                //project = document.Project;
+                var e = workspace.TryApplyChanges(np.Solution);
+                //var e = workspace.TryApplyChanges(
+                //    doc.WithText(SourceText.From(code_class_mod)).Project.Solution);
+                //var e2 = workspace.TryApplyChanges(document.Project.Solution);
+                //var e =  workspace.TryApplyChanges(doc_class.WithText(SourceText.From(code_class_mod)).Project.Solution);
+                //var e2 = workspace.TryApplyChanges(document.Project.Solution);
+                document = workspace.CurrentSolution.GetDocument(document.Id);
+
+                //solutionWorkspace.TryApplyChanges(
+                //    solutionDocument.WithText(SourceText.From(editorText)).Project.Solution);
+                //var newDoc = document.WithText(SourceText.From(code_class_mod));
+                //workspace.TryApplyChanges(newDoc.Project.Solution);
+                //var document2 = workspace.CurrentSolution.GetDocument(document.Id);
+                //workspace.AddDocument(project.Id, "TestC.cs", SourceText.From(code_class_mod));
+                //var document2 = workspace.AddDocument(project.Id, "MyFile.cs", SourceText.From(code));
+                //workspace.TryApplyChanges(document.Project.Solution);
+                //var document2 = workspace.AddDocument(project.Id, "MyFile.cs", SourceText.From(code));
+                var position2 = code.LastIndexOf("aa_b.Tets") + 9;
+                var completionService2 = CompletionService.GetService(document);
+                //Microsoft.CodeAnalysis.Options.DocumentOptionSet dopset;
+                //dopset.
+                var results2 = await completionService2.GetCompletionsAsync(document, position2);
+                foreach (var i in results2.ItemsList) {
+                    var dd = i.InlineDescription;
+                    Console.WriteLine(i.DisplayText);
+
+                    foreach (var prop in i.Properties) {
+                        Console.Write($"{prop.Key}:{prop.Value} ");
+                    }
+
+                    Console.WriteLine();
+                    foreach (var tag in i.Tags) {
+                        Console.Write($"{tag} ");
+                    }
+
+                    Console.WriteLine();
+                    Console.WriteLine();
+                }
+
+                {
+                    var model = document.GetSemanticModelAsync().Result;
+                    var symbols = Recommender.GetRecommendedSymbolsAtPosition(model, position2, workspace);
+                    foreach (var item in symbols) {
+                        var n = item.Name;
+                        var k = item.Kind;
+                        var md = item.MetadataName;
+                        Console.WriteLine(item.ToDisplayString());
+                        Console.WriteLine(item.GetDocumentationCommentXml());
+                        Console.WriteLine();
+                    }
+                    var ppp = 0;
+                }
             }
 
             //var syntaxTree = CSharpSyntaxTree.ParseText(code_class);

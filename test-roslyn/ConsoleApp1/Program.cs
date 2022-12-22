@@ -149,20 +149,36 @@ public class MyClass
             }
             Console.WriteLine("-------------------");
             {
-                //SourceText sourceText = SourceText.From(code_class_mod);
-                //Solution newSolution = doc_class.Project.Solution.WithDocumentText(doc_class.Id, sourceText);
+               
+                var solution = workspace.CurrentSolution;
+                //var documentIds = solution.GetDocument(doc_class.Id);
+                //var documents = project.Documents;
                 var doc = workspace.CurrentSolution.GetDocument(doc_class.Id);
-                var np = doc.WithText(SourceText.From(code_class_mod)).Project;
-                np = np.GetDocument(document.Id).WithText(SourceText.From(code)).Project;
-                //Document doc = project.GetDocument(doc_class.Id);
-                //var ndoc = doc_class;
-                //project = document.Project;
-                var e = workspace.TryApplyChanges(np.Solution);
+                //var sourceText = await doc.GetTextAsync();
+                //solution = doc.WithText(SourceText.From(code_class_mod)).Project.Solution;
+                solution = solution.WithDocumentText(doc_class.Id, SourceText.From(code_class_mod));
+                //var e = workspace.TryApplyChanges(solution);
+
+                ////SourceText sourceText = SourceText.From(code_class_mod);
+                ////Solution newSolution = doc_class.Project.Solution.WithDocumentText(doc_class.Id, sourceText);
+                //var doc = workspace.CurrentSolution.GetDocument(doc_class.Id);
+                //var np = doc.WithText(SourceText.From(code_class_mod)).Project;
+                //np = np.GetDocument(document.Id).WithText(SourceText.From(code)).Project;
+                ////Document doc = project.GetDocument(doc_class.Id);
+                ////var ndoc = doc_class;
+                ////project = document.Project;
+                //var e = workspace.TryApplyChanges(np.Solution);
                 //var e = workspace.TryApplyChanges(
                 //    doc.WithText(SourceText.From(code_class_mod)).Project.Solution);
                 //var e2 = workspace.TryApplyChanges(document.Project.Solution);
                 //var e =  workspace.TryApplyChanges(doc_class.WithText(SourceText.From(code_class_mod)).Project.Solution);
                 //var e2 = workspace.TryApplyChanges(document.Project.Solution);
+                solution = solution.GetDocument(document.Id).
+                    WithText(SourceText.From(code)).Project.Solution;
+                //var newDoc = doc.WithText(SourceText.From(code));
+                //solution = newDoc.Project.Solution;
+                workspace.TryApplyChanges(solution);
+                //var currentDoc = _workspace.CurrentSolution.GetDocument(docId);
                 document = workspace.CurrentSolution.GetDocument(document.Id);
 
                 //solutionWorkspace.TryApplyChanges(

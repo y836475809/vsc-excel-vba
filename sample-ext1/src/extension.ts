@@ -1,7 +1,7 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as path from 'path';
-import { commands, window, workspace, ExtensionContext, languages } from 'vscode';
+import * as vscode from 'vscode';
 
 import {
 	LanguageClient,
@@ -9,12 +9,38 @@ import {
 	ServerOptions,
 	TransportKind
 } from 'vscode-languageclient/node';
+import { TreeDataProvider } from './treeDataProvider';
 
 let client: LanguageClient;
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
-export function activate(context: ExtensionContext) {
+export async function activate(context: vscode.ExtensionContext) {
+	const wf = vscode.workspace.workspaceFolders;
+	const rootPath = (wf && (wf.length > 0)) ? wf[0].uri.fsPath : undefined;
+	
+	const treeDataProvider = new TreeDataProvider();
+	vscode.window.registerTreeDataProvider('testView', treeDataProvider);
+	vscode.commands.registerCommand('testView.addEntry', () => console.log("testView.addEntry"));
+	vscode.commands.registerCommand('testView.myCommand', (arg) => console.log("testView.myCommand=", arg));
+	
+	// const uris = await vscode.workspace.findFiles("*.{bas,cls}");
+	// const fsPaths = uris.map(uri => uri.fsPath);
+
+	// const editorConfig: any = await vscode.workspace.getConfiguration().get('editor.quickSuggestions');
+	// if(editorConfig["other"] !== "off"){
+	// 	editorConfig["other"] = "on";
+	// 	await vscode.workspace.getConfiguration().update(
+	// 		'editor.quickSuggestions',
+	// 		editorConfig,
+	// 		vscode.ConfigurationTarget.Workspace
+	// 	);
+	// }
+
+	vscode.window.onDidChangeActiveTextEditor((e) => {
+		// e.
+	});
+
 	let serverModule = context.asAbsolutePath(path.join('out', 'server.js'));
 	let debugOptions = { execArgv: ['--nolazy', '--inspect=6009'] };
 	let serverOptions: ServerOptions = {
@@ -28,8 +54,10 @@ export function activate(context: ExtensionContext) {
 	let clientOptions: LanguageClientOptions = {
 		// Register the server for plain text documents
 		documentSelector: [
-			{ scheme: 'file', language: 'plaintext' },
-			{ scheme: "untitled", language: "plaintext" },
+			// { scheme: 'file', language: 'plaintext' },
+			// { scheme: "untitled", language: "plaintext" },
+			{ scheme: 'file', language: 'vba-module' },
+			{ scheme: 'file', language: 'vba-class' }
 		],
 	};
 

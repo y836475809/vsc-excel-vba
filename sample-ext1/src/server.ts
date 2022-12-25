@@ -10,7 +10,7 @@ import {
     CompletionItemKind,
     TextDocumentPositionParams,
     TextDocumentSyncKind,
-    InitializeResult
+    InitializeResult,
   } from 'vscode-languageserver/node';
   
 import { TextDocument } from 'vscode-languageserver-textdocument';
@@ -51,7 +51,8 @@ connection.onInitialize((params: InitializeParams) => {
     return result;
 });
 
-connection.onInitialized(() => {
+// let all_bk:TextDocument[] = []
+connection.onInitialized(async () => {
     // if (hasConfigurationCapability) {
     //     // Register for all configuration changes.
     //     connection.client.register(DidChangeConfigurationNotification.type, undefined);
@@ -61,10 +62,13 @@ connection.onInitialized(() => {
             connection.console.log('Workspace folder change event received.');
         });
     }
+   
 });
 
 documents.onDidChangeContent(change => {
     let m = 0;
+    // let all_bk = documents.all();
+    console.log("change=", change);
     // alidateTextDocument(change.document);
 });
 

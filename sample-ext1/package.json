@@ -14,12 +14,58 @@
   ],
   "main": "./out/extension.js",
   "contributes": {
+    "languages": [
+      {
+        "id": "vba-module",
+        "extensions": [
+            ".bas"
+        ]
+      },
+      {
+        "id": "vba-class",
+        "extensions": [
+            ".cls"
+        ]
+      }
+    ],
     "commands": [
       {
         "command": "sample-ext1.helloWorld",
         "title": "Hello World"
+      },
+      {
+        "command": "testView.addEntry",
+        "title": "Add"
+      },
+      {
+        "command": "testView.myCommand",
+        "title": "testView reg"
       }
-    ]
+    ],
+    "views": {
+      "explorer": [
+        {
+          "id": "testView",
+          "name": "Test View"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "testView.addEntry",
+          "when": "view == testView",
+          "group": "navigation"
+        }
+      ],
+      "explorer/context": [
+        {
+          "when": "!explorerResourceIsFolder",
+          "command": "testView.myCommand",
+          "group": "myGroup"
+        }
+      ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",

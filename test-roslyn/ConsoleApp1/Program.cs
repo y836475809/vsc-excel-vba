@@ -214,6 +214,8 @@ public class MyClass
 
                 {
                     var model = document.GetSemanticModelAsync().Result;
+                    //var rootNode = await document.GetSyntaxRootAsync();
+                    //rootNode.DescendantNodes()
                     var symbols = Recommender.GetRecommendedSymbolsAtPosition(model, position2, workspace);
                     foreach (var item in symbols) {
                         var n = item.Name;

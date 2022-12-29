@@ -14,12 +14,16 @@ import {
   } from 'vscode-languageserver/node';
   
 import { TextDocument } from 'vscode-languageserver-textdocument';
-
+// import * as vscode from 'vscode';
+import { URI } from 'vscode-uri';
+import * as fs from "fs";
 import { getComdData } from "./ts-client";
+import path = require('path');
 
 const connection = createConnection(ProposedFeatures.all);
 const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
 let hasWorkspaceFolderCapability: boolean = false;
+const changedDocSet = new Set<string>();
 
 connection.onInitialize((params: InitializeParams) => {
     let capabilities = params.capabilities;
@@ -62,52 +66,100 @@ connection.onInitialized(async () => {
             connection.console.log('Workspace folder change event received.');
         });
     }
-   
+    const wfs = await connection.workspace.getWorkspaceFolders();
+    const rootPath = (wfs && (wfs.length > 0)) ? URI.parse(wfs[0].uri).fsPath: undefined;
+    if(rootPath){
+        const fsPaths = fs.readdirSync(rootPath, { withFileTypes: true })
+            .filter(dirent => {
+                return dirent.isFile() 
+                    && (dirent.name.endsWith('.bas') || dirent.name.endsWith('.cls'));
+            }).map(dirent => path.join(rootPath, dirent.name));
+        // const uris = await vscode.workspace.findFiles("*.{bas,cls}");
+        // const fsPaths = uris.map(uri => uri.fsPath);
+        for (let index = 0; index < fsPaths.length; index++) {
+            const fp = fsPaths[index];
+            const data = JSON.stringify({
+                Id: "AddDocument",
+                FilePath: fp,
+                Position: 0,
+                Text: ""
+            });
+            await getComdData(data);
+        }
+    }
 });
 
 documents.onDidChangeContent(change => {
     let m = 0;
     // let all_bk = documents.all();
     console.log("change=", change);
+    // change.document.getText();
     // alidateTextDocument(change.document);
+    // change.document.positionAt()
+    changedDocSet.add(change.document.uri);
 });
 
-connection.onCompletion((_textDocumentPosition: TextDocumentPositionParams): CompletionItem[] => {
+documents.onDidSave(async change => {
+    console.log("onDidSave change=", change);
+    const doc = change.document;
+    if(changedDocSet.has(doc.uri)){
+        const fp = URI.parse(doc.uri).fsPath;
+        const data = JSON.stringify({
+            Id: "ChangeDocument",
+            FilePath: fp,
+            Position: 0,
+            Text: doc.getText()
+        });    
+        changedDocSet.delete(doc.uri);
+        await getComdData(data);
+    }
+});
+
+connection.onCompletion(async (_textDocumentPosition: TextDocumentPositionParams): Promise<CompletionItem[]> => {
     // The pass parameter contains the position of the text document in
     // which code complete got requested. For the example we ignore this
     // info and always provide the same completion items.
-        const json_data = JSON.stringify({
-            cmd: "OK",
-            line: 10,
-            col:25,
-            uri: _textDocumentPosition.textDocument.uri
-        });
-        const data = JSON.stringify({
-            id: "text",
-            json_string: json_data
-        });
-    // let ret = await getComdData(data);
-    // let res_items: string[] = JSON.parse(ret).items;
-    // let comlItems:CompletionItem[] = res_items.map(item => {
-    //     return     {
-    //         label: item,
-    //         insertText: item,
-    //         kind: CompletionItemKind.Text
-    //     };
-    // });
-    // return comlItems;
-    return [
-    {
-        label: 'TypeScript',
-        kind: CompletionItemKind.Text,
-        data: 1
-    },
-    {
-        label: 'JavaScript',
-        kind: CompletionItemKind.Text,
-        data: 2
-    }
-    ];
+        // const json_data = JSON.stringify({
+        //     cmd: "OK",
+        //     line: 10,
+        //     col:25,
+        //     uri: _textDocumentPosition.textDocument.uri
+        // });
+        // const data = JSON.stringify({
+        //     id: "text",
+        //     json_string: json_data
+        // });
+       
+    const fp = URI.parse(_textDocumentPosition.textDocument.uri).fsPath;
+    const pos = documents.get(_textDocumentPosition.textDocument.uri)?.offsetAt(_textDocumentPosition.position);
+    const data = JSON.stringify({
+        Id: "Completion",
+        FilePath: fp,
+        Position: pos,
+        Text: documents.get(_textDocumentPosition.textDocument.uri)?.getText()
+    });
+    let ret = await getComdData(data);
+    let res_items: string[] = JSON.parse(ret).items;
+    let comlItems: CompletionItem[] = res_items.map(item => {
+        return {
+            label: item,
+            insertText: item,
+            kind: CompletionItemKind.Text
+        };
+    });
+    return comlItems;
+    // return [
+    // {
+    //     label: 'TypeScript',
+    //     kind: CompletionItemKind.Text,
+    //     data: 1
+    // },
+    // {
+    //     label: 'JavaScript',
+    //     kind: CompletionItemKind.Text,
+    //     data: 2
+    // }
+    // ];
 });
 connection.onCompletionResolve((item: CompletionItem): CompletionItem => {
     // if (item.data === 1) {
@@ -118,6 +170,24 @@ connection.onCompletionResolve((item: CompletionItem): CompletionItem => {
     //     item.documentation = 'JavaScript documentation';
     // }
     return item;
+});
+// connection.onExit(async ()=>{
+//     const data = JSON.stringify({
+//         Id: "Exit",
+//         FilePath: "",
+//         Position: 0,
+//         Text: ""
+//     });
+//     await getComdData(data);
+// });
+connection.onShutdown(async ()=>{
+    const data = JSON.stringify({
+        Id: "Shutdown",
+        FilePath: "",
+        Position: 0,
+        Text: ""
+    });
+    await getComdData(data);
 });
 
 // Make the text document manager listen on the connection

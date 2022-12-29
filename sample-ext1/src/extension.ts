@@ -22,7 +22,10 @@ export async function activate(context: vscode.ExtensionContext) {
 	const treeDataProvider = new TreeDataProvider();
 	vscode.window.registerTreeDataProvider('testView', treeDataProvider);
 	vscode.commands.registerCommand('testView.addEntry', () => console.log("testView.addEntry"));
-	vscode.commands.registerCommand('testView.myCommand', (arg) => console.log("testView.myCommand=", arg));
+	vscode.commands.registerCommand('testView.myCommand', (arg: string) => {
+		console.log("testView.myCommand=", arg);
+
+	});
 	
 	// const uris = await vscode.workspace.findFiles("*.{bas,cls}");
 	// const fsPaths = uris.map(uri => uri.fsPath);
@@ -56,8 +59,8 @@ export async function activate(context: vscode.ExtensionContext) {
 		documentSelector: [
 			// { scheme: 'file', language: 'plaintext' },
 			// { scheme: "untitled", language: "plaintext" },
-			{ scheme: 'file', language: 'vba-module' },
-			{ scheme: 'file', language: 'vba-class' }
+			{ scheme: 'file', language: 'vb' },
+			// { scheme: 'file', language: 'visual basic' }
 		],
 	};
 

@@ -27,8 +27,12 @@ namespace ConsoleApp1 {
         }
 
         public void AddDocument(string name, string text) {
-            var doc = workspace.AddDocument(project.Id, name, SourceText.From(text));
-            doc_id_dict.Add(name, doc.Id);
+            if (doc_id_dict.ContainsKey(name)){
+                ChangeDocument(name, text);
+            } else {
+                var doc = workspace.AddDocument(project.Id, name, SourceText.From(text));
+                doc_id_dict.Add(name, doc.Id);
+            }
         }
 
         public void DeleteDocument(string name)
@@ -46,14 +50,15 @@ namespace ConsoleApp1 {
         }
 
 
-        public async Task<IEnumerable<CompletionItem>> GetCompletions(string name, int position) {
+        public async Task<IEnumerable<CompletionItem>> GetCompletions(string name, string text, int position) {
+            ChangeDocument(name, text);
             var completions = new List<CompletionItem>();
             var docId = doc_id_dict[name];
             var doc = workspace.CurrentSolution.GetDocument(docId);
             var symbols = await Recommender.GetRecommendedSymbolsAtPositionAsync(doc, position);
             foreach (var symbol in symbols) {
                 var completionItem = new CompletionItem();
-                if(symbol.ContainingType.Name == "Object") {
+                if(symbol.ContainingType?.Name == "Object") {
                     continue;
                 }
                 completionItem.DisplayText = symbol.ToDisplayString();

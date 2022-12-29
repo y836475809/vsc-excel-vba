@@ -17,7 +17,7 @@ namespace TestProject1
             var mc = new MyCodeAnalysis();
             mc.AddDocument(class1Name, class1Code);
             mc.AddDocument(mod1Name, mod1Code);
-            var items = await mc.GetCompletions(mod1Name, Helper.getPosition(mod1Code, "p."));
+            var items = await mc.GetCompletions(mod1Name, mod1Code, Helper.getPosition(mod1Code, "p."));
             var exp = new List<CompletionItem>() {
                 new CompletionItem(){
                     DisplayText = "Public Name As String",
@@ -55,7 +55,7 @@ namespace TestProject1
             mc.AddDocument(class1Name, class1Code);
             mc.AddDocument(mod1Name, mod1Code);
 
-            var items1 = await mc.GetCompletions(mod1Name, Helper.getPosition(mod1Code, "p."));
+            var items1 = await mc.GetCompletions(mod1Name, mod1Code, Helper.getPosition(mod1Code, "p."));
             var exp = new List<CompletionItem>() {
                 new CompletionItem(){
                     DisplayText = "Public Name As String",
@@ -84,7 +84,7 @@ namespace TestProject1
 
             var class2Code = Helper.getCode("test_class2.cls");
             mc.ChangeDocument(class1Name, class2Code);
-            var items2 = await mc.GetCompletions(mod1Name, Helper.getPosition(mod1Code, "p."));
+            var items2 = await mc.GetCompletions(mod1Name, mod1Code, Helper.getPosition(mod1Code, "p."));
             var exp2 = new List<CompletionItem>() {
                 new CompletionItem(){
                     DisplayText = "Public Name As String",
@@ -121,7 +121,7 @@ namespace TestProject1
             var mc = new MyCodeAnalysis();
             mc.AddDocument(class1Name, class1Code);
             mc.AddDocument(mod1Name, mod1Code);
-            var items = await mc.GetCompletions(mod1Name, Helper.getPosition(mod1Code, "p."));
+            var items = await mc.GetCompletions(mod1Name, mod1Code, Helper.getPosition(mod1Code, "p."));
             var exp = new List<CompletionItem>() {
                 new CompletionItem(){
                     DisplayText = "Public Name As String",
@@ -148,7 +148,7 @@ namespace TestProject1
             Assert.Equal(exp, items);
 
             mc.DeleteDocument(class1Name);
-            var items2 = await mc.GetCompletions(mod1Name, Helper.getPosition(mod1Code, "p."));
+            var items2 = await mc.GetCompletions(mod1Name, mod1Code, Helper.getPosition(mod1Code, "p."));
             Assert.Equal(new List<CompletionItem>() { }, items2);
         }
     }

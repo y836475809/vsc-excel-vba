@@ -10,6 +10,14 @@ const options: http.RequestOptions = {
 const url = "http://localhost";
 
 export function getComdData(send_data: any): Promise<string> {
+    if(process.env.DUMMY_SERVER){
+        return new Promise((resolve, reject) => {
+            const data = JSON.stringify({
+                items: ['test1', 'test2']
+            });
+            resolve(data);
+        });
+    }
     return new Promise((resolve, reject) => {
         const req = http.request(url, options, (res: http.IncomingMessage) => {
             let data = "";

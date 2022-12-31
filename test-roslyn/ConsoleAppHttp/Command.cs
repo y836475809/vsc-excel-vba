@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ConsoleApp1;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -16,6 +17,9 @@ namespace ConsoleAppServer {
     class ResponseCompletion {
         public List<string> items { get; set; }
     }
+    class ResponseDefinition {
+        public List<DefinitionItem> items { get; set; }
+    }
 
     //class ResponseCompletion {
     //    public string FilePath { get; set; }
@@ -26,6 +30,7 @@ namespace ConsoleAppServer {
 
     public class DocumentAddedEventArgs : EventArgs {
         public string FilePath { get; set; }
+        public string Text { get; set; }
 
         public DocumentAddedEventArgs(string FilePath) {
             this.FilePath = FilePath;
@@ -36,8 +41,7 @@ namespace ConsoleAppServer {
         public string FilePath { get; set; }
         public string Text { get; set; }
 
-        public DocumentChangedEventArgs(string FilePath, string Text)
-        {
+        public DocumentChangedEventArgs(string FilePath, string Text) {
             this.FilePath = FilePath;
             this.Text = Text;
         }
@@ -50,6 +54,26 @@ namespace ConsoleAppServer {
         public List<string> Items { get; set; }
 
         public CompletionEventArgs(string FilePath, string Text, int Position) {
+            this.FilePath = FilePath;
+            this.Text = Text;
+            this.Position = Position;
+        }
+    }
+
+    //public class DefinitionItem {
+    //    public string FilePath { get; set; }
+    //    public int Start { get; set; }
+    //    public int End { get; set; }
+    //}
+
+    public class DefinitionEventArgs : EventArgs {
+        public string FilePath { get; set; }
+        public string Text { get; set; }
+        public int Position { get; set; }
+
+        public List<DefinitionItem> Items { get; set; }
+
+        public DefinitionEventArgs(string FilePath, string Text, int Position) {
             this.FilePath = FilePath;
             this.Text = Text;
             this.Position = Position;

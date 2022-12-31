@@ -9,11 +9,13 @@ using System.Text.Json;
 namespace ConsoleAppServer {
     class Program {
         static void Main(string[] args) {
+            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
             //var changedDocSet = new HashSet<string>();
             var mc = new MyCodeAnalysis();
             var server = new Server();
             server.DocumentAdded += (object sender, DocumentAddedEventArgs e) => {
                 var code = Helper.getCode(e.FilePath);
+                e.Text = code;
                 mc.AddDocument(e.FilePath, code);
             };
             server.DocumentChanged += (object sender, DocumentChangedEventArgs e) => {
@@ -28,6 +30,14 @@ namespace ConsoleAppServer {
                 foreach (var item in Items)
                 {
                     list.Add(item.CompletionText);
+                }
+                e.Items = list;
+            };
+            server.DefinitionReq += async (object sender, DefinitionEventArgs e) => {
+                var Items = await mc.GetDefinitions(e.FilePath, e.Text, e.Position);
+                var list = new List<DefinitionItem>();
+                foreach (var item in Items) {
+                    list.Add(item);
                 }
                 e.Items = list;
             };
@@ -76,6 +86,10 @@ namespace ConsoleAppServer {
             //} catch (Exception e) {
             //    Console.WriteLine(e.Message);
             //}
+        }
+
+        private static void Server_DefinitionReq(object sender, DefinitionEventArgs e) {
+            throw new NotImplementedException();
         }
     }
 }

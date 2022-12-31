@@ -13,7 +13,7 @@ namespace ConsoleAppServer {
         //    return code.LastIndexOf(target) + target.Length;
         //}
         public static string getCode(string filePath) {
-            using (var sr = new StreamReader(filePath)) {
+            using (var sr = new StreamReader(filePath, Encoding.GetEncoding("shift_jis"))) {
                 return sr.ReadToEnd();
             }
         }

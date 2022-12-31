@@ -8,13 +8,14 @@ import {
     DidChangeConfigurationNotification,
     CompletionItem,
     CompletionItemKind,
+    DefinitionParams,
     TextDocumentPositionParams,
     TextDocumentSyncKind,
     InitializeResult,
+    Location
   } from 'vscode-languageserver/node';
   
 import { TextDocument } from 'vscode-languageserver-textdocument';
-// import * as vscode from 'vscode';
 import { URI } from 'vscode-uri';
 import * as fs from "fs";
 import { getComdData } from "./ts-client";
@@ -24,6 +25,7 @@ const connection = createConnection(ProposedFeatures.all);
 const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
 let hasWorkspaceFolderCapability: boolean = false;
 const changedDocSet = new Set<string>();
+const textDocumentMap = new Map<string, TextDocument>();
 
 connection.onInitialize((params: InitializeParams) => {
     let capabilities = params.capabilities;
@@ -41,6 +43,7 @@ connection.onInitialize((params: InitializeParams) => {
                 // triggerCharacters: ['--'],
                 // completionItem: 
             },
+            definitionProvider: true 
             // // Tell the client that this server supports hover.
             // hoverProvider: true,
         },
@@ -65,6 +68,11 @@ connection.onInitialized(async () => {
         connection.workspace.onDidChangeWorkspaceFolders(_event => {
             connection.console.log('Workspace folder change event received.');
         });
+        connection.workspace.onDidDeleteFiles(params => {
+            params.files.forEach(file => {
+                textDocumentMap.delete(file.uri);
+            });
+        });
     }
     const wfs = await connection.workspace.getWorkspaceFolders();
     const rootPath = (wfs && (wfs.length > 0)) ? URI.parse(wfs[0].uri).fsPath: undefined;
@@ -84,7 +92,12 @@ connection.onInitialized(async () => {
                 Position: 0,
                 Text: ""
             });
-            await getComdData(data);
+            const uri = URI.file(fp).toString();
+            // const buf = fs.readFileSync(fp);
+            // const content = iconv.decode(buf, "Shift_JIS");
+            const item = JSON.parse(await getComdData(data));
+            textDocumentMap.set(uri, TextDocument.create(
+                uri, "vb", 0, item.Text));
         }
     }
 });
@@ -96,6 +109,9 @@ documents.onDidChangeContent(change => {
     // change.document.getText();
     // alidateTextDocument(change.document);
     // change.document.positionAt()
+    const uri = change.document.uri;
+    textDocumentMap.set(uri, TextDocument.create(
+        uri, "vb", 0, change.document.getText()));
     changedDocSet.add(change.document.uri);
 });
 
@@ -114,6 +130,7 @@ documents.onDidSave(async change => {
         await getComdData(data);
     }
 });
+
 
 connection.onCompletion(async (_textDocumentPosition: TextDocumentPositionParams): Promise<CompletionItem[]> => {
     // The pass parameter contains the position of the text document in
@@ -170,6 +187,37 @@ connection.onCompletionResolve((item: CompletionItem): CompletionItem => {
     //     item.documentation = 'JavaScript documentation';
     // }
     return item;
+});
+// connection.onDeclaration
+connection.onDefinition(async (params: DefinitionParams): Promise<Location[]> => {
+    console.log(params);
+
+    const uri = params.textDocument.uri;
+    const fp = URI.parse(uri).fsPath;
+    const pos = documents.get(uri)?.offsetAt(params.position);
+    if(!documents.get(uri)){
+        return  new Array<Location>();
+    }
+    const data = JSON.stringify({
+        Id: "Definition",
+        FilePath: fp,
+        Position: pos,
+        Text: documents.get(uri)?.getText()
+    });
+    let ret = await getComdData(data);
+    let resItems: any[] = JSON.parse(ret).items;
+    const defItems: Location[] = [];
+    resItems.forEach(item => {
+        const defUri = URI.file(item.FilePath).toString();
+        const doc = textDocumentMap.get(defUri);
+        if(doc){        
+            defItems.push(Location.create(defUri, {
+                start: doc.positionAt(item.Start),
+                end: doc.positionAt(item.End)
+            }));  
+        }
+    });
+    return defItems;
 });
 // connection.onExit(async ()=>{
 //     const data = JSON.stringify({

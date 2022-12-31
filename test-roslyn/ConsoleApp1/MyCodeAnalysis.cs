@@ -1,4 +1,5 @@
 ﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.FindSymbols;
 using Microsoft.CodeAnalysis.Host.Mef;
 using Microsoft.CodeAnalysis.Recommendations;
 using Microsoft.CodeAnalysis.Text;
@@ -73,6 +74,27 @@ namespace ConsoleApp1 {
                 completions.Add(completionItem);
             }
             return completions;
+        }
+
+        public async Task<IEnumerable<DefinitionItem>> GetDefinitions(string name, string text, int position) {
+            var items = new List<DefinitionItem>();
+
+            var docId = doc_id_dict[name];
+            if (workspace.CurrentSolution.ContainsDocument(docId)) {
+                var doc = workspace.CurrentSolution.GetDocument(docId);
+                var model = await doc.GetSemanticModelAsync();
+                var symbol = await SymbolFinder.FindSymbolAtPositionAsync(model, position, workspace);
+                if(symbol != null) {
+                    foreach (var loc in symbol.Locations) {
+                        var span = loc.SourceSpan;
+                        var tree = loc.SourceTree;
+                        items.Add(new DefinitionItem(
+                            tree.FilePath,
+                            span.Start, span.End));
+                    }
+                }
+            }
+            return items;
         }
 
         public int p1() {

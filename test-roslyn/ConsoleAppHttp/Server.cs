@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ConsoleApp1;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
@@ -12,6 +13,7 @@ namespace ConsoleAppServer
         public event EventHandler<DocumentAddedEventArgs> DocumentAdded;
         public event EventHandler<DocumentChangedEventArgs> DocumentChanged;
         public event EventHandler<CompletionEventArgs> CompletionReq;
+        public event EventHandler<DefinitionEventArgs> DefinitionReq;
         private HttpListener listener;
 
         public void Setup(int port)
@@ -45,8 +47,9 @@ namespace ConsoleAppServer
                 switch (cmd?.Id)
                 {
                     case "AddDocument":
-                        DocumentAdded?.Invoke(this, new DocumentAddedEventArgs(cmd.FilePath));
-                        Response(response, 202);
+                        var args_add = new DocumentAddedEventArgs(cmd.FilePath);
+                        DocumentAdded?.Invoke(this, args_add);
+                        Response(response, new AddDocumentItem(args_add.FilePath, args_add.Text));
                         break;
                     case "ChangeDocument":
                         DocumentChanged?.Invoke(this, new DocumentChangedEventArgs(cmd.FilePath, cmd.Text));
@@ -56,6 +59,11 @@ namespace ConsoleAppServer
                         var args = new CompletionEventArgs(cmd.FilePath, cmd.Text, cmd.Position);
                         CompletionReq?.Invoke(this, args);
                         Response(response, args.Items);
+                        break;
+                    case "Definition":
+                        var args_def = new DefinitionEventArgs(cmd.FilePath, cmd.Text, cmd.Position);
+                        DefinitionReq?.Invoke(this, args_def);
+                        Response(response, args_def.Items);
                         break;
                     //case "Exit":
                     case "Shutdown":
@@ -88,11 +96,32 @@ namespace ConsoleAppServer
             response.StatusCode = StatusCode;
             //response.Close();
         }
+        private void Response(HttpListenerResponse response, AddDocumentItem Item) {
+            var text = Encoding.UTF8.GetBytes(
+                JsonSerializer.Serialize<AddDocumentItem>(Item));
+            response.ContentType = "application/json";
+            response.ContentLength64 = text.Length;
+            response.OutputStream.Write(text, 0, text.Length);
+        }
+
         private void Response(HttpListenerResponse response, List<string> CompletionItems)
         {
             var res_com = new ResponseCompletion();
             res_com.items = CompletionItems;
             var text = Encoding.UTF8.GetBytes(JsonSerializer.Serialize<ResponseCompletion>(res_com));
+            response.ContentType = "application/json";
+            response.ContentLength64 = text.Length;
+            response.OutputStream.Write(text, 0, text.Length);
+            //response.Close();
+        }
+
+        private void Response(HttpListenerResponse response, List<DefinitionItem> Items) {
+            var res_def = new ResponseDefinition();
+            res_def.items = Items;
+            //res_def.Start = Start;
+            //res_def.End = End;
+            var text = Encoding.UTF8.GetBytes(
+                JsonSerializer.Serialize<ResponseDefinition>(res_def));
             response.ContentType = "application/json";
             response.ContentLength64 = text.Length;
             response.OutputStream.Write(text, 0, text.Length);

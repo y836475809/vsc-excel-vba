@@ -10,6 +10,7 @@ import {
 	TransportKind
 } from 'vscode-languageclient/node';
 import { TreeDataProvider } from './treeDataProvider';
+import { Project } from './project';
 
 let client: LanguageClient;
 
@@ -21,7 +22,13 @@ export async function activate(context: vscode.ExtensionContext) {
 	if(!rootPath){
 		return;
 	}
-	
+
+	const project = new Project();
+	await project.setupConfig();
+	for(const fn of ["collection.cls", "dictionary.cls"]){
+		await project.copy(context, rootPath, 
+			`assets/${fn}`, `/.vscode/${fn}`);
+	}
 	const treeDataProvider = new TreeDataProvider();
 	vscode.window.registerTreeDataProvider('testView', treeDataProvider);
 	vscode.commands.registerCommand('testView.addEntry', () => console.log("testView.addEntry"));

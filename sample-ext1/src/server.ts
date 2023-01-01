@@ -85,15 +85,18 @@ connection.onInitialized(async () => {
     const wfs = await connection.workspace.getWorkspaceFolders();
     const rootPath = (wfs && (wfs.length > 0)) ? URI.parse(wfs[0].uri).fsPath: undefined;
     if(rootPath){
-        const fsPaths = fs.readdirSync(rootPath, { withFileTypes: true })
+        let allPaths:string[] = [];
+        for(const fp of [rootPath, path.join(rootPath, ".vscode")]){
+            const fsPaths = fs.readdirSync(fp, { withFileTypes: true })
             .filter(dirent => {
                 return dirent.isFile() 
                     && (dirent.name.endsWith('.bas') || dirent.name.endsWith('.cls'));
-            }).map(dirent => path.join(rootPath, dirent.name));
-        // const uris = await vscode.workspace.findFiles("*.{bas,cls}");
-        // const fsPaths = uris.map(uri => uri.fsPath);
-        for (let index = 0; index < fsPaths.length; index++) {
-            const fp = fsPaths[index];
+            }).map(dirent => path.join(fp, dirent.name));
+            allPaths = allPaths.concat(fsPaths);
+        }
+        // fs.writeFileSync("pp.txt", allPaths.join("\n"));
+        for (let index = 0; index < allPaths.length; index++) {
+            const fp = allPaths[index];
             const data = JSON.stringify({
                 Id: "AddDocument",
                 FilePath: fp,
@@ -101,8 +104,6 @@ connection.onInitialized(async () => {
                 Text: ""
             });
             const uri = URI.file(fp).toString();
-            // const buf = fs.readFileSync(fp);
-            // const content = iconv.decode(buf, "Shift_JIS");
             const item = JSON.parse(await getComdData(data));
             textDocumentMap.set(uri, TextDocument.create(
                 uri, "vb", 0, item.Text));

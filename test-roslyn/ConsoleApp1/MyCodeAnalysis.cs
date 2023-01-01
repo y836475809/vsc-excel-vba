@@ -1,4 +1,4 @@
-using Microsoft.CodeAnalysis;
+﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.FindSymbols;
 using Microsoft.CodeAnalysis.Host.Mef;
 using Microsoft.CodeAnalysis.Recommendations;
@@ -39,6 +39,9 @@ namespace ConsoleApp1 {
 
         public void DeleteDocument(string name)
         {
+            if (!doc_id_dict.ContainsKey(name)) {
+                return;
+            }
             var docId = doc_id_dict[name];
             workspace.TryApplyChanges(
                workspace.CurrentSolution.RemoveDocument(docId));
@@ -46,6 +49,9 @@ namespace ConsoleApp1 {
         }
 
         public void ChangeDocument(string name, string text) {
+            if (!doc_id_dict.ContainsKey(name)) {
+                return;
+            }
             var docId = doc_id_dict[name];
             workspace.TryApplyChanges(
                 workspace.CurrentSolution.WithDocumentText(docId, SourceText.From(text)));
@@ -55,6 +61,9 @@ namespace ConsoleApp1 {
         public async Task<List<CompletionItem>> GetCompletions(string name, string text, int position) {
             ChangeDocument(name, text);
             var completions = new List<CompletionItem>();
+            if (!doc_id_dict.ContainsKey(name)) {
+                return completions;
+            }
             var docId = doc_id_dict[name];
             var doc = workspace.CurrentSolution.GetDocument(docId);
             var symbols = await Recommender.GetRecommendedSymbolsAtPositionAsync(doc, position);
@@ -77,22 +86,27 @@ namespace ConsoleApp1 {
             return completions;
         }
 
-        public async Task<IEnumerable<DefinitionItem>> GetDefinitions(string name, string text, int position) {
+        public async Task<List<DefinitionItem>> GetDefinitions(string name, string text, int position) {
             var items = new List<DefinitionItem>();
-
+            if (!doc_id_dict.ContainsKey(name)) {
+                return items;
+            }
             var docId = doc_id_dict[name];
             if (workspace.CurrentSolution.ContainsDocument(docId)) {
                 var doc = workspace.CurrentSolution.GetDocument(docId);
                 var model = await doc.GetSemanticModelAsync();
                 var symbol = await SymbolFinder.FindSymbolAtPositionAsync(model, position, workspace);
-                
-                if (symbol != null) {
-                    foreach (var loc in symbol.Locations) {
-                        var span = loc.SourceSpan;
-                        var tree = loc.SourceTree;
+
+                if (symbol == null) {
+                    return items;
+                }
+                foreach (var loc in symbol.Locations) {
+                    var span = loc?.SourceSpan;
+                    var tree = loc?.SourceTree;
+                    if(span != null && tree != null) {
                         items.Add(new DefinitionItem(
                             tree.FilePath,
-                            span.Start, span.End));
+                            span.Value.Start, span.Value.End));
                     }
                 }
             }
@@ -102,6 +116,9 @@ namespace ConsoleApp1 {
         public async Task<CompletionItem> GetHover(string name, string text, int position) {
             //var items = new List<CompletionItem>();
             var completionItem = new CompletionItem();
+            if (!doc_id_dict.ContainsKey(name)) {
+                return completionItem;
+            }
             var docId = doc_id_dict[name];
             if (workspace.CurrentSolution.ContainsDocument(docId)) {
                 var doc = workspace.CurrentSolution.GetDocument(docId);

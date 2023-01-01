@@ -1,4 +1,4 @@
-﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.FindSymbols;
 using Microsoft.CodeAnalysis.Host.Mef;
 using Microsoft.CodeAnalysis.Recommendations;
@@ -119,6 +119,23 @@ namespace ConsoleApp1 {
                     if (symbol.Kind == SymbolKind.Method) {
                         var methodSymbol = symbol as IMethodSymbol;
                         completionItem.ReturnType = methodSymbol.ReturnType.ToDisplayString();
+                    }
+                    if (symbol.Kind == SymbolKind.Local) {
+                        var localSymbol = symbol as ILocalSymbol;
+                        var kind = localSymbol.Type.Name;
+                        var kindLower = kind.ToLower();
+                        if (kindLower == "int64") {
+                            kind = "Long";
+                        }
+                        if (kindLower == "int32") {
+                            kind = "Integer";
+                        }
+                        if (kindLower == "datetime") {
+                            kind = "Date";
+                        }
+                        completionItem.DisplayText = kind;
+                        completionItem.CompletionText = kind;
+                        completionItem.Kind = kind;
                     }
                 }
                 //completions.Add(completionItem);

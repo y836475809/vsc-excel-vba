@@ -7,12 +7,27 @@ namespace ConsoleAppServer {
     class Command {
         public string Id { get; set; }
 
-        public string FilePath { get; set; }
+        public List<string> FilePaths { get; set; }
 
         public int Position { get; set; }
 
         public string Text { get; set; }
     }
+
+    //public class AddDocuments {
+    //    public List<string> FilePaths { get; set; }
+    //}
+
+    //public class ChangeDocument {
+    //    public string FilePath { get; set; }
+    //    public string Text { get; set; }
+    //}
+
+    //public class Completion {
+    //    public string FilePath { get; set; }
+    //    public int Position { get; set; }
+    //    public string Text { get; set; }
+    //}
 
     class ResponseCompletion {
         public List<CompletionItem> items { get; set; }
@@ -27,13 +42,26 @@ namespace ConsoleAppServer {
     //    public int Position { get; set; }
     //}
 
+    //public class Document {
+    //    public string FilePath { get; set; }
+    //    public string Text { get; set; }
+
+    //    public Document(string FilePath, string Text) {
+    //        this.FilePath = FilePath;
+    //        this.Text = Text;
+    //    }
+
+    //}
+
 
     public class DocumentAddedEventArgs : EventArgs {
-        public string FilePath { get; set; }
-        public string Text { get; set; }
+        public List<string> FilePaths { get; set; }
+        public List<string> Texts { get; set; }
+        //public string Text { get; set; }
 
-        public DocumentAddedEventArgs(string FilePath) {
-            this.FilePath = FilePath;
+        public DocumentAddedEventArgs(List<string> FilePaths) {
+            this.FilePaths = FilePaths;
+            this.Texts = new List<string>();
         }
     }
 

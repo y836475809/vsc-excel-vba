@@ -76,11 +76,35 @@ connection.onInitialized(async () => {
         connection.workspace.onDidChangeWorkspaceFolders(_event => {
             connection.console.log('Workspace folder change event received.');
         });
-        connection.workspace.onDidDeleteFiles(params => {
-            params.files.forEach(file => {
-                textDocumentMap.delete(file.uri);
-            });
-        });
+        // connection.workspace.onDidDeleteFiles(async params => {
+        //     params.files.forEach(file => {
+        //         textDocumentMap.delete(file.uri);
+        //     });
+        //     for (let index = 0; index < params.files.length; index++) {
+        //         const file = params.files[index];
+        //         const fp = URI.parse(file.uri).fsPath;
+        //         const data = JSON.stringify({
+        //             Id: "DeleteDocument",
+        //             FilePath: fp,
+        //             Position: 0,
+        //             Text: ""
+        //         });   
+        //         await getComdData(data);
+        //     }
+        // });
+        // connection.workspace.onDidRenameFiles(async params => {
+        //     for (let index = 0; index < params.files.length; index++) {
+        //         const file = params.files[index];
+        //         const oldfp = URI.parse(file.oldUri).fsPath;
+        //         const newfp = URI.parse(file.newUri).fsPath;
+        //         const data = JSON.stringify({
+        //             Id: "RenameDocument",
+        //             OldFilePath: oldfp,
+        //             NewFilePath: newfp,
+        //         });   
+        //         await getComdData(data);
+        //     }
+        // });
     }
     const wfs = await connection.workspace.getWorkspaceFolders();
     const rootPath = (wfs && (wfs.length > 0)) ? URI.parse(wfs[0].uri).fsPath: undefined;
@@ -95,19 +119,32 @@ connection.onInitialized(async () => {
             allPaths = allPaths.concat(fsPaths);
         }
         // fs.writeFileSync("pp.txt", allPaths.join("\n"));
-        for (let index = 0; index < allPaths.length; index++) {
-            const fp = allPaths[index];
-            const data = JSON.stringify({
-                Id: "AddDocument",
-                FilePath: fp,
-                Position: 0,
-                Text: ""
-            });
-            const uri = URI.file(fp).toString();
-            const item = JSON.parse(await getComdData(data));
+        const data = JSON.stringify({
+            Id: "AddDocuments",
+            FilePaths: allPaths,
+            Position: 0,
+            Text: ""
+        }); 
+        const item = JSON.parse(await getComdData(data));
+        for (let index = 0; index < item.FilePaths.length; index++) {
+            const uri = URI.file(item.FilePaths[index]).toString();
+            const text = item.Texts[index];
             textDocumentMap.set(uri, TextDocument.create(
                 uri, "vb", 0, item.Text));
         }
+        // for (let index = 0; index < allPaths.length; index++) {
+        //     const fp = allPaths[index];
+        //     const data = JSON.stringify({
+        //         Id: "AddDocuments",
+        //         FilePaths: allPaths,
+        //         Position: 0,
+        //         Text: ""
+        //     });
+        //     const uri = URI.file(fp).toString();
+        //     const item = JSON.parse(await getComdData(data));
+        //     textDocumentMap.set(uri, TextDocument.create(
+        //         uri, "vb", 0, item.Text));
+        // }
     }
 });
 
@@ -131,7 +168,7 @@ documents.onDidSave(async change => {
         const fp = URI.parse(doc.uri).fsPath;
         const data = JSON.stringify({
             Id: "ChangeDocument",
-            FilePath: fp,
+            FilePaths: [fp],
             Position: 0,
             Text: doc.getText()
         });    
@@ -160,7 +197,7 @@ connection.onCompletion(async (_textDocumentPosition: TextDocumentPositionParams
     const pos = documents.get(_textDocumentPosition.textDocument.uri)?.offsetAt(_textDocumentPosition.position);
     const data = JSON.stringify({
         Id: "Completion",
-        FilePath: fp,
+        FilePaths: [fp],
         Position: pos,
         Text: documents.get(_textDocumentPosition.textDocument.uri)?.getText()
     });
@@ -211,7 +248,7 @@ connection.onDefinition(async (params: DefinitionParams): Promise<Location[]> =>
     }
     const data = JSON.stringify({
         Id: "Definition",
-        FilePath: fp,
+        FilePaths: [fp],
         Position: pos,
         Text: documents.get(uri)?.getText()
     });
@@ -242,7 +279,7 @@ connection.onHover(async (params: HoverParams): Promise<Hover | undefined> => {
     const pos = doc.offsetAt(params.position);
     const data = JSON.stringify({
         Id: "Hover",
-        FilePath: fp,
+        FilePaths: [fp],
         Position: pos,
         Text: documents.get(uri)?.getText()
     });
@@ -281,7 +318,7 @@ connection.onHover(async (params: HoverParams): Promise<Hover | undefined> => {
 connection.onShutdown(async ()=>{
     const data = JSON.stringify({
         Id: "Shutdown",
-        FilePath: "",
+        FilePath: [""],
         Position: 0,
         Text: ""
     });

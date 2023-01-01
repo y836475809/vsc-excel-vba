@@ -16,12 +16,14 @@ namespace ConsoleAppServer {
             var server = new Server();
             server.DocumentAdded += (object sender, DocumentAddedEventArgs e) => {
                 //var code = "";
-                if (!docCache.ContainsKey(e.FilePath)) {
-                    docCache[e.FilePath] = Helper.getCode(e.FilePath);
+                foreach (var FilePath in e.FilePaths) {
+                    if (!docCache.ContainsKey(FilePath)) {
+                        docCache[FilePath] = Helper.getCode(FilePath);
+                    }
+                    var code = docCache[FilePath];
+                    mc.AddDocument(FilePath, code);
+                    e.Texts.Add(code);
                 }
-                var code = docCache[e.FilePath];
-                e.Text = code;
-                mc.AddDocument(e.FilePath, code);
             };
             server.DocumentChanged += (object sender, DocumentChangedEventArgs e) => {
                 //changedDocSet.Add(e.FilePath);

@@ -4,12 +4,12 @@ using System.Text;
 
 namespace ConsoleApp1 {
     public class AddDocumentItem {
-        public string FilePath { get; set; }
-        public string Text { get; set; }
+        public List<string> FilePaths { get; set; }
+        public List<string> Texts { get; set; }
 
-        public AddDocumentItem(string FilePath, string Text) {
-            this.FilePath = FilePath;
-            this.Text = Text;
+        public AddDocumentItem(List<string> FilePaths, List<string> Texts) {
+            this.FilePaths = FilePaths;
+            this.Texts = Texts;
         }
     }
 }

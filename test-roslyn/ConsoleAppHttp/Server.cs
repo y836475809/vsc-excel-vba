@@ -47,27 +47,27 @@ namespace ConsoleAppServer
                 var response = context.Response;
                 switch (cmd?.Id)
                 {
-                    case "AddDocument":
-                        var args_add = new DocumentAddedEventArgs(cmd.FilePath);
+                    case "AddDocuments":
+                        var args_add = new DocumentAddedEventArgs(cmd.FilePaths);
                         DocumentAdded?.Invoke(this, args_add);
-                        Response(response, new AddDocumentItem(args_add.FilePath, args_add.Text));
+                        Response(response, new AddDocumentItem(args_add.FilePaths, args_add.Texts));
                         break;
                     case "ChangeDocument":
-                        DocumentChanged?.Invoke(this, new DocumentChangedEventArgs(cmd.FilePath, cmd.Text));
+                        DocumentChanged?.Invoke(this, new DocumentChangedEventArgs(cmd.FilePaths[0], cmd.Text));
                         Response(response, 202);
                         break;
                     case "Completion":
-                        var args = new CompletionEventArgs(cmd.FilePath, cmd.Text, cmd.Position);
+                        var args = new CompletionEventArgs(cmd.FilePaths[0], cmd.Text, cmd.Position);
                         CompletionReq?.Invoke(this, args);
                         Response(response, args.Items);
                         break;
                     case "Definition":
-                        var args_def = new DefinitionEventArgs(cmd.FilePath, cmd.Text, cmd.Position);
+                        var args_def = new DefinitionEventArgs(cmd.FilePaths[0], cmd.Text, cmd.Position);
                         DefinitionReq?.Invoke(this, args_def);
                         Response(response, args_def.Items);
                         break;
                     case "Hover":
-                        var args_hover = new CompletionEventArgs(cmd.FilePath, cmd.Text, cmd.Position);
+                        var args_hover = new CompletionEventArgs(cmd.FilePaths[0], cmd.Text, cmd.Position);
                         HoverReq?.Invoke(this, args_hover);
                         Response(response, args_hover.Items);
                         break;
@@ -103,8 +103,7 @@ namespace ConsoleAppServer
             //response.Close();
         }
         private void Response(HttpListenerResponse response, AddDocumentItem Item) {
-            var text = Encoding.UTF8.GetBytes(
-                JsonSerializer.Serialize<AddDocumentItem>(Item));
+            var text = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(Item));
             response.ContentType = "application/json";
             response.ContentLength64 = text.Length;
             response.OutputStream.Write(text, 0, text.Length);

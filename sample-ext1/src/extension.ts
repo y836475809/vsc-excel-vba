@@ -18,6 +18,9 @@ let client: LanguageClient;
 export async function activate(context: vscode.ExtensionContext) {
 	const wf = vscode.workspace.workspaceFolders;
 	const rootPath = (wf && (wf.length > 0)) ? wf[0].uri.fsPath : undefined;
+	if(!rootPath){
+		return;
+	}
 	
 	const treeDataProvider = new TreeDataProvider();
 	vscode.window.registerTreeDataProvider('testView', treeDataProvider);

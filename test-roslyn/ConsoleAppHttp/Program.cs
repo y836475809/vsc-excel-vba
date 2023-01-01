@@ -10,11 +10,16 @@ namespace ConsoleAppServer {
     class Program {
         static void Main(string[] args) {
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-            //var changedDocSet = new HashSet<string>();
+            var docCache = new Dictionary<string, string>();
+            
             var mc = new MyCodeAnalysis();
             var server = new Server();
             server.DocumentAdded += (object sender, DocumentAddedEventArgs e) => {
-                var code = Helper.getCode(e.FilePath);
+                //var code = "";
+                if (!docCache.ContainsKey(e.FilePath)) {
+                    docCache[e.FilePath] = Helper.getCode(e.FilePath);
+                }
+                var code = docCache[e.FilePath];
                 e.Text = code;
                 mc.AddDocument(e.FilePath, code);
             };
@@ -22,22 +27,30 @@ namespace ConsoleAppServer {
                 //changedDocSet.Add(e.FilePath);
                 //var code = Helper.getCode(e.FilePath);
                 //mc.AddDocument(e.FilePath, code);
+                docCache[e.FilePath] = e.Text;
                 mc.ChangeDocument(e.FilePath, e.Text);
             };
             server.CompletionReq += async (object sender, CompletionEventArgs e) => {
                 var Items = await mc.GetCompletions(e.FilePath, e.Text, e.Position);
-                var list = new List<string>();
-                foreach (var item in Items)
-                {
-                    list.Add(item.CompletionText);
-                }
-                e.Items = list;
+                e.Items = Items;
             };
             server.DefinitionReq += async (object sender, DefinitionEventArgs e) => {
                 var Items = await mc.GetDefinitions(e.FilePath, e.Text, e.Position);
                 var list = new List<DefinitionItem>();
                 foreach (var item in Items) {
                     list.Add(item);
+                }
+                e.Items = list;
+            };
+            server.HoverReq += async (object sender, CompletionEventArgs e) => {
+                var list = new List<CompletionItem>();
+                var Items = await mc.GetDefinitions(e.FilePath, e.Text, e.Position);
+                foreach (var item in Items) {
+                    if (!docCache.ContainsKey(item.FilePath)) {
+                        docCache[e.FilePath] = Helper.getCode(item.FilePath);
+                    }
+                    var code = docCache[e.FilePath];
+                    list.Add(await mc.GetHover(item.FilePath, code, (int)((item.Start + item.End)/2)));
                 }
                 e.Items = list;
             };
@@ -86,6 +99,10 @@ namespace ConsoleAppServer {
             //} catch (Exception e) {
             //    Console.WriteLine(e.Message);
             //}
+        }
+
+        private static void Server_HoverReq(object sender, CompletionEventArgs e) {
+            throw new NotImplementedException();
         }
 
         private static void Server_DefinitionReq(object sender, DefinitionEventArgs e) {

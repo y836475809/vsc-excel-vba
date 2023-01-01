@@ -14,6 +14,7 @@ namespace ConsoleAppServer
         public event EventHandler<DocumentChangedEventArgs> DocumentChanged;
         public event EventHandler<CompletionEventArgs> CompletionReq;
         public event EventHandler<DefinitionEventArgs> DefinitionReq;
+        public event EventHandler<CompletionEventArgs> HoverReq;
         private HttpListener listener;
 
         public void Setup(int port)
@@ -65,6 +66,11 @@ namespace ConsoleAppServer
                         DefinitionReq?.Invoke(this, args_def);
                         Response(response, args_def.Items);
                         break;
+                    case "Hover":
+                        var args_hover = new CompletionEventArgs(cmd.FilePath, cmd.Text, cmd.Position);
+                        HoverReq?.Invoke(this, args_hover);
+                        Response(response, args_hover.Items);
+                        break;
                     //case "Exit":
                     case "Shutdown":
                         run = false;
@@ -104,7 +110,7 @@ namespace ConsoleAppServer
             response.OutputStream.Write(text, 0, text.Length);
         }
 
-        private void Response(HttpListenerResponse response, List<string> CompletionItems)
+        private void Response(HttpListenerResponse response, List<CompletionItem> CompletionItems)
         {
             var res_com = new ResponseCompletion();
             res_com.items = CompletionItems;

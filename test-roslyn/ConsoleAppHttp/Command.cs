@@ -15,7 +15,7 @@ namespace ConsoleAppServer {
     }
 
     class ResponseCompletion {
-        public List<string> items { get; set; }
+        public List<CompletionItem> items { get; set; }
     }
     class ResponseDefinition {
         public List<DefinitionItem> items { get; set; }
@@ -51,7 +51,7 @@ namespace ConsoleAppServer {
         public string FilePath { get; set; }
         public string Text { get; set; }
         public int Position { get; set; }
-        public List<string> Items { get; set; }
+        public List<CompletionItem> Items { get; set; }
 
         public CompletionEventArgs(string FilePath, string Text, int Position) {
             this.FilePath = FilePath;

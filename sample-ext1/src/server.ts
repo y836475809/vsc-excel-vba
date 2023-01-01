@@ -12,7 +12,10 @@ import {
     TextDocumentPositionParams,
     TextDocumentSyncKind,
     InitializeResult,
-    Location
+    Location,
+    HoverParams,
+    Hover,
+    MarkupContent
   } from 'vscode-languageserver/node';
   
 import { TextDocument } from 'vscode-languageserver-textdocument';
@@ -43,9 +46,9 @@ connection.onInitialize((params: InitializeParams) => {
                 // triggerCharacters: ['--'],
                 // completionItem: 
             },
-            definitionProvider: true 
+            definitionProvider: true,
             // // Tell the client that this server supports hover.
-            // hoverProvider: true,
+            hoverProvider: true,
         },
     };
     if (hasWorkspaceFolderCapability) {
@@ -156,11 +159,11 @@ connection.onCompletion(async (_textDocumentPosition: TextDocumentPositionParams
         Text: documents.get(_textDocumentPosition.textDocument.uri)?.getText()
     });
     let ret = await getComdData(data);
-    let res_items: string[] = JSON.parse(ret).items;
+    let res_items: any[] = JSON.parse(ret).items;
     let comlItems: CompletionItem[] = res_items.map(item => {
         return {
-            label: item,
-            insertText: item,
+            label: item.DisplayText,
+            insertText: item.CompletionText,
             kind: CompletionItemKind.Text
         };
     });
@@ -218,6 +221,45 @@ connection.onDefinition(async (params: DefinitionParams): Promise<Location[]> =>
         }
     });
     return defItems;
+});
+
+connection.onHover(async (params: HoverParams): Promise<Hover | undefined> => {
+    const uri = params.textDocument.uri;
+    const fp = URI.parse(uri).fsPath;
+    const doc = documents.get(uri);
+    if(!doc){
+        return undefined;
+    }
+    
+    const pos = doc.offsetAt(params.position);
+    const data = JSON.stringify({
+        Id: "Hover",
+        FilePath: fp,
+        Position: pos,
+        Text: documents.get(uri)?.getText()
+    });
+    let ret = await getComdData(data);
+    let resItems: any[] = JSON.parse(ret).items;
+    // const contents: string[] = resItems.map(item => {
+    //     return item.DisplayText;
+    // });
+    if(resItems.length === 0){
+        return undefined;
+    }
+    const item = resItems[0];
+    const content: MarkupContent = {
+        kind: "markdown",
+        value: [
+            '```vb',
+            `${item.DisplayText}`,
+            '```',
+            '```xml',
+            `${item.Description}`,
+            '```',
+        ].join('\n'),
+    };
+    return { contents: content };
+    // return { contents: contents };
 });
 // connection.onExit(async ()=>{
 //     const data = JSON.stringify({

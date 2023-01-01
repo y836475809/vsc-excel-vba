@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace ConsoleApp1 {
     public class MyCodeAnalysis {
@@ -51,7 +52,7 @@ namespace ConsoleApp1 {
         }
 
 
-        public async Task<IEnumerable<CompletionItem>> GetCompletions(string name, string text, int position) {
+        public async Task<List<CompletionItem>> GetCompletions(string name, string text, int position) {
             ChangeDocument(name, text);
             var completions = new List<CompletionItem>();
             var docId = doc_id_dict[name];
@@ -84,7 +85,8 @@ namespace ConsoleApp1 {
                 var doc = workspace.CurrentSolution.GetDocument(docId);
                 var model = await doc.GetSemanticModelAsync();
                 var symbol = await SymbolFinder.FindSymbolAtPositionAsync(model, position, workspace);
-                if(symbol != null) {
+                
+                if (symbol != null) {
                     foreach (var loc in symbol.Locations) {
                         var span = loc.SourceSpan;
                         var tree = loc.SourceTree;
@@ -97,8 +99,46 @@ namespace ConsoleApp1 {
             return items;
         }
 
-        public int p1() {
-            return 10;
+        public async Task<CompletionItem> GetHover(string name, string text, int position) {
+            //var items = new List<CompletionItem>();
+            var completionItem = new CompletionItem();
+            var docId = doc_id_dict[name];
+            if (workspace.CurrentSolution.ContainsDocument(docId)) {
+                var doc = workspace.CurrentSolution.GetDocument(docId);
+                var model = await doc.GetSemanticModelAsync();
+                var symbol = await SymbolFinder.FindSymbolAtPositionAsync(model, position, workspace);
+                if (symbol != null) {
+                    //if (symbol.ContainingType?.Name == "Object") {
+                    //    continue;
+                    //}
+                    completionItem.DisplayText = symbol.ToDisplayString();
+                    completionItem.CompletionText = symbol.MetadataName;
+                    completionItem.Description = symbol.GetDocumentationCommentXml();
+                    completionItem.Kind = symbol.Kind.ToString();
+                    completionItem.ReturnType = "";
+                    if (symbol.Kind == SymbolKind.Method) {
+                        var methodSymbol = symbol as IMethodSymbol;
+                        completionItem.ReturnType = methodSymbol.ReturnType.ToDisplayString();
+                    }
+                }
+                //completions.Add(completionItem);
+            }
+            return completionItem;
+        }
+
+        public DescriptionItem ParseDescriptionXML(string xml) {
+            var doc = XElement.Parse(xml);
+            var summary_text = doc.Element("summary")?.Value??"";
+            var ps = new List<DescriptionParam> ();
+            var param_elms = doc.Elements("param");
+            if (param_elms != null) {
+                foreach (var param_elm in param_elms) {
+                    var name = param_elm.Attribute("name").Value;
+                    ps.Add(new DescriptionParam(name, param_elm.Value));
+                }
+            }
+            var returns_text = doc.Element("returns")?.Value ?? "";
+            return new DescriptionItem(summary_text, ps, returns_text);
         }
     }
 }

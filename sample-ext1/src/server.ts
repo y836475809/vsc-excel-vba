@@ -30,6 +30,11 @@ let hasWorkspaceFolderCapability: boolean = false;
 const changedDocSet = new Set<string>();
 const textDocumentMap = new Map<string, TextDocument>();
 
+const symbolKindMap = new Map<string, CompletionItemKind>([
+    ["Method", CompletionItemKind.Method],
+    ["Field", CompletionItemKind.Field],
+]);
+
 connection.onInitialize((params: InitializeParams) => {
     let capabilities = params.capabilities;
     hasWorkspaceFolderCapability = !!(
@@ -161,10 +166,12 @@ connection.onCompletion(async (_textDocumentPosition: TextDocumentPositionParams
     let ret = await getComdData(data);
     let res_items: any[] = JSON.parse(ret).items;
     let comlItems: CompletionItem[] = res_items.map(item => {
+        const val = symbolKindMap.get(item.Kind);
+        const kind = val?val:CompletionItemKind.Text;
         return {
             label: item.DisplayText,
             insertText: item.CompletionText,
-            kind: CompletionItemKind.Text
+            kind: kind
         };
     });
     return comlItems;

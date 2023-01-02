@@ -107,35 +107,6 @@ connection.onInitialized(async () => {
         connection.workspace.onDidChangeWorkspaceFolders(_event => {
             connection.console.log('Workspace folder change event received.');
         });
-        // connection.workspace.onDidDeleteFiles(async params => {
-        //     params.files.forEach(file => {
-        //         textDocumentMap.delete(file.uri);
-        //     });
-        //     for (let index = 0; index < params.files.length; index++) {
-        //         const file = params.files[index];
-        //         const fp = URI.parse(file.uri).fsPath;
-        //         const data = JSON.stringify({
-        //             Id: "DeleteDocument",
-        //             FilePath: fp,
-        //             Position: 0,
-        //             Text: ""
-        //         });   
-        //         await getComdData(data);
-        //     }
-        // });
-        // connection.workspace.onDidRenameFiles(async params => {
-        //     for (let index = 0; index < params.files.length; index++) {
-        //         const file = params.files[index];
-        //         const oldfp = URI.parse(file.oldUri).fsPath;
-        //         const newfp = URI.parse(file.newUri).fsPath;
-        //         const data = JSON.stringify({
-        //             Id: "RenameDocument",
-        //             OldFilePath: oldfp,
-        //             NewFilePath: newfp,
-        //         });   
-        //         await getComdData(data);
-        //     }
-        // });
     }
     const wfs = await connection.workspace.getWorkspaceFolders();
     const rootPath = (wfs && (wfs.length > 0)) ? URI.parse(wfs[0].uri).fsPath: undefined;

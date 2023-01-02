@@ -161,7 +161,7 @@ connection.onInitialized(async () => {
             const uri = URI.file(item.FilePaths[index]).toString();
             const text = item.Texts[index];
             textDocumentMap.set(uri, TextDocument.create(
-                uri, "vb", 0, item.Text));
+                uri, "vb", 0, text));
         }
         // for (let index = 0; index < allPaths.length; index++) {
         //     const fp = allPaths[index];

@@ -66,6 +66,37 @@ connection.onInitialize((params: InitializeParams) => {
     return result;
 });
 
+connection.onExecuteCommand(async (params) => {
+    if(params.command === "create"){
+        const uri = params.arguments?params.arguments[0]:undefined;
+        const fp = URI.parse(uri).fsPath;
+        const data = JSON.stringify({
+            Id: "AddDocuments",
+            FilePaths: [fp],
+            Position: 0,
+            Text: ""
+        }); 
+        const item = JSON.parse(await getComdData(data));
+        const text = item.Texts[0];
+        textDocumentMap.set(uri, TextDocument.create(
+            uri, "vb", 0, text));
+        changedDocSet.add(uri);
+    }
+    if(params.command === "delete"){
+        const uri = params.arguments?params.arguments[0]:undefined;
+        const fp = URI.parse(uri).fsPath;
+        const data = JSON.stringify({
+            Id: "DeleteDocuments",
+            FilePaths: [fp],
+            Position: 0,
+            Text: ""
+        });   
+        await getComdData(data);
+        textDocumentMap.delete(uri);
+        changedDocSet.delete(uri);
+    }
+});
+
 // let all_bk:TextDocument[] = []
 connection.onInitialized(async () => {
     // if (hasConfigurationCapability) {

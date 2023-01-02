@@ -11,6 +11,8 @@ namespace ConsoleAppServer
     public class Server
     {
         public event EventHandler<DocumentAddedEventArgs> DocumentAdded;
+        public event EventHandler<DocumentDeletedEventArgs> DocumentDeleted;
+        public event EventHandler<DocumentRenamedEventArgs> DocumentRenamed;
         public event EventHandler<DocumentChangedEventArgs> DocumentChanged;
         public event EventHandler<CompletionEventArgs> CompletionReq;
         public event EventHandler<DefinitionEventArgs> DefinitionReq;
@@ -51,6 +53,16 @@ namespace ConsoleAppServer
                         var args_add = new DocumentAddedEventArgs(cmd.FilePaths);
                         DocumentAdded?.Invoke(this, args_add);
                         Response(response, new AddDocumentItem(args_add.FilePaths, args_add.Texts));
+                        break;
+                    case "DeleteDocuments":
+                        var args_del = new DocumentDeletedEventArgs(cmd.FilePaths);
+                        DocumentDeleted?.Invoke(this, args_del);
+                        Response(response, 202);
+                        break;
+                    case "RenameDocument":
+                        var args_rename = new DocumentRenamedEventArgs(cmd.FilePaths[0], cmd.FilePaths[1]);
+                        DocumentRenamed?.Invoke(this, args_rename);
+                        Response(response, 202);
                         break;
                     case "ChangeDocument":
                         DocumentChanged?.Invoke(this, new DocumentChangedEventArgs(cmd.FilePaths[0], cmd.Text));

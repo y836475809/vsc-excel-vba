@@ -12,10 +12,30 @@ const url = "http://localhost";
 export function getComdData(send_data: any): Promise<string> {
     if(process.env.DUMMY_SERVER){
         return new Promise((resolve, reject) => {
+            const jsonData = JSON.parse(send_data);
+            if(jsonData.Id === "AddDocuments"){
+                const data = JSON.stringify({
+                    FilePaths: ['test1', 'test2'],
+                    Texts: ['test1 text', 'test2 text']
+                });
+                resolve(data);
+                return;
+            }
+            if(jsonData.Id === "Hover"){
+                const data = JSON.stringify({
+                    items:[{
+                        DisplayText: 'test1',
+                        Description: 'test1 text'
+                    }]
+                });
+                resolve(data);
+                return;
+            }
             const data = JSON.stringify({
                 items: ['test1', 'test2']
             });
             resolve(data);
+            return;
         });
     }
     return new Promise((resolve, reject) => {

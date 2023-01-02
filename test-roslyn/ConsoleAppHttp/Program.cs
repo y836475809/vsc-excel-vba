@@ -25,6 +25,26 @@ namespace ConsoleAppServer {
                     e.Texts.Add(code);
                 }
             };
+            server.DocumentDeleted += (object sender, DocumentDeletedEventArgs e) => {
+                foreach (var FilePath in e.FilePaths) {
+                    if (docCache.ContainsKey(FilePath)) {
+                        mc.DeleteDocument(FilePath);
+                        docCache.Remove(FilePath);
+                    }
+                }
+            };
+            server.DocumentRenamed += (object sender, DocumentRenamedEventArgs e) => { 
+                if (docCache.ContainsKey(e.OldFilePath)) {
+                    mc.DeleteDocument(e.OldFilePath);
+                    docCache.Remove(e.OldFilePath);
+                }
+                if (!docCache.ContainsKey(e.NewFilePath)) {
+                    docCache[e.NewFilePath] = Helper.getCode(e.NewFilePath);
+                }
+                var code = docCache[e.NewFilePath];
+                mc.AddDocument(e.NewFilePath, code);
+
+            };
             server.DocumentChanged += (object sender, DocumentChangedEventArgs e) => {
                 //changedDocSet.Add(e.FilePath);
                 //var code = Helper.getCode(e.FilePath);

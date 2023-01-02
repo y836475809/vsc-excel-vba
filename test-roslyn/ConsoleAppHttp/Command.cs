@@ -65,6 +65,24 @@ namespace ConsoleAppServer {
         }
     }
 
+    public class DocumentDeletedEventArgs : EventArgs {
+        public List<string> FilePaths { get; set; }
+
+        public DocumentDeletedEventArgs(List<string> FilePaths) {
+            this.FilePaths = FilePaths;
+        }
+    }
+
+    public class DocumentRenamedEventArgs : EventArgs {
+        public string OldFilePath { get; set; }
+        public string NewFilePath { get; set; }
+
+        public DocumentRenamedEventArgs(string OldFilePath, string NewFilePath) {
+            this.OldFilePath = OldFilePath;
+            this.NewFilePath = NewFilePath;
+        }
+    }
+
     public class DocumentChangedEventArgs : EventArgs {
         public string FilePath { get; set; }
         public string Text { get; set; }

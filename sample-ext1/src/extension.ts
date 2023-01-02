@@ -4,6 +4,7 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 
 import {
+	ExecuteCommandRequest,
 	LanguageClient,
 	LanguageClientOptions,
 	ServerOptions,
@@ -36,6 +37,23 @@ export async function activate(context: vscode.ExtensionContext) {
 		console.log("testView.myCommand=", arg);
 
 	});
+
+	if (wf) {
+		const watcher = vscode.workspace.createFileSystemWatcher(
+			new vscode.RelativePattern(wf[0], "*.{bas,cls}"));
+		watcher.onDidCreate(async uri => {
+			await client.sendRequest(ExecuteCommandRequest.type, {
+				command: "create",
+				arguments: [uri.toString()],
+			});
+		});
+		watcher.onDidDelete(async uri => {
+			await client.sendRequest(ExecuteCommandRequest.type, {
+				command: "delete",
+				arguments: [uri.toString()],
+			});
+		});
+	}
 	
 	// const uris = await vscode.workspace.findFiles("*.{bas,cls}");
 	// const fsPaths = uris.map(uri => uri.fsPath);

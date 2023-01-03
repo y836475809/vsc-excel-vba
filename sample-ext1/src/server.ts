@@ -147,6 +147,35 @@ export class Server {
             this.textDocumentMap.delete(uri);
             this.changedDocSet.delete(uri);
         }
+        if(params.command === "rename"){
+            const renameArgs: any[] = params.arguments?params.arguments:undefined;
+            if(!renameArgs){
+                return;
+            }
+            for(const renameArg of renameArgs){
+                const oldUir = renameArg.oldUir;
+                const newUir = renameArg.newUir;
+                const oldFsPath = URI.parse(oldUir).fsPath;
+                const newFsPath = URI.parse(newUir).fsPath;
+                const data = JSON.stringify({
+                    Id: "RenameDocument",
+                    FilePaths: [oldFsPath, newFsPath],
+                    Position: 0,
+                    Text: ""
+                });   
+                await this.lpsRequest(data);
+            }
+            for(const renameArg of renameArgs){
+                const oldUir = renameArg.oldUir;
+                const newUir = renameArg.newUir;
+                const textDoc = this.textDocumentMap.get(oldUir);
+                if(textDoc){
+                    this.textDocumentMap.set(newUir, textDoc);
+                }
+                this.textDocumentMap.delete(oldUir);
+                this.changedDocSet.delete(oldUir);
+            }
+        }
     }
 
     async onCompletion(_textDocumentPosition: TextDocumentPositionParams): Promise<CompletionItem[]>{

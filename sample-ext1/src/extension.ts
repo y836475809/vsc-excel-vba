@@ -39,18 +39,33 @@ export async function activate(context: vscode.ExtensionContext) {
 	});
 
 	if (wf) {
-		const watcher = vscode.workspace.createFileSystemWatcher(
-			new vscode.RelativePattern(wf[0], "*.{bas,cls}"));
-		watcher.onDidCreate(async uri => {
-			await client.sendRequest("client.sendRequest", {
-				command: "create",
-				arguments: [uri.toString()],
-			});
+		vscode.workspace.onDidCreateFiles(async (e: vscode.FileCreateEvent) => {
+			for(const uri of e.files){
+				await client.sendRequest("client.sendRequest", {
+					command: "create",
+					arguments: [uri.toString()],
+				});
+			}
 		});
-		watcher.onDidDelete(async uri => {
+		vscode.workspace.onDidDeleteFiles(async (e: vscode.FileDeleteEvent) => {
+			for(const uri of e.files){
+				await client.sendRequest("client.sendRequest", {
+					command: "delete",
+					arguments: [uri.toString()],
+				});
+			}
+		});
+		vscode.workspace.onDidRenameFiles(async (e: vscode.FileRenameEvent) => {
+			let renameArgs = [];
+			for(const file of e.files){
+				renameArgs.push({
+					oldUir: file.oldUri.toString(),
+					newUir: file.newUri.toString()
+				});
+			}
 			await client.sendRequest("client.sendRequest", {
-				command: "delete",
-				arguments: [uri.toString()],
+				command: "rename",
+				arguments: renameArgs,
 			});
 		});
 	}

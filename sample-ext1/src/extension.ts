@@ -42,13 +42,13 @@ export async function activate(context: vscode.ExtensionContext) {
 		const watcher = vscode.workspace.createFileSystemWatcher(
 			new vscode.RelativePattern(wf[0], "*.{bas,cls}"));
 		watcher.onDidCreate(async uri => {
-			await client.sendRequest(ExecuteCommandRequest.type, {
+			await client.sendRequest("client.sendRequest", {
 				command: "create",
 				arguments: [uri.toString()],
 			});
 		});
 		watcher.onDidDelete(async uri => {
-			await client.sendRequest(ExecuteCommandRequest.type, {
+			await client.sendRequest("client.sendRequest", {
 				command: "delete",
 				arguments: [uri.toString()],
 			});

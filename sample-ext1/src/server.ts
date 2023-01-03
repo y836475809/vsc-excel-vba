@@ -112,7 +112,10 @@ export class Server {
         }
     }
 
-    async onExecuteCommand(params: ExecuteCommandParams) {
+    async onRequest(method: string, params: any) {
+        if(method !== "client.sendRequest"){
+            return;
+        }
         if(params.command === "create"){
             const uri = params.arguments?params.arguments[0]:undefined;
             const fp = URI.parse(uri).fsPath;
@@ -266,7 +269,7 @@ export class Server {
 const server = new Server();
 connection.onInitialize(server.onInitialize.bind(server));
 connection.onInitialized(server.onInitialized.bind(server));
-connection.onExecuteCommand(server.onExecuteCommand.bind(server));
+connection.onRequest(server.onRequest.bind(server));
 connection.onCompletion(server.onCompletion.bind(server));
 connection.onDefinition(server.onDefinition.bind(server));
 connection.onHover(server.onHover.bind(server));

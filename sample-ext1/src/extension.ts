@@ -72,7 +72,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		// e.
 	});
 
-	let serverModule = context.asAbsolutePath(path.join('out', 'server.js'));
+	let serverModule = context.asAbsolutePath(path.join('out', 'lsp-connection.js'));
 	let debugOptions = { execArgv: ['--nolazy', '--inspect=6009'] };
 	let serverOptions: ServerOptions = {
 		run: { module: serverModule, transport: TransportKind.ipc },

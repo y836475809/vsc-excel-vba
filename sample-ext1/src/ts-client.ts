@@ -31,6 +31,28 @@ export function getComdData(send_data: any): Promise<string> {
                 resolve(data);
                 return;
             }
+            if(jsonData.Id === "Completion"){
+                const data = JSON.stringify({
+                    items:[{
+                        DisplayText: "test1(val1)",
+                        CompletionText: "test1",
+                        Kind: "Method"
+                    }]
+                });
+                resolve(data);
+                return;
+            }
+            if(jsonData.Id === "Definition"){
+                const data = JSON.stringify({
+                    items:[{
+                        FilePath: "dummy",
+                        Start: 0,
+                        End: 0
+                    }]
+                });
+                resolve(data);
+                return;
+            }
             const data = JSON.stringify({
                 items: ['test1', 'test2']
             });

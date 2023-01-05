@@ -59,8 +59,8 @@ export async function activate(context: vscode.ExtensionContext) {
 			let renameArgs = [];
 			for(const file of e.files){
 				renameArgs.push({
-					oldUir: file.oldUri.toString(),
-					newUir: file.newUri.toString()
+					oldUri: file.oldUri.toString(),
+					newUri: file.newUri.toString()
 				});
 			}
 			await client.sendRequest("client.sendRequest", {

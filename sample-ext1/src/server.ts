@@ -153,10 +153,10 @@ export class Server {
                 return;
             }
             for(const renameArg of renameArgs){
-                const oldUir = renameArg.oldUir;
-                const newUir = renameArg.newUir;
-                const oldFsPath = URI.parse(oldUir).fsPath;
-                const newFsPath = URI.parse(newUir).fsPath;
+                const oldUri = renameArg.oldUri;
+                const newUri = renameArg.newUri;
+                const oldFsPath = URI.parse(oldUri).fsPath;
+                const newFsPath = URI.parse(newUri).fsPath;
                 const data = JSON.stringify({
                     Id: "RenameDocument",
                     FilePaths: [oldFsPath, newFsPath],
@@ -166,14 +166,14 @@ export class Server {
                 await this.lpsRequest(data);
             }
             for(const renameArg of renameArgs){
-                const oldUir = renameArg.oldUir;
-                const newUir = renameArg.newUir;
-                const textDoc = this.textDocumentMap.get(oldUir);
+                const oldUri = renameArg.oldUri;
+                const newUri = renameArg.newUri;
+                const textDoc = this.textDocumentMap.get(oldUri);
                 if(textDoc){
-                    this.textDocumentMap.set(newUir, textDoc);
+                    this.textDocumentMap.set(newUri, textDoc);
                 }
-                this.textDocumentMap.delete(oldUir);
-                this.changedDocSet.delete(oldUir);
+                this.textDocumentMap.delete(oldUri);
+                this.changedDocSet.delete(oldUri);
             }
         }
     }

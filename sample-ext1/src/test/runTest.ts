@@ -22,7 +22,6 @@ async function main() {
 				const testWorkspace = path.resolve(__dirname, `../../src/test/fixture`);
 				
 				process.env["MOCHA_TEST_DIRNAME"] = dirName;
-				process.env["DUMMY_SERVER"] = "true";
 				// Download VS Code, unzip it and run the integration test
 				// await runTests({ extensionDevelopmentPath, extensionTestsPath });
 				await runTests({ 

@@ -10,16 +10,13 @@
 			"type": "extensionHost",
 			"request": "launch",
 			"args": [
-				"${workspaceFolder}/test-data",
+				"${workspaceFolder}/src/test/fixture",
 				"--extensionDevelopmentPath=${workspaceFolder}"
 			],
 			"outFiles": [
 				"${workspaceFolder}/out/**/*.js"
 			],
-			"preLaunchTask": "${defaultBuildTask}",
-			"env": {
-				"DUMMY_SERVER": "true"
-			}
+			"preLaunchTask": "startMockServer"
 		},
 		{
 			"name": "Run Extension",
@@ -48,7 +45,7 @@
 			"type": "extensionHost",
 			"request": "launch",
 			"args": [
-				"${workspaceFolder}/${relativeFileDirname}/fixture",
+				"${workspaceFolder}/src/test/fixture",
 				"--disable-extensions",
 				"--extensionDevelopmentPath=${workspaceFolder}",
 				"--extensionTestsPath=${workspaceFolder}/out/test/index-launch"
@@ -58,7 +55,6 @@
 			],
 			"preLaunchTask": "${defaultBuildTask}",
 			"env": {
-				"DUMMY_SERVER": "true",
 				"MOCHA_LAUNCH_FILE": "${workspaceFolder}/out/test/${fileDirnameBasename}/${fileBasenameNoExtension}.js"
 			}
 		}

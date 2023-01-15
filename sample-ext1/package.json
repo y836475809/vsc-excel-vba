@@ -87,7 +87,8 @@
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
-    "test": "node ./out/test/runTest.js"
+    "test": "node ./out/test/runTest.js",
+    "start:server": "npm run compile && node ./out/test/lsp-mock-server.js start"
   },
   "devDependencies": {
     "@types/glob": "^8.0.0",

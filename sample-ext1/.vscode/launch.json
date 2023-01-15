@@ -10,6 +10,7 @@
 			"type": "extensionHost",
 			"request": "launch",
 			"args": [
+				"${workspaceFolder}/test-data",
 				"--extensionDevelopmentPath=${workspaceFolder}"
 			],
 			"outFiles": [
@@ -25,6 +26,7 @@
 			"type": "extensionHost",
 			"request": "launch",
 			"args": [
+				"${workspaceFolder}/test-data",
 				"--extensionDevelopmentPath=${workspaceFolder}"
 			],
 			"outFiles": [
@@ -37,7 +39,7 @@
 			"port": 6009,
 			"request": "attach",
 			"skipFiles": [
-				"<node_internals>/**"
+				"${workspaceFolder}/node_modules/**"
 			],
 			"type": "node"
 		},
@@ -46,13 +48,19 @@
 			"type": "extensionHost",
 			"request": "launch",
 			"args": [
+				"${workspaceFolder}/${relativeFileDirname}/fixture",
+				"--disable-extensions",
 				"--extensionDevelopmentPath=${workspaceFolder}",
-				"--extensionTestsPath=${workspaceFolder}/out/test/suite/index"
+				"--extensionTestsPath=${workspaceFolder}/out/test/index-launch"
 			],
 			"outFiles": [
 				"${workspaceFolder}/out/test/**/*.js"
 			],
-			"preLaunchTask": "${defaultBuildTask}"
+			"preLaunchTask": "${defaultBuildTask}",
+			"env": {
+				"DUMMY_SERVER": "true",
+				"MOCHA_LAUNCH_FILE": "${workspaceFolder}/out/test/${fileDirnameBasename}/${fileBasenameNoExtension}.js"
+			}
 		}
 	]
 }

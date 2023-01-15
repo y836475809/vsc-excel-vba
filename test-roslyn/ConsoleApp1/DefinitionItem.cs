@@ -3,12 +3,24 @@ using System.Collections.Generic;
 using System.Text;
 
 namespace ConsoleApp1 {
+    public class Location {
+        public int Positon { get; set; }
+        public int Line { get; set; }
+        public int Character { get; set; }
+
+        public Location(int Positon, int Line, int Character) {
+            this.Positon = Positon;
+            this.Line = Line;
+            this.Character = Character;
+        }
+    }
+
     public class DefinitionItem {
         public string FilePath { get; set; }
-        public int Start { get; set; }
-        public int End { get; set; }
+        public Location Start { get; set; }
+        public Location End { get; set; }
 
-        public DefinitionItem(string FilePath, int Start, int End) {
+        public DefinitionItem(string FilePath, Location Start, Location End) {
             this.FilePath = FilePath;
             this.Start = Start;
             this.End = End;

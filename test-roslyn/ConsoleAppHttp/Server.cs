@@ -52,7 +52,7 @@ namespace ConsoleAppServer
                     case "AddDocuments":
                         var args_add = new DocumentAddedEventArgs(cmd.FilePaths);
                         DocumentAdded?.Invoke(this, args_add);
-                        Response(response, new AddDocumentItem(args_add.FilePaths, args_add.Texts));
+                        Response(response, 202);
                         break;
                     case "DeleteDocuments":
                         var args_del = new DocumentDeletedEventArgs(cmd.FilePaths);
@@ -114,12 +114,12 @@ namespace ConsoleAppServer
             response.StatusCode = StatusCode;
             //response.Close();
         }
-        private void Response(HttpListenerResponse response, AddDocumentItem Item) {
-            var text = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(Item));
-            response.ContentType = "application/json";
-            response.ContentLength64 = text.Length;
-            response.OutputStream.Write(text, 0, text.Length);
-        }
+        //private void Response(HttpListenerResponse response, AddDocumentItem Item) {
+        //    var text = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(Item));
+        //    response.ContentType = "application/json";
+        //    response.ContentLength64 = text.Length;
+        //    response.OutputStream.Write(text, 0, text.Length);
+        //}
 
         private void Response(HttpListenerResponse response, List<CompletionItem> CompletionItems)
         {

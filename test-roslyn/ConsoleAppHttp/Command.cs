@@ -56,12 +56,9 @@ namespace ConsoleAppServer {
 
     public class DocumentAddedEventArgs : EventArgs {
         public List<string> FilePaths { get; set; }
-        public List<string> Texts { get; set; }
-        //public string Text { get; set; }
 
         public DocumentAddedEventArgs(List<string> FilePaths) {
             this.FilePaths = FilePaths;
-            this.Texts = new List<string>();
         }
     }
 

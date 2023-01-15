@@ -103,10 +103,13 @@ namespace ConsoleApp1 {
                 foreach (var loc in symbol.Locations) {
                     var span = loc?.SourceSpan;
                     var tree = loc?.SourceTree;
-                    if(span != null && tree != null) {
+                    if (span != null && tree != null) {
+                        var start = tree.GetLineSpan(span.Value).StartLinePosition;
+                        var end = tree.GetLineSpan(span.Value).EndLinePosition;
                         items.Add(new DefinitionItem(
                             tree.FilePath,
-                            span.Value.Start, span.Value.End));
+                            new Location(span.Value.Start,  start.Line, start.Character), 
+                            new Location(span.Value.End, end.Line, end.Character)));
                     }
                 }
             }

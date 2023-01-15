@@ -22,7 +22,6 @@ namespace ConsoleAppServer {
                     }
                     var code = docCache[FilePath];
                     mc.AddDocument(FilePath, code);
-                    e.Texts.Add(code);
                 }
             };
             server.DocumentDeleted += (object sender, DocumentDeletedEventArgs e) => {
@@ -72,7 +71,7 @@ namespace ConsoleAppServer {
                         docCache[e.FilePath] = Helper.getCode(item.FilePath);
                     }
                     var code = docCache[e.FilePath];
-                    list.Add(await mc.GetHover(item.FilePath, code, (int)((item.Start + item.End)/2)));
+                    list.Add(await mc.GetHover(item.FilePath, code, (int)((item.Start.Positon + item.End.Positon)/2)));
                 }
                 e.Items = list;
             };

@@ -14,11 +14,7 @@ export function getComdData(send_data: any): Promise<string> {
         return new Promise((resolve, reject) => {
             const jsonData = JSON.parse(send_data);
             if(jsonData.Id === "AddDocuments"){
-                const data = JSON.stringify({
-                    FilePaths: ['test1', 'test2'],
-                    Texts: ['test1 text', 'test2 text']
-                });
-                resolve(data);
+                resolve("");
                 return;
             }
             if(jsonData.Id === "Hover"){

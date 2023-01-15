@@ -34,15 +34,11 @@ type LpsRequest = (json: any) => Promise<string>;
 
 export class Server {
     hasWorkspaceFolderCapability: boolean;
-    changedDocSet: Set<string>;
-    textDocumentMap: Map<string, TextDocument>;
     symbolKindMap:Map<string, CompletionItemKind>;
     lpsRequest: LpsRequest;
 
     constructor(lpsRequest: LpsRequest){
         this.hasWorkspaceFolderCapability = false;
-        this.changedDocSet = new Set<string>();
-        this.textDocumentMap = new Map<string, TextDocument>();
         this.symbolKindMap = new Map<string, CompletionItemKind>([
             ["Method", CompletionItemKind.Method],
             ["Field", CompletionItemKind.Field],
@@ -105,13 +101,7 @@ export class Server {
                 Position: 0,
                 Text: ""
             }); 
-            const item = JSON.parse(await this.lpsRequest(data));
-            for (let index = 0; index < item.FilePaths.length; index++) {
-                const uri = URI.file(item.FilePaths[index]).toString();
-                const text = item.Texts[index];
-                this.textDocumentMap.set(uri, TextDocument.create(
-                    uri, "vb", 0, text));
-            }
+            await this.lpsRequest(data);
         }
     }
 
@@ -128,24 +118,20 @@ export class Server {
                 Position: 0,
                 Text: ""
             }); 
-            const item = JSON.parse(await this.lpsRequest(data));
-            const text = item.Texts[0];
-            this.textDocumentMap.set(uri, TextDocument.create(
-                uri, "vb", 0, text));
-            this.changedDocSet.add(uri);
+            await this.lpsRequest(data);
         }
         if(params.command === "delete"){
-            const uri = params.arguments?params.arguments[0]:undefined;
-            const fp = URI.parse(uri).fsPath;
+            const uris:string[] = params.arguments?params.arguments:undefined;
+            const fsPaths = uris.map(uri => {
+                return URI.parse(uri).fsPath;
+            });
             const data = JSON.stringify({
                 Id: "DeleteDocuments",
-                FilePaths: [fp],
+                FilePaths: fsPaths,
                 Position: 0,
                 Text: ""
             });   
             await this.lpsRequest(data);
-            this.textDocumentMap.delete(uri);
-            this.changedDocSet.delete(uri);
         }
         if(params.command === "rename"){
             const renameArgs: any[] = params.arguments?params.arguments:undefined;
@@ -165,16 +151,20 @@ export class Server {
                 });   
                 await this.lpsRequest(data);
             }
-            for(const renameArg of renameArgs){
-                const oldUri = renameArg.oldUri;
-                const newUri = renameArg.newUri;
-                const textDoc = this.textDocumentMap.get(oldUri);
-                if(textDoc){
-                    this.textDocumentMap.set(newUri, textDoc);
-                }
-                this.textDocumentMap.delete(oldUri);
-                this.changedDocSet.delete(oldUri);
+        }
+        if(params.command === "changeDocument"){
+            const uri = params.arguments?params.arguments[0]:undefined;
+            if(!uri){
+                return;
             }
+            const fsPath = URI.parse(uri).fsPath;
+            const data = JSON.stringify({
+                Id: "ChangeDocument",
+                FilePaths: [fsPath],
+                Position: 0,
+                Text: documents.get(uri)?.getText()
+            });
+            await this.lpsRequest(data);
         }
     }
 
@@ -219,13 +209,12 @@ export class Server {
         const defItems: Location[] = [];
         resItems.forEach(item => {
             const defUri = URI.file(item.FilePath).toString();
-            const doc = this.textDocumentMap.get(defUri);
-            if(doc){        
-                defItems.push(Location.create(defUri, {
-                    start: doc.positionAt(item.Start),
-                    end: doc.positionAt(item.End)
-                }));  
-            }
+            const start = item.Start;
+            const end = item.End;
+            defItems.push(Location.create(defUri, {
+                start: {line: start.Line, character: start.Character},
+                end: {line: end.Line, character: end.Character}
+            }));
         });
         return defItems;
     }
@@ -274,28 +263,6 @@ export class Server {
         });
         await this.lpsRequest(data);
     }
-
-    onDidChangeContent(change: TextDocumentChangeEvent<TextDocument>) {
-        const uri = change.document.uri;
-        this.textDocumentMap.set(uri, TextDocument.create(
-            uri, "vb", 0, change.document.getText()));
-        this.changedDocSet.add(change.document.uri);
-    }
-
-    async onDidSave(change: TextDocumentChangeEvent<TextDocument>) {
-        const doc = change.document;
-        if(this.changedDocSet.has(doc.uri)){
-            const fp = URI.parse(doc.uri).fsPath;
-            const data = JSON.stringify({
-                Id: "ChangeDocument",
-                FilePaths: [fp],
-                Position: 0,
-                Text: doc.getText()
-            });    
-            this.changedDocSet.delete(doc.uri);
-            await this.lpsRequest(data);
-        }
-    }
 }
 
 export function startLspServer() {
@@ -307,8 +274,6 @@ export function startLspServer() {
     connection.onDefinition(server.onDefinition.bind(server));
     connection.onHover(server.onHover.bind(server));
     connection.onShutdown(server.onShutdown.bind(server));
-    documents.onDidChangeContent(server.onDidChangeContent.bind(server));
-    documents.onDidSave(server.onDidSave.bind(server));
     // Make the text document manager listen on the connection
     // for open, change and close text document events
     documents.listen(connection);

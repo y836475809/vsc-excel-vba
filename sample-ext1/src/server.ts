@@ -27,10 +27,11 @@ import { URI } from 'vscode-uri';
 import * as fs from "fs";
 import { getComdData } from "./ts-client";
 import path = require('path');
+import { EphemeralKeyInfo } from 'tls';
 
 const connection = createConnection(ProposedFeatures.all);
 const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
-type LpsRequest = (json: any) => Promise<string>;
+type LpsRequest = (json: any) => Promise<any>;
 
 export class Server {
     hasWorkspaceFolderCapability: boolean;
@@ -95,12 +96,12 @@ export class Server {
         if(rootPath){
             const filePaths = this.getWorkspaceFolderFiles(
                 [rootPath, path.join(rootPath, ".vscode")]);
-            const data = JSON.stringify({
+            const data = {
                 Id: "AddDocuments",
                 FilePaths: filePaths,
                 Position: 0,
                 Text: ""
-            }); 
+            }; 
             await this.lpsRequest(data);
         }
     }
@@ -112,12 +113,12 @@ export class Server {
         if(params.command === "create"){
             const uri = params.arguments?params.arguments[0]:undefined;
             const fp = URI.parse(uri).fsPath;
-            const data = JSON.stringify({
+            const data = {
                 Id: "AddDocuments",
                 FilePaths: [fp],
                 Position: 0,
                 Text: ""
-            }); 
+            }; 
             await this.lpsRequest(data);
         }
         if(params.command === "delete"){
@@ -125,12 +126,12 @@ export class Server {
             const fsPaths = uris.map(uri => {
                 return URI.parse(uri).fsPath;
             });
-            const data = JSON.stringify({
+            const data = {
                 Id: "DeleteDocuments",
                 FilePaths: fsPaths,
                 Position: 0,
                 Text: ""
-            });   
+            };   
             await this.lpsRequest(data);
         }
         if(params.command === "rename"){
@@ -143,12 +144,12 @@ export class Server {
                 const newUri = renameArg.newUri;
                 const oldFsPath = URI.parse(oldUri).fsPath;
                 const newFsPath = URI.parse(newUri).fsPath;
-                const data = JSON.stringify({
+                const data = {
                     Id: "RenameDocument",
                     FilePaths: [oldFsPath, newFsPath],
                     Position: 0,
                     Text: ""
-                });   
+                };   
                 await this.lpsRequest(data);
             }
         }
@@ -158,12 +159,12 @@ export class Server {
                 return;
             }
             const fsPath = URI.parse(uri).fsPath;
-            const data = JSON.stringify({
+            const data = {
                 Id: "ChangeDocument",
                 FilePaths: [fsPath],
                 Position: 0,
                 Text: documents.get(uri)?.getText()
-            });
+            };
             await this.lpsRequest(data);
         }
     }
@@ -171,14 +172,14 @@ export class Server {
     async onCompletion(_textDocumentPosition: TextDocumentPositionParams): Promise<CompletionItem[]>{
         const fp = URI.parse(_textDocumentPosition.textDocument.uri).fsPath;
         const pos = documents.get(_textDocumentPosition.textDocument.uri)?.offsetAt(_textDocumentPosition.position);
-        const data = JSON.stringify({
+        const data = {
             Id: "Completion",
             FilePaths: [fp],
             Position: pos,
             Text: documents.get(_textDocumentPosition.textDocument.uri)?.getText()
-        });
-        let ret = await this.lpsRequest(data);
-        let res_items: any[] = JSON.parse(ret).items;
+        };
+        let ret:any = await this.lpsRequest(data);
+        let res_items: any[] = ret.items;
         let comlItems: CompletionItem[] = res_items.map(item => {
             const val = this.symbolKindMap.get(item.Kind);
             const kind = val?val:CompletionItemKind.Text;
@@ -198,14 +199,14 @@ export class Server {
         if(!documents.get(uri)){
             return  new Array<Location>();
         }
-        const data = JSON.stringify({
+        const data = {
             Id: "Definition",
             FilePaths: [fp],
             Position: pos,
             Text: documents.get(uri)?.getText()
-        });
-        let ret = await this.lpsRequest(data);
-        let resItems: any[] = JSON.parse(ret).items;
+        };
+        let ret:any = await this.lpsRequest(data);
+        let resItems: any[] = ret.items;
         const defItems: Location[] = [];
         resItems.forEach(item => {
             const defUri = URI.file(item.FilePath).toString();
@@ -228,14 +229,14 @@ export class Server {
         }
         
         const pos = doc.offsetAt(params.position);
-        const data = JSON.stringify({
+        const data = {
             Id: "Hover",
             FilePaths: [fp],
             Position: pos,
             Text: documents.get(uri)?.getText()
-        });
-        let ret = await this.lpsRequest(data);
-        let resItems: any[] = JSON.parse(ret).items;
+        };
+        let ret:any = await this.lpsRequest(data);
+        let resItems: any[] = ret.items;
         if(resItems.length === 0){
             return undefined;
         }
@@ -255,12 +256,12 @@ export class Server {
     }
 
     async onShutdown() {
-        const data = JSON.stringify({
+        const data = {
             Id: "Shutdown",
             FilePaths: [""],
             Position: 0,
             Text: ""
-        });
+        };
         await this.lpsRequest(data);
     }
 }

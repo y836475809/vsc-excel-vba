@@ -9,38 +9,23 @@ const options: http.RequestOptions = {
 };
 const url = "http://localhost";
 
-export function getComdData(send_data: any): Promise<string> {
+export function getComdData(json: any): Promise<any> {
     return new Promise((resolve, reject) => {
         const req = http.request(url, options, (res: http.IncomingMessage) => {
             let data = "";
             res.setEncoding('utf8');
             res.on('data', (chunk) => {
                 data += chunk;
-                // console.log('data');
             });
 
             res.on('end', () => {
-                console.log("data=", data);
-                console.log('end');
-                resolve(data);
+                resolve(JSON.parse(data));
             });
         });
         req.on('error', function(e) {
-            console.log('problem with request: ' + e.message);
-            reject();
+            reject(e);
         });
-        // const json_data = JSON.stringify({
-        //     cmd: "OK",
-        //     line: 10,
-        //     col:25
-        // });
-        // const data = JSON.stringify({
-        //     id: "text",
-        //     json_string: json_data
-        // });
-        req.write(send_data);
+        req.write(JSON.stringify(json));
         req.end();    
     });
 }
-
-// exports.getComdData = getComdData;

@@ -91,19 +91,6 @@ export class Server {
                 connection.console.log('Workspace folder change event received.');
             });
         }
-        const wfs = await connection.workspace.getWorkspaceFolders();
-        const rootPath = (wfs && (wfs.length > 0)) ? URI.parse(wfs[0].uri).fsPath: undefined;
-        if(rootPath){
-            const filePaths = this.getWorkspaceFolderFiles(
-                [rootPath, path.join(rootPath, ".vscode")]);
-            const data = {
-                Id: "AddDocuments",
-                FilePaths: filePaths,
-                Position: 0,
-                Text: ""
-            }; 
-            await this.lpsRequest(data);
-        }
     }
 
     async onRequest(method: string, params: any) {

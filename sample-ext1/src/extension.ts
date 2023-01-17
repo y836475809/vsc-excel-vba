@@ -13,6 +13,7 @@ import {
 } from 'vscode-languageclient/node';
 import { TreeDataProvider } from './treeDataProvider';
 import { Project } from './project';
+import * as fs from "fs";
 
 let client: LanguageClient;
 
@@ -180,6 +181,41 @@ async function stopLanguageServer(){
 	}
 }
 
+async function waitUntilClientIsRunning(){
+	let waitCount = 0;
+	while(true){
+		if(waitCount > 30){
+			throw new Error("Timed out waiting for client ready");
+		}
+		waitCount++;
+		await new Promise(resolve => {
+			setTimeout(resolve, 100);
+		});
+		if(client.state === State.Running){
+			break;
+		}
+	}
+}
+
+function getWorkspaceFileUris() : string[] | undefined{
+	const wsPath = getWorkspacePath();
+	if(!wsPath){
+		return undefined
+	}
+	let filePaths: string[] = [];
+	const dirPaths = [wsPath, path.join(wsPath, ".vscode")];
+	for(const dirPath of  dirPaths){
+		const fsPaths = fs.readdirSync(dirPath, { withFileTypes: true })
+		.filter(dirent => {
+			return dirent.isFile() 
+				&& (dirent.name.endsWith('.bas') || dirent.name.endsWith('.cls'));
+		}).map(dirent => path.join(dirPath, dirent.name));
+		filePaths = filePaths.concat(fsPaths);
+	} 
+	const uris = filePaths.map(fp => vscode.Uri.file(fp).toString());
+	return uris;
+}
+
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export async function activate(context: vscode.ExtensionContext) {
@@ -196,12 +232,30 @@ export async function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(vscode.commands.registerCommand("sample-ext1.startLanguageServer", async () => {
 		await stopLanguageServer();
 		await startLanguageServer(context);	
+
+		await waitUntilClientIsRunning();
+		const uris = getWorkspaceFileUris();
+		if(uris){
+			await client.sendRequest("client.sendRequest", {
+				command: "create",
+				arguments: uris,
+			});
+		}
 	}));
 
 	context.subscriptions.push(vscode.commands.registerCommand("sample-ext1.start", async () => {
 		await setupFiles(context);
 		await stopLanguageServer();
 		await startLanguageServer(context);	
+
+		await waitUntilClientIsRunning();
+		const uris = getWorkspaceFileUris();
+		if(uris){
+			await client.sendRequest("client.sendRequest", {
+				command: "create",
+				arguments: uris,
+			});
+		}
 	}));
 
 	context.subscriptions.push(vscode.commands.registerCommand("sample-ext1.renameFiles", async (oldUri, newUri) => {

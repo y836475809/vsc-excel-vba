@@ -68,12 +68,11 @@ function setupWorkspaceFileEvent(context: vscode.ExtensionContext){
 		if(!client || client.state !== State.Running){
 			return;
 		}
-		for(const uri of e.files){
-			await client.sendRequest("client.sendRequest", {
-				command: "create",
-				arguments: [uri.toString()],
-			});
-		}
+		const uris = e.files.map(uri => uri.toString());
+		await client.sendRequest("client.sendRequest", {
+			command: "create",
+			arguments: uris,
+		});
 	}, null, context.subscriptions);
 	vscode.workspace.onDidDeleteFiles(async (e: vscode.FileDeleteEvent) => {
 		if(!client || client.state !== State.Running){

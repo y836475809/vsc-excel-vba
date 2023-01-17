@@ -111,11 +111,11 @@ export class Server {
             return;
         }
         if(params.command === "create"){
-            const uri = params.arguments?params.arguments[0]:undefined;
-            const fp = URI.parse(uri).fsPath;
+            const uris: string[] = params.arguments?params.arguments:undefined;
+            const filePaths = uris.map(uri => URI.parse(uri).fsPath);
             const data = {
                 Id: "AddDocuments",
-                FilePaths: [fp],
+                FilePaths: filePaths,
                 Position: 0,
                 Text: ""
             }; 

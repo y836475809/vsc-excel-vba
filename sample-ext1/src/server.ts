@@ -25,7 +25,7 @@ import {
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { URI } from 'vscode-uri';
 import * as fs from "fs";
-import { LPSRequest } from "./ts-client";
+import { LPSRequest } from "./lsp-request";
 import path = require('path');
 import { EphemeralKeyInfo } from 'tls';
 

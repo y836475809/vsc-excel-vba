@@ -45,7 +45,8 @@ suite('Extension Test Suite3', () => {
 			}
 			return {};
 		};
-		mockServer.listen(9088);
+		const port = await helper.getServerPort();
+		mockServer.listen(port);
 
         await vscode.commands.executeCommand("sample-ext1.startLanguageServer");
 		await helper.sleep(1000);

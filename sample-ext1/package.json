@@ -16,6 +16,16 @@
   ],
   "main": "./out/extension.js",
   "contributes": {
+    "configuration": {
+      "title": "Sample-ext1",
+      "properties": {
+        "sample-ext1.serverPort": {
+          "type": "number",
+          "default": 9088,
+          "description": "server port"
+        }
+      }
+    },
     "languages": [
       {
         "id": "vb",

@@ -17,7 +17,8 @@ suite('Extension Test Suite', () => {
 			log.push(json.Id);
 			return {};
 		};
-		mockServer.listen(9088);
+		const port = await helper.getServerPort();
+		mockServer.listen(port);
 
         await vscode.commands.executeCommand("sample-ext1.startLanguageServer");
 		await helper.sleep(1000);
@@ -30,7 +31,6 @@ suite('Extension Test Suite', () => {
 	test('Sample test', async () => {
 		// log = [];
 		await helper.activateExtension();
-
 		// await myclinet.getComdData({});
 		// try {
 			// const docUri = helper.getDocUri('m1.bas');

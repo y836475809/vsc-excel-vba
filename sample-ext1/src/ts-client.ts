@@ -1,31 +1,37 @@
 import * as http from "http";
 
-const options: http.RequestOptions = {
-    port: 9088,
-    method: "POST",
-    headers: {
-        "Content-Type": "application/json",
-    },
-};
 const url = "http://localhost";
 
-export function getComdData(json: any): Promise<any> {
-    return new Promise((resolve, reject) => {
-        const req = http.request(url, options, (res: http.IncomingMessage) => {
-            let data = "";
-            res.setEncoding('utf8');
-            res.on('data', (chunk) => {
-                data += chunk;
-            });
+export class LPSRequest {
+    private options: http.RequestOptions;
 
-            res.on('end', () => {
-                resolve(JSON.parse(data));
+    constructor(port: number){
+        this.options = {
+            port: port,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            } 
+        };
+    }
+
+    send(json: any): Promise<any> {
+        return new Promise((resolve, reject) => {
+            const req = http.request(url, this.options, (res: http.IncomingMessage) => {
+                let data = "";
+                res.setEncoding('utf8');
+                res.on('data', (chunk) => {
+                    data += chunk;
+                });
+                res.on('end', () => {
+                    resolve(JSON.parse(data));
+                });
             });
+            req.on('error', function(e) {
+                reject(e);
+            });
+            req.write(JSON.stringify(json));
+            req.end();    
         });
-        req.on('error', function(e) {
-            reject(e);
-        });
-        req.write(JSON.stringify(json));
-        req.end();    
-    });
+    }
 }

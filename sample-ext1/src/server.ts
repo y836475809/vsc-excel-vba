@@ -25,26 +25,30 @@ import {
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { URI } from 'vscode-uri';
 import * as fs from "fs";
-import { getComdData } from "./ts-client";
+import { LPSRequest } from "./ts-client";
 import path = require('path');
 import { EphemeralKeyInfo } from 'tls';
 
 const connection = createConnection(ProposedFeatures.all);
 const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
-type LpsRequest = (json: any) => Promise<any>;
+
+async function getSetting(){
+    const settings = await connection.workspace.getConfiguration(
+        [{ section: "sample-ext1" }]) as any[];
+    return settings[0];
+}
 
 export class Server {
     hasWorkspaceFolderCapability: boolean;
     symbolKindMap:Map<string, CompletionItemKind>;
-    lpsRequest: LpsRequest;
+    lpsRequest!: LPSRequest;
 
-    constructor(lpsRequest: LpsRequest){
+    constructor(){
         this.hasWorkspaceFolderCapability = false;
         this.symbolKindMap = new Map<string, CompletionItemKind>([
             ["Method", CompletionItemKind.Method],
             ["Field", CompletionItemKind.Field],
         ]);
-        this.lpsRequest = lpsRequest;
     }
 
     onInitialize(params: InitializeParams){
@@ -91,6 +95,10 @@ export class Server {
                 connection.console.log('Workspace folder change event received.');
             });
         }
+
+        const setting = await getSetting();
+        const port = setting.serverPort as number;
+        this.lpsRequest = new LPSRequest(port);
     }
 
     async onRequest(method: string, params: any) {
@@ -106,7 +114,7 @@ export class Server {
                 Position: 0,
                 Text: ""
             }; 
-            await this.lpsRequest(data);
+            await this.lpsRequest.send(data);
         }
         if(params.command === "delete"){
             const uris:string[] = params.arguments?params.arguments:undefined;
@@ -119,7 +127,7 @@ export class Server {
                 Position: 0,
                 Text: ""
             };   
-            await this.lpsRequest(data);
+            await this.lpsRequest.send(data);
         }
         if(params.command === "rename"){
             const renameArgs: any[] = params.arguments?params.arguments:undefined;
@@ -137,7 +145,7 @@ export class Server {
                     Position: 0,
                     Text: ""
                 };   
-                await this.lpsRequest(data);
+                await this.lpsRequest.send(data);
             }
         }
         if(params.command === "changeDocument"){
@@ -152,7 +160,7 @@ export class Server {
                 Position: 0,
                 Text: documents.get(uri)?.getText()
             };
-            await this.lpsRequest(data);
+            await this.lpsRequest.send(data);
         }
     }
 
@@ -165,7 +173,7 @@ export class Server {
             Position: pos,
             Text: documents.get(_textDocumentPosition.textDocument.uri)?.getText()
         };
-        let ret:any = await this.lpsRequest(data);
+        let ret:any = await this.lpsRequest.send(data);
         let res_items: any[] = ret.items;
         let comlItems: CompletionItem[] = res_items.map(item => {
             const val = this.symbolKindMap.get(item.Kind);
@@ -192,7 +200,7 @@ export class Server {
             Position: pos,
             Text: documents.get(uri)?.getText()
         };
-        let ret:any = await this.lpsRequest(data);
+        let ret:any = await this.lpsRequest.send(data);
         let resItems: any[] = ret.items;
         const defItems: Location[] = [];
         resItems.forEach(item => {
@@ -222,7 +230,7 @@ export class Server {
             Position: pos,
             Text: documents.get(uri)?.getText()
         };
-        let ret:any = await this.lpsRequest(data);
+        let ret:any = await this.lpsRequest.send(data);
         let resItems: any[] = ret.items;
         if(resItems.length === 0){
             return undefined;
@@ -249,12 +257,12 @@ export class Server {
             Position: 0,
             Text: ""
         };
-        await this.lpsRequest(data);
+        await this.lpsRequest.send(data);
     }
 }
 
 export function startLspServer() {
-    const server = new Server(getComdData);
+    const server = new Server();
     connection.onInitialize(server.onInitialize.bind(server));
     connection.onInitialized(server.onInitialized.bind(server));
     connection.onRequest(server.onRequest.bind(server));

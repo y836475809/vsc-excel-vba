@@ -24,7 +24,11 @@ export class LPSRequest {
                     data += chunk;
                 });
                 res.on('end', () => {
-                    resolve(JSON.parse(data));
+                    if(data.length === 0){
+                        resolve({});
+                    }else{
+                        resolve(JSON.parse(data));
+                    }  
                 });
             });
             req.on('error', function(e) {

@@ -128,27 +128,6 @@ function setupWorkspaceFileEvent(context: vscode.ExtensionContext){
 	}, 500), null, context.subscriptions);
 }
 
-function setupContextSubscriptions(context: vscode.ExtensionContext){
-	context.subscriptions.push(vscode.commands.registerCommand("myExtension.commandRequest",  async (command: string, args: any[]) => {
-		if(!client || client.state !== State.Running){
-			return;
-		}
-		return await client.sendRequest(ExecuteCommandRequest.type, {
-			command: command,
-			arguments: args,
-		});
-	}));
-	context.subscriptions.push(vscode.commands.registerCommand("myExtension.sendRequest", async (command: string, args: any[]) => {
-		if(!client || client.state !== State.Running){
-			return;
-		}
-		await client.sendRequest("client.sendRequest", {
-			command: command,
-			arguments: args,
-		});
-	}));
-}
-
 async function startLanguageServer(context: vscode.ExtensionContext){
 	let serverModule = context.asAbsolutePath(path.join('out', 'lsp-connection.js'));
 	let debugOptions = { execArgv: ['--nolazy', '--inspect=6009'] };
@@ -220,7 +199,6 @@ function getWorkspaceFileUris() : string[] | undefined{
 // Your extension is activated the very first time the command is executed
 export async function activate(context: vscode.ExtensionContext) {
 	setupWorkspaceFileEvent(context);
-	setupContextSubscriptions(context);
 
 	context.subscriptions.push(vscode.commands.registerCommand("sample-ext1.setupFiles", async () => {
 		await setupFiles(context);

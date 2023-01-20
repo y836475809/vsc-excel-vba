@@ -113,7 +113,7 @@ export class Server {
                 FilePaths: filePaths,
                 Position: 0,
                 Text: ""
-            }; 
+            } as Hoge.Command;
             await this.lpsRequest.send(data);
         }
         if(params.command === "delete"){
@@ -126,7 +126,7 @@ export class Server {
                 FilePaths: fsPaths,
                 Position: 0,
                 Text: ""
-            };   
+            } as Hoge.Command;  
             await this.lpsRequest.send(data);
         }
         if(params.command === "rename"){
@@ -144,7 +144,7 @@ export class Server {
                     FilePaths: [oldFsPath, newFsPath],
                     Position: 0,
                     Text: ""
-                };   
+                } as Hoge.Command;  
                 await this.lpsRequest.send(data);
             }
         }
@@ -153,29 +153,38 @@ export class Server {
             if(!uri){
                 return;
             }
+            const doc = documents.get(uri);
+            if(!doc){
+                return;
+            }
             const fsPath = URI.parse(uri).fsPath;
             const data = {
                 Id: "ChangeDocument",
                 FilePaths: [fsPath],
                 Position: 0,
-                Text: documents.get(uri)?.getText()
-            };
+                Text: doc.getText()
+            } as Hoge.Command;
             await this.lpsRequest.send(data);
         }
     }
 
     async onCompletion(_textDocumentPosition: TextDocumentPositionParams): Promise<CompletionItem[]>{
         const fp = URI.parse(_textDocumentPosition.textDocument.uri).fsPath;
-        const pos = documents.get(_textDocumentPosition.textDocument.uri)?.offsetAt(_textDocumentPosition.position);
+        const doc = documents.get(_textDocumentPosition.textDocument.uri);
+        if(!doc){
+            return [];
+        }
+        const pos = doc.offsetAt(_textDocumentPosition.position);
+        const text = doc.getText();
         const data = {
             Id: "Completion",
             FilePaths: [fp],
             Position: pos,
-            Text: documents.get(_textDocumentPosition.textDocument.uri)?.getText()
-        };
-        let ret:any = await this.lpsRequest.send(data);
-        let res_items: any[] = ret.items;
-        let comlItems: CompletionItem[] = res_items.map(item => {
+            Text: text
+        } as Hoge.Command;
+        let ret = await this.lpsRequest.send(data) as Hoge.CompletionItems;
+        let res_items = ret.items;
+        let comlItems = res_items.map(item => {
             const val = this.symbolKindMap.get(item.Kind);
             const kind = val?val:CompletionItemKind.Text;
             return {
@@ -199,9 +208,9 @@ export class Server {
             FilePaths: [fp],
             Position: pos,
             Text: documents.get(uri)?.getText()
-        };
-        let ret:any = await this.lpsRequest.send(data);
-        let resItems: any[] = ret.items;
+        } as Hoge.Command;
+        let ret = await this.lpsRequest.send(data) as Hoge.DefinitionItems;
+        let resItems = ret.items;
         const defItems: Location[] = [];
         resItems.forEach(item => {
             const defUri = URI.file(item.FilePath).toString();
@@ -229,9 +238,9 @@ export class Server {
             FilePaths: [fp],
             Position: pos,
             Text: documents.get(uri)?.getText()
-        };
-        let ret:any = await this.lpsRequest.send(data);
-        let resItems: any[] = ret.items;
+        } as Hoge.Command;
+        let ret = await this.lpsRequest.send(data) as Hoge.CompletionItems;
+        let resItems = ret.items;
         if(resItems.length === 0){
             return undefined;
         }
@@ -253,10 +262,10 @@ export class Server {
     async onShutdown() {
         const data = {
             Id: "Shutdown",
-            FilePaths: [""],
+            FilePaths: [],
             Position: 0,
             Text: ""
-        };
+        } as Hoge.Command;
         await this.lpsRequest.send(data);
     }
 }

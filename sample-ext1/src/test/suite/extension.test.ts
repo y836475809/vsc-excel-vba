@@ -38,7 +38,7 @@ suite('Extension Test Suite3', () => {
 
 	suiteSetup(async () => {
 		mockServer = new LspMockServer();
-		mockServer.callBackAddDocuments = (json: any) => {
+		mockServer.callBackAddDocuments = (json: Hoge.Command) => {
 			log.push(json.Id);
 			if(resMap.has(json.Id)){
 				return resMap.get(json.Id);

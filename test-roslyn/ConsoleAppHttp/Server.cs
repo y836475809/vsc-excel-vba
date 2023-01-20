@@ -88,7 +88,9 @@ namespace ConsoleAppServer
                         run = false;
                         break;
                 }
-                response.Close();
+                if (run) {
+                    response.Close();
+                }
 
 
                 //// HTMLを表示する

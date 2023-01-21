@@ -40,4 +40,14 @@ namespace Hoge {
         Position: number;
         Text: string;
     };
+
+    export type RequestMethod = 
+        "createFiles"
+        | "deleteFiles"
+        | "renameFiles"
+        | "changeText";
+    export type RequestRenameParam = {
+        oldUri: string,
+        newUri: string
+    };
 }

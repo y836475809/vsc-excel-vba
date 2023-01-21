@@ -7,14 +7,17 @@ import * as path from 'path';
 import * as helper from '../helper';
 import { LspMockServer }  from "../lsp-mock-server";
 
-let log:string[] = [];
+let log:Hoge.Command[] = [];
+let fixtureDir = "";
 let mockServer: LspMockServer;
 
 suite('Extension Test Suite', () => {	
 	suiteSetup(async () => {
+		fixtureDir = helper.getWorkspaceFolder();
+
 		mockServer = new LspMockServer();
-		mockServer.callBackAddDocuments = (json: any) => {
-			log.push(json.Id);
+		mockServer.callBackAddDocuments = (json: Hoge.Command) => {
+			log.push(json);
 			return {};
 		};
 		const port = await helper.getServerPort();
@@ -41,8 +44,21 @@ suite('Extension Test Suite', () => {
 		// 	console.error(e);
 		// }
 		// const docUri = helper.getDocUri('m1.bas');
+		log[0].FilePaths = log[0].FilePaths.sort();
 		assert.deepEqual(log, [
-			"AddDocuments"
+			{
+				Id: "AddDocuments",
+				FilePaths: [
+					path.join(fixtureDir, ".vscode", "collection.cls"),
+					path.join(fixtureDir, ".vscode", "dictionary.cls"),
+					path.join(fixtureDir, "c1.cls"),
+					path.join(fixtureDir, "c2.cls"),
+					path.join(fixtureDir, "m1.bas"),
+					path.join(fixtureDir, "m2.bas"),
+				],
+				Position: 0,
+				Text: "",
+			}
 		]);
 		// const docMap: any = await vscode.commands.executeCommand(
 		// 	'sample-ext1.executeReverse');
@@ -81,7 +97,15 @@ suite('Extension Test Suite', () => {
 		// ]));
 		// assert.deepEqual(preff, []);
 		assert.deepEqual(log, [
-			"RenameDocument"
+			{
+				Id: "RenameDocument",
+				FilePaths: [
+					path.join(fixtureDir, "m2.bas"),
+					path.join(fixtureDir, "renamed_m2.bas"),
+				],
+				Position: 0,
+				Text: "",
+			}
 		]);
 	});
 
@@ -122,7 +146,14 @@ suite('Extension Test Suite', () => {
 		// 	["m2.bas", "Changed"],
 		// ]));
 		assert.deepEqual(log, [
-			"ChangeDocument"
+			{
+				Id: "ChangeDocument",
+				FilePaths: [
+					path.join(fixtureDir, "m2.bas")
+				],
+				Position: 0,
+				Text: "asample\r\n",
+			}
 		]);
 
 		await editor.edit((editBuilder: vscode.TextEditorEdit) => {
@@ -144,8 +175,22 @@ suite('Extension Test Suite', () => {
 		// 	["m2.bas", "Non"],
 		// ]));
 		assert.deepEqual(log, [
-			"ChangeDocument",
-			"ChangeDocument"
+			{
+				Id: "ChangeDocument",
+				FilePaths: [
+					path.join(fixtureDir, "m2.bas")
+				],
+				Position: 0,
+				Text: "asample\r\n",
+			},
+			{
+				Id: "ChangeDocument",
+				FilePaths: [
+					path.join(fixtureDir, "m2.bas")
+				],
+				Position: 0,
+				Text: "sample\r\n",
+			}
 		]);
 	});
 });

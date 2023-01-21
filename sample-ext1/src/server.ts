@@ -102,11 +102,9 @@ export class Server {
     }
 
     async onRequest(method: string, params: any) {
-        if(method !== "client.sendRequest"){
-            return;
-        }
-        if(params.command === "create"){
-            const uris: string[] = params.arguments?params.arguments:undefined;
+        const requestMethod = method as Hoge.RequestMethod;
+        if(requestMethod === "createFiles"){
+            const uris = params.uris as string[];
             const filePaths = uris.map(uri => URI.parse(uri).fsPath);
             const data = {
                 Id: "AddDocuments",
@@ -116,8 +114,8 @@ export class Server {
             } as Hoge.Command;
             await this.lpsRequest.send(data);
         }
-        if(params.command === "delete"){
-            const uris:string[] = params.arguments?params.arguments:undefined;
+        if(requestMethod === "deleteFiles"){
+            const uris = params.uris as string[];
             const fsPaths = uris.map(uri => {
                 return URI.parse(uri).fsPath;
             });
@@ -129,8 +127,8 @@ export class Server {
             } as Hoge.Command;  
             await this.lpsRequest.send(data);
         }
-        if(params.command === "rename"){
-            const renameArgs: any[] = params.arguments?params.arguments:undefined;
+        if(requestMethod === "renameFiles"){
+            const renameArgs = params.renameParams as Hoge.RequestRenameParam[];
             if(!renameArgs){
                 return;
             }
@@ -148,8 +146,8 @@ export class Server {
                 await this.lpsRequest.send(data);
             }
         }
-        if(params.command === "changeDocument"){
-            const uri = params.arguments?params.arguments[0]:undefined;
+        if(requestMethod === "changeText"){
+            const uri = params.uri as string;
             if(!uri){
                 return;
             }

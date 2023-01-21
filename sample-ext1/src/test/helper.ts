@@ -3,6 +3,10 @@ import * as path from 'path';
 import * as Mocha from 'mocha';
 import * as glob from 'glob';
 
+export const getWorkspaceFolder = () => {
+    return vscode.workspace.workspaceFolders![0].uri.fsPath;
+};
+
 export async function getServerPort(): Promise<number> {
     const config = vscode.workspace.getConfiguration("sample-ext1");
     const port: number = await config.get("serverPort")!;

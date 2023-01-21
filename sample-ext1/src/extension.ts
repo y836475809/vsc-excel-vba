@@ -37,19 +37,17 @@ async function setupFiles(context: vscode.ExtensionContext){
 }
 
 async function renameFiles(files: any[]){
-	let renameArgs = [];
+	const method: Hoge.RequestMethod = "renameFiles";
+	let renameParams: Hoge.RequestRenameParam[] = [];
 	for(const file of files){
 		const oldUri = file.oldUri.toString();
 		const newUri = file.newUri.toString();
-		renameArgs.push({
+		renameParams.push({
 			oldUri: oldUri,
 			newUri: newUri
 		});
 	}
-	await client.sendRequest("client.sendRequest", {
-		command: "rename",
-		arguments: renameArgs,
-	});
+	await client.sendRequest(method, {renameParams});
 }
 
 function debounce(fn: any, interval: number){
@@ -69,23 +67,19 @@ function setupWorkspaceFileEvent(context: vscode.ExtensionContext){
 		if(!client || client.state !== State.Running){
 			return;
 		}
+		const method: Hoge.RequestMethod = "createFiles";
 		const uris = e.files.map(uri => uri.toString());
-		await client.sendRequest("client.sendRequest", {
-			command: "create",
-			arguments: uris,
-		});
+		await client.sendRequest(method, {uris});
 	}, null, context.subscriptions);
 	vscode.workspace.onDidDeleteFiles(async (e: vscode.FileDeleteEvent) => {
 		if(!client || client.state !== State.Running){
 			return;
 		}
+		const method: Hoge.RequestMethod = "deleteFiles";
 		const uris = e.files.map(uri => {
 			return uri.toString();
 		});
-		await client.sendRequest("client.sendRequest", {
-			command: "delete",
-			arguments: uris,
-		});
+		await client.sendRequest(method, {uris});
 	}, null, context.subscriptions);
 	vscode.workspace.onDidRenameFiles(async (e: vscode.FileRenameEvent) => {
 		if(!client || client.state !== State.Running){
@@ -120,11 +114,9 @@ function setupWorkspaceFileEvent(context: vscode.ExtensionContext){
 			if(path.dirname(fname) !== wsPath){
 				return;
 			}
+			const method: Hoge.RequestMethod = "changeText";
 			const uri = e.document.uri.toString();
-			await client.sendRequest("client.sendRequest", {
-				command: "changeDocument",
-				arguments: [uri],
-			});
+			await client.sendRequest(method, {uri});
 	}, 500), null, context.subscriptions);
 }
 
@@ -214,10 +206,8 @@ export async function activate(context: vscode.ExtensionContext) {
 		await waitUntilClientIsRunning();
 		const uris = getWorkspaceFileUris();
 		if(uris){
-			await client.sendRequest("client.sendRequest", {
-				command: "create",
-				arguments: uris,
-			});
+			const method: Hoge.RequestMethod = "createFiles";
+			await client.sendRequest(method, {uris});
 		}
 	}));
 
@@ -229,10 +219,8 @@ export async function activate(context: vscode.ExtensionContext) {
 		await waitUntilClientIsRunning();
 		const uris = getWorkspaceFileUris();
 		if(uris){
-			await client.sendRequest("client.sendRequest", {
-				command: "create",
-				arguments: uris,
-			});
+			const method: Hoge.RequestMethod = "createFiles";
+			await client.sendRequest(method, {uris});
 		}
 	}));
 

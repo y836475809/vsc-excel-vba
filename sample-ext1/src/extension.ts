@@ -171,7 +171,7 @@ async function waitUntilClientIsRunning(){
 function getWorkspaceFileUris() : string[] | undefined{
 	const wsPath = getWorkspacePath();
 	if(!wsPath){
-		return undefined
+		return undefined;
 	}
 	let filePaths: string[] = [];
 	const dirPaths = [wsPath, path.join(wsPath, ".vscode")];

@@ -50,6 +50,14 @@ async function renameFiles(files: any[]){
 	await client.sendRequest(method, {renameParams});
 }
 
+async function deleteFiles(files: any[]){
+	const method: Hoge.RequestMethod = "deleteFiles";
+	const uris = files.map(uri => {
+		return uri.toString();
+	});
+	await client.sendRequest(method, {uris});
+}
+
 function debounce(fn: any, interval: number){
     let timerId: any;
     return (e: any) => {
@@ -75,11 +83,10 @@ function setupWorkspaceFileEvent(context: vscode.ExtensionContext){
 		if(!client || client.state !== State.Running){
 			return;
 		}
-		const method: Hoge.RequestMethod = "deleteFiles";
-		const uris = e.files.map(uri => {
-			return uri.toString();
+		const files = e.files.map(file => {
+			return file;
 		});
-		await client.sendRequest(method, {uris});
+		await deleteFiles(files);
 	}, null, context.subscriptions);
 	vscode.workspace.onDidRenameFiles(async (e: vscode.FileRenameEvent) => {
 		if(!client || client.state !== State.Running){
@@ -229,6 +236,9 @@ export async function activate(context: vscode.ExtensionContext) {
 			oldUri,
 			newUri
 		}]);
+	}));
+	context.subscriptions.push(vscode.commands.registerCommand("sample-ext1.deleteFiles", async (uris: vscode.Uri[]) => {
+		await deleteFiles(uris);
 	}));
 }
 

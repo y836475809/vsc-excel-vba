@@ -17,6 +17,7 @@ namespace ConsoleAppServer
         public event EventHandler<CompletionEventArgs> CompletionReq;
         public event EventHandler<DefinitionEventArgs> DefinitionReq;
         public event EventHandler<CompletionEventArgs> HoverReq;
+        public event EventHandler<DebugEventArgs> DebugGetDocumentsEvent;
         private HttpListener listener;
 
         public void Setup(int port)
@@ -87,6 +88,12 @@ namespace ConsoleAppServer
                     case "Shutdown":
                         run = false;
                         break;
+                    case "Debug:GetDocuments":
+                        var args_debug = new DebugEventArgs();
+                        string debugInfo = string.Empty;
+                        DebugGetDocumentsEvent?.Invoke(this, args_debug);
+                        Response(response, args_debug.Text);
+                        break;
                 }
                 if (run) {
                     response.Close();
@@ -122,6 +129,13 @@ namespace ConsoleAppServer
         //    response.ContentLength64 = text.Length;
         //    response.OutputStream.Write(text, 0, text.Length);
         //}
+
+        private void Response(HttpListenerResponse response, string text) {
+            var data = Encoding.UTF8.GetBytes(text);
+            response.ContentType = "application/json";
+            response.ContentLength64 = data.Length;
+            response.OutputStream.Write(data, 0, data.Length);
+        }
 
         private void Response(HttpListenerResponse response, List<CompletionItem> CompletionItems)
         {

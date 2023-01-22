@@ -33,7 +33,8 @@ namespace Hoge {
         | "Completion" 
         | "Definition" 
         | "Hover" 
-        | "Shutdown";
+        | "Shutdown"
+        | "Debug:GetDocuments";
     export type Command = {
         Id: CommandId;
         FilePaths: string[];

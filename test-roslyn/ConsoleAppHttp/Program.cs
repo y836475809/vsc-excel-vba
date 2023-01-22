@@ -75,6 +75,10 @@ namespace ConsoleAppServer {
                 }
                 e.Items = list;
             };
+            server.DebugGetDocumentsEvent += (object sender, DebugEventArgs e) => {
+                e.Text = JsonSerializer.Serialize(docCache);
+            };
+
             server.Setup(9088);
             server.Run();
 

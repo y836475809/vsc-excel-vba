@@ -58,6 +58,10 @@
         "title": "renameFiles"
       },
       {
+        "command": "sample-ext1.deleteFiles",
+        "title": "deleteFiles"
+      },
+      {
         "command": "testView.addEntry",
         "title": "Add"
       },

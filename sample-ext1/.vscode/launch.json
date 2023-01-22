@@ -57,6 +57,21 @@
 			"env": {
 				"MOCHA_LAUNCH_FILE": "${workspaceFolder}/out/test/${fileDirnameBasename}/${fileBasenameNoExtension}.js"
 			}
+		},
+		{
+			"name": "E2E Roslyn Tests",
+			"type": "extensionHost",
+			"request": "launch",
+			"args": [
+				"${workspaceFolder}/src/test/fixture",
+				"--disable-extensions",
+				"--extensionDevelopmentPath=${workspaceFolder}",
+				"--extensionTestsPath=${workspaceFolder}/out/test/e2e-roslyn/index"
+			],
+			"outFiles": [
+				"${workspaceFolder}/out/test/**/*.js"
+			],
+			"preLaunchTask": "${defaultBuildTask}"
 		}
 	]
 }

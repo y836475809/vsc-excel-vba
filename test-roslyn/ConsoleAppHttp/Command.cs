@@ -122,4 +122,10 @@ namespace ConsoleAppServer {
             this.Position = Position;
         }
     }
+
+    public class DebugEventArgs : EventArgs {
+        public string Text { get; set; }
+        public DebugEventArgs() {
+        }
+    }
 }

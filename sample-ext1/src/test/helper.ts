@@ -2,6 +2,59 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as Mocha from 'mocha';
 import * as glob from 'glob';
+import * as fs from 'fs';
+
+export class FixtureData {
+    fileMap: Map<string, string>;
+    pathMap: Map<string, string>;;
+    constructor(){
+        this.pathMap = new Map<string, string>();
+        this.fileMap = new Map<string, string>();
+        const fixtureDir = getWorkspaceFolder();
+        const fsPaths = [
+            path.join(fixtureDir, ".vscode", "collection.cls"),
+            path.join(fixtureDir, ".vscode", "dictionary.cls"),
+            path.join(fixtureDir, "c1.cls"),
+            path.join(fixtureDir, "c2.cls"),
+            path.join(fixtureDir, "m1.bas"),
+            path.join(fixtureDir, "m2.bas"),
+        ];
+        for (const fp of fsPaths) {
+            this.pathMap.set(path.basename(fp), fp);
+            this.fileMap.set(fp, fs.readFileSync(fp, { encoding: "utf8"}));
+        }
+    }
+
+    getText(filename: string): string {
+        const fp = this.pathMap.get(filename)!;
+        return this.fileMap.get(fp)!;
+    }
+
+    getFileMap(): Map<string, string> { 
+        const cloneMap = new Map<string, string>(
+            JSON.parse(JSON.stringify(Array.from(this.fileMap)))
+        );
+        return cloneMap;
+    }
+
+    rename(fileMap: Map<string, string>, oldFilename: string, newFilename: string){
+        const oldFp = this.pathMap.get(oldFilename)!;
+        const text = fileMap.get(oldFp)!;
+		fileMap.delete(oldFp);
+        const newFp = path.join(path.dirname(oldFp), newFilename);
+		fileMap.set(newFp, text);
+    }
+
+    update(fileMap: Map<string, string>, filename:string, text: string){
+        const fp = this.pathMap.get(filename)!;
+		fileMap.set(fp, text);
+    }
+
+    delete(fileMap: Map<string, string>, filename:string){
+        const fp = this.pathMap.get(filename)!;
+		fileMap.delete(fp);
+    }
+}
 
 export const getWorkspaceFolder = () => {
     return vscode.workspace.workspaceFolders![0].uri.fsPath;

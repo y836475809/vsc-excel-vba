@@ -246,6 +246,7 @@ export class Server {
             return undefined;
         }
         const item = resItems[0];
+        const description = item.Description.replace(/\r/g, "");
         const content: MarkupContent = {
             kind: "markdown",
             value: [
@@ -253,7 +254,7 @@ export class Server {
                 `${item.DisplayText}`,
                 '```',
                 '```xml',
-                `${item.Description}`,
+                `${description}`,
                 '```',
             ].join('\n'),
         };

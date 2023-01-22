@@ -1,16 +1,18 @@
 Public Class Collection
     Public Count As Long
 
-    Public Sub Add(object item, string? Key)
+    Public Sub Add(item As Object)
+    End Sub
+    Public Sub Add(item As Object, key As String)
     End Sub
 
-    Public Sub Remove(Index as Long)
+    Public Sub Remove(index As Long)
     End Sub
-    Public Sub Remove(Key as string)
+    Public Sub Remove(key As String)
     End Sub
 
-    Public Property Item(ByVal index As Integer) As Object
+    Public Property Item(index As Integer) As Object
     End Property
-    Public Property Item(ByVal Key As string) As Object
+    Public Property Item(key As String) As Object
     End Property
 End Class

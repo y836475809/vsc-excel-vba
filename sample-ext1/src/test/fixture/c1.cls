@@ -1,5 +1,8 @@
 Option Explicit On
 
+''' <summary>
+'''  個人
+''' </summary>
 Public Class Person
     ''' <summary>
     '''  メンバ変数

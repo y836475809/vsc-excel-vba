@@ -2,7 +2,7 @@ Module Module1
 ''' <summary>
 '''  モジュールbuf
 ''' </summary>
-private buf As String
+Private buf As String
 
 ''' <summary>
 '''  テストメッセージ
@@ -54,8 +54,9 @@ Sub call1()
     Dim p2 As New Person
     ' Set p2 = New Person
     buf = "ss"
-    'p2.Name
-    p2.SayHelloms
+    p2.SayHello
+    ' completion position
+
 End Sub
 
 End Module

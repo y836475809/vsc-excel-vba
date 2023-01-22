@@ -48,6 +48,9 @@ export class Server {
         this.symbolKindMap = new Map<string, CompletionItemKind>([
             ["Method", CompletionItemKind.Method],
             ["Field", CompletionItemKind.Field],
+            ["Property", CompletionItemKind.Property],
+            ["Local", CompletionItemKind.Variable],
+            ["Class", CompletionItemKind.Class],
         ]);
     }
 

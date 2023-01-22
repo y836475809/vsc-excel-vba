@@ -57,6 +57,20 @@ namespace ConsoleApp1 {
                 workspace.CurrentSolution.WithDocumentText(docId, SourceText.From(text)));
         }
 
+        private bool IsCompletionItem(ISymbol symbol) {
+            if (symbol.ContainingType?.Name == "Object") {
+                return false;
+            }
+            if (symbol is INamedTypeSymbol namedType) {
+                if(namedType.TypeKind == TypeKind.Module) {
+                    return false;
+                }
+            }
+            if (symbol.Kind == SymbolKind.Namespace) {
+                return false;
+            }
+            return true;
+        }
 
         public async Task<List<CompletionItem>> GetCompletions(string name, string text, int position) {
             ChangeDocument(name, text);
@@ -69,13 +83,18 @@ namespace ConsoleApp1 {
             var symbols = await Recommender.GetRecommendedSymbolsAtPositionAsync(doc, position);
             foreach (var symbol in symbols) {
                 var completionItem = new CompletionItem();
-                if(symbol.ContainingType?.Name == "Object") {
+                if (!IsCompletionItem(symbol)) {
                     continue;
                 }
                 completionItem.DisplayText = symbol.ToDisplayString();
                 completionItem.CompletionText = symbol.MetadataName;
                 completionItem.Description = symbol.GetDocumentationCommentXml();
                 completionItem.Kind = symbol.Kind.ToString();
+                if (symbol is INamedTypeSymbol namedType) {
+                    if (namedType.TypeKind == TypeKind.Class) {
+                        completionItem.Kind = TypeKind.Class.ToString();
+                    }
+                }   
                 completionItem.ReturnType = "";
                 if (symbol.Kind == SymbolKind.Method) {
                     var methodSymbol = symbol as IMethodSymbol;

@@ -15,28 +15,6 @@
 				"kind": "build",
 				"isDefault": true
 			}
-		},
-		{
-            "label": "startMockServer",
-            "type": "npm",
-			"script": "start:server",
-            "group": "test",
-			"isBackground": true,
-			"problemMatcher": {
-                "pattern": [
-                    {
-                        "regexp": ".",
-                        "file": 1,
-                        "location": 2,
-                        "message": 3
-                    }
-                ],
-                "background": {
-                    "activeOnStart": false,
-                    "beginsPattern": ".*",
-                    "endsPattern": "^.*start mock server port.*$",
-                }
-            }
-        }
+		}
 	]
 }

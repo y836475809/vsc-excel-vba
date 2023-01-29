@@ -1,16 +1,26 @@
-Public Class Collection
-    Public Count As Long
+VERSION 1.0 CLASS
+BEGIN
+  MultiUse = -1  'True
+END
+Attribute VB_Name = "Collection"
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = False
+Attribute VB_PredeclaredId = False
+Attribute VB_Exposed = False
 
-    Public Sub Add(object item, string? Key)
-    End Sub
+Public Count As Long
 
-    Public Sub Remove(Index as Long)
-    End Sub
-    Public Sub Remove(Key as string)
-    End Sub
+Public Sub Add(item As Object)
+End Sub
+Public Sub Add(item As Object, key As String)
+End Sub
 
-    Public Property Item(ByVal index As Integer) As Object
-    End Property
-    Public Property Item(ByVal Key As string) As Object
-    End Property
-End Class
+Public Sub Remove(index As Long)
+End Sub
+Public Sub Remove(key As String)
+End Sub
+
+Public Property Item(index As Integer) As Object
+End Property
+Public Property Item(key As String) As Object
+End Property

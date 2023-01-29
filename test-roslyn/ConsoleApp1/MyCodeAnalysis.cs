@@ -119,6 +119,17 @@ namespace ConsoleApp1 {
                 if (symbol == null) {
                     return items;
                 }
+                bool isClass = false;
+                if (symbol is INamedTypeSymbol namedType) {
+                    if (namedType.TypeKind == TypeKind.Class) {
+                        isClass = true;
+                    }
+                }
+                if(symbol is IMethodSymbol methodTypel) {
+                    if (methodTypel.MethodKind == MethodKind.Constructor) {
+                        isClass = true;
+                    }
+                }
                 foreach (var loc in symbol.Locations) {
                     var span = loc?.SourceSpan;
                     var tree = loc?.SourceTree;
@@ -128,7 +139,8 @@ namespace ConsoleApp1 {
                         items.Add(new DefinitionItem(
                             tree.FilePath,
                             new Location(span.Value.Start,  start.Line, start.Character), 
-                            new Location(span.Value.End, end.Line, end.Character)));
+                            new Location(span.Value.End, end.Line, end.Character),
+                            isClass));
                     }
                 }
             }

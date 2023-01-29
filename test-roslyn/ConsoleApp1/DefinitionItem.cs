@@ -20,10 +20,16 @@ namespace ConsoleApp1 {
         public Location Start { get; set; }
         public Location End { get; set; }
 
-        public DefinitionItem(string FilePath, Location Start, Location End) {
+        private bool IsClass;
+        public bool IsKindClass() {
+            return this.IsClass;
+        }
+
+        public DefinitionItem(string FilePath, Location Start, Location End, bool IsClass) {
             this.FilePath = FilePath;
             this.Start = Start;
             this.End = End;
+            this.IsClass = IsClass;
         }
     }
 }

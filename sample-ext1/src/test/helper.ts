@@ -3,6 +3,38 @@ import * as path from 'path';
 import * as Mocha from 'mocha';
 import * as glob from 'glob';
 import * as fs from 'fs';
+import { LPSRequest } from "../lsp-request";
+
+export async function resetServer(port: number): Promise<void>{
+    const lpsRequest = new LPSRequest(port);
+	await lpsRequest.send({
+		Id: "Reset",
+		FilePaths: [],
+		Position: 0,
+		Text: ""
+	});
+	await lpsRequest.send({
+		Id: "IgnoreShutdown",
+		FilePaths: [],
+		Position: 0,
+		Text: ""
+	});
+};
+
+export class FixtureFile {
+    fileMap: Map<string, string>;
+    constructor(filenames: string[]){
+        this.fileMap = new Map<string, string>();
+        const fixtureDir = getWorkspaceFolder();
+        for (const fn of filenames) {
+            const fp = path.join(fixtureDir, fn);
+            this.fileMap.set(fn, fs.readFileSync(fp, { encoding: "utf8"}));
+        }
+    }
+    getText(filename: string): string {
+        return this.fileMap.get(filename)!;
+    }
+}
 
 export class FixtureData {
     fileMap: Map<string, string>;

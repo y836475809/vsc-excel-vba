@@ -5,7 +5,7 @@ import * as glob from 'glob';
 
 async function main() {
 	const testsRoot = path.resolve(__dirname, '.');
-	glob('suite*/', { cwd: testsRoot }, async (err, files) => {
+	glob('e2e_*/', { cwd: testsRoot }, async (err, files) => {
 		if (err) {
 			throw err;
 		}
@@ -19,8 +19,8 @@ async function main() {
 				// Passed to --extensionTestsPath
 				const extensionTestsPath = path.resolve(__dirname, `./index`);
 		
-				const testWorkspace = path.resolve(__dirname, `../../src/test/fixture`);
-				
+				const testWorkspace = path.resolve(__dirname, `../../src/test/${dirName}/fixture`);
+
 				process.env["MOCHA_TEST_DIRNAME"] = dirName;
 				// Download VS Code, unzip it and run the integration test
 				// await runTests({ extensionDevelopmentPath, extensionTestsPath });

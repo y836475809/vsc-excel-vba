@@ -1,29 +1,37 @@
-Public Class Dictionary
-    Public Count As Long
-    
-    Public Sub Add(string Key, Object item)
-    End Sub
-    Public Sub Add(Integer Key, Object item)
-    End Sub
+VERSION 1.0 CLASS
+BEGIN
+  MultiUse = -1  'True
+END
+Attribute VB_Name = "Dictionary"
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = False
+Attribute VB_PredeclaredId = False
+Attribute VB_Exposed = False
 
-    Public Function Items() as Object()
-    End Function
+Public Count As Long
 
-    Public Function keys() as string()
-    End Function
-    Public Function keys() as Integer()
-    End Function
+Public Sub Add(key As String, item As Object)
+End Sub
+Public Sub Add(key As Integer, item As Object)
+End Sub
 
-    Public Function Exists(string Key) as Boolean
-    End Function
-    Public Function Exists(Integer Key) as Boolean
-    End Function
+Public Function Items() As Object()
+End Function
 
-    Public Sub Remove(string Key)
-    End Sub
-    Public Sub Remove(Integer Key)
-    End Sub
+Public Function Keys() As String()
+End Function
+Public Function Keys() As Integer()
+End Function
 
-    Public Sub RemoveAll()
-    End Sub
-End Class
+Public Function Exists(key As String) As Boolean
+End Function
+Public Function Exists(key As Integer) As Boolean
+End Function
+
+Public Sub Remove(key As String)
+End Sub
+Public Sub Remove(key As Integer)
+End Sub
+
+Public Sub RemoveAll()
+End Sub

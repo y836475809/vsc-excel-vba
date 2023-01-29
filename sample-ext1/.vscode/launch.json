@@ -59,19 +59,22 @@
 			}
 		},
 		{
-			"name": "E2E Roslyn Tests",
+			"name": "E2E Test",
 			"type": "extensionHost",
 			"request": "launch",
 			"args": [
-				"${workspaceFolder}/src/test/fixture",
+				"${workspaceFolder}/src/test/${fileDirnameBasename}/fixture",
 				"--disable-extensions",
 				"--extensionDevelopmentPath=${workspaceFolder}",
-				"--extensionTestsPath=${workspaceFolder}/out/test/e2e-roslyn/index"
+				"--extensionTestsPath=${workspaceFolder}/out/test/index-launch"
 			],
 			"outFiles": [
 				"${workspaceFolder}/out/test/**/*.js"
 			],
-			"preLaunchTask": "${defaultBuildTask}"
+			"preLaunchTask": "${defaultBuildTask}",
+			"env": {
+				"MOCHA_LAUNCH_FILE": "${workspaceFolder}/out/test/${fileDirnameBasename}/${fileBasenameNoExtension}.js"
+			}
 		}
 	]
 }

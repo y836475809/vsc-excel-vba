@@ -1,4 +1,4 @@
-﻿using ConsoleApp1;
+using ConsoleApp1;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -10,73 +10,94 @@ namespace ConsoleAppServer {
     class Program {
         static void Main(string[] args) {
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-            var docCache = new Dictionary<string, string>();
-            
+            var codeAdapter = new CodeAdapter();
             var mc = new MyCodeAnalysis();
             var server = new Server();
             server.DocumentAdded += (object sender, DocumentAddedEventArgs e) => {
-                //var code = "";
                 foreach (var FilePath in e.FilePaths) {
-                    if (!docCache.ContainsKey(FilePath)) {
-                        docCache[FilePath] = Helper.getCode(FilePath);
-                    }
-                    var code = docCache[FilePath];
-                    mc.AddDocument(FilePath, code);
+                    codeAdapter.SetCode(FilePath, Helper.getCode(FilePath));
+                    var vbCode = codeAdapter.GetVbCodeInfo(FilePath).VbCode;
+                    mc.AddDocument(FilePath, vbCode);
                 }
             };
             server.DocumentDeleted += (object sender, DocumentDeletedEventArgs e) => {
                 foreach (var FilePath in e.FilePaths) {
-                    if (docCache.ContainsKey(FilePath)) {
-                        mc.DeleteDocument(FilePath);
-                        docCache.Remove(FilePath);
-                    }
+                    mc.DeleteDocument(FilePath);
+                    codeAdapter.Delete(FilePath);
                 }
             };
             server.DocumentRenamed += (object sender, DocumentRenamedEventArgs e) => { 
-                if (docCache.ContainsKey(e.OldFilePath)) {
-                    mc.DeleteDocument(e.OldFilePath);
-                    docCache.Remove(e.OldFilePath);
-                }
-                if (!docCache.ContainsKey(e.NewFilePath)) {
-                    docCache[e.NewFilePath] = Helper.getCode(e.NewFilePath);
-                }
-                var code = docCache[e.NewFilePath];
-                mc.AddDocument(e.NewFilePath, code);
+                mc.DeleteDocument(e.OldFilePath);
+                codeAdapter.Delete(e.OldFilePath);
+                codeAdapter.SetCode(e.NewFilePath, Helper.getCode(e.NewFilePath));
+                var vbCode = codeAdapter.GetVbCodeInfo(e.NewFilePath).VbCode;
+                mc.AddDocument(e.NewFilePath, vbCode);
 
             };
             server.DocumentChanged += (object sender, DocumentChangedEventArgs e) => {
-                //changedDocSet.Add(e.FilePath);
-                //var code = Helper.getCode(e.FilePath);
-                //mc.AddDocument(e.FilePath, code);
-                docCache[e.FilePath] = e.Text;
                 mc.ChangeDocument(e.FilePath, e.Text);
+                codeAdapter.SetCode(e.FilePath, e.Text);
             };
             server.CompletionReq += async (object sender, CompletionEventArgs e) => {
-                var Items = await mc.GetCompletions(e.FilePath, e.Text, e.Position);
+                var vbCodeInfo = codeAdapter.GetVbCodeInfo(e.FilePath);
+                var vbCode = vbCodeInfo.VbCode;
+                var posOffset = vbCodeInfo.PositionOffset;
+                var Items = await mc.GetCompletions(e.FilePath, vbCode, e.Position + posOffset);
                 e.Items = Items;
             };
             server.DefinitionReq += async (object sender, DefinitionEventArgs e) => {
-                var Items = await mc.GetDefinitions(e.FilePath, e.Text, e.Position);
+                var vbCodeInfo = codeAdapter.GetVbCodeInfo(e.FilePath);
+                var vbCode = vbCodeInfo.VbCode;
+                var posOffset = vbCodeInfo.PositionOffset;
+                var Items = await mc.GetDefinitions(e.FilePath, vbCode, e.Position + posOffset);
                 var list = new List<DefinitionItem>();
+
+                Location adjustLocation(Location location, int lineOffset,  int chaOffset) {
+                    location.Line += lineOffset;
+                    location.Positon += chaOffset;
+                    if (location.Line < 0) {
+                        location.Line = 0;
+                    }
+                    if (location.Positon < 0) {
+                        location.Positon = 0;
+                    }
+                    return new Location(location.Positon, location.Line, location.Character);
+                }
                 foreach (var item in Items) {
+                    var itemVbCodeInfo = codeAdapter.GetVbCodeInfo(item.FilePath);
+                    var itemLineOffset = itemVbCodeInfo.LineOffset;
+                    var itemPosOffset = itemVbCodeInfo.PositionOffset;
+                    if (item.IsKindClass()) {
+                        item.Start.Positon = 0;
+                        item.Start.Line = 0;
+                        item.Start.Character = 0;
+                        item.End.Positon = 0;
+                        item.End.Line = 0;
+                        item.End.Character = 0;
+                    } else {
+                        item.Start = adjustLocation(item.Start, itemLineOffset, itemPosOffset);
+                        item.End = adjustLocation(item.End, itemLineOffset, itemPosOffset);
+                    }
                     list.Add(item);
                 }
                 e.Items = list;
             };
             server.HoverReq += async (object sender, CompletionEventArgs e) => {
                 var list = new List<CompletionItem>();
-                var Items = await mc.GetDefinitions(e.FilePath, e.Text, e.Position);
+                var vbCodeInfo = codeAdapter.GetVbCodeInfo(e.FilePath);
+                var vbCode = vbCodeInfo.VbCode;
+                var posOffset = vbCodeInfo.PositionOffset;
+                var Items = await mc.GetDefinitions(e.FilePath, vbCode, e.Position + posOffset);
                 foreach (var item in Items) {
-                    if (!docCache.ContainsKey(item.FilePath)) {
-                        docCache[e.FilePath] = Helper.getCode(item.FilePath);
-                    }
-                    var code = docCache[e.FilePath];
-                    list.Add(await mc.GetHover(item.FilePath, code, (int)((item.Start.Positon + item.End.Positon)/2)));
+                    var sp = item.Start.Positon;
+                    var ep = item.End.Positon;
+                    var hoverItem = await mc.GetHover(item.FilePath, e.Text, (int)((sp + ep) / 2));
+                    list.Add(hoverItem);
                 }
                 e.Items = list;
             };
             server.DebugGetDocumentsEvent += (object sender, DebugEventArgs e) => {
-                e.Text = JsonSerializer.Serialize(docCache);
+                e.Text = JsonSerializer.Serialize(codeAdapter.getVbCodeDict());
             };
 
             server.Setup(9088);

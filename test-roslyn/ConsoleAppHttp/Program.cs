@@ -1,4 +1,4 @@
-using ConsoleApp1;
+﻿using ConsoleApp1;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -13,6 +13,11 @@ namespace ConsoleAppServer {
             var codeAdapter = new CodeAdapter();
             var mc = new MyCodeAnalysis();
             var server = new Server();
+
+            server.ResetReq += (object sender, EventArgs e) => {
+                mc = new MyCodeAnalysis();
+                codeAdapter = new CodeAdapter();
+            };
             server.DocumentAdded += (object sender, DocumentAddedEventArgs e) => {
                 foreach (var FilePath in e.FilePaths) {
                     codeAdapter.SetCode(FilePath, Helper.getCode(FilePath));

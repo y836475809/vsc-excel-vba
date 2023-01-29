@@ -34,6 +34,8 @@ namespace Hoge {
         | "Definition" 
         | "Hover" 
         | "Shutdown"
+        | "Reset"
+        | "IgnoreShutdown"
         | "Debug:GetDocuments";
     export type Command = {
         Id: CommandId;

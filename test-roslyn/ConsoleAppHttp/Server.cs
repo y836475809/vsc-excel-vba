@@ -17,6 +17,7 @@ namespace ConsoleAppServer
         public event EventHandler<CompletionEventArgs> CompletionReq;
         public event EventHandler<DefinitionEventArgs> DefinitionReq;
         public event EventHandler<CompletionEventArgs> HoverReq;
+        public event EventHandler<EventArgs> ResetReq;
         public event EventHandler<DebugEventArgs> DebugGetDocumentsEvent;
         private HttpListener listener;
 
@@ -32,6 +33,7 @@ namespace ConsoleAppServer
 
         public void Run()
         {
+            bool ignoreShutdown = false;
             bool run = true;
             while (run)
             {
@@ -86,7 +88,17 @@ namespace ConsoleAppServer
                         break;
                     //case "Exit":
                     case "Shutdown":
-                        run = false;
+                        if (!ignoreShutdown) {
+                            run = false;
+                        }
+                        break;
+                    case "Reset":
+                        ResetReq?.Invoke(this, new EventArgs());
+                        Response(response, 202);
+                        break;
+                    case "IgnoreShutdown":
+                        ignoreShutdown = true;
+                        Response(response, 202);
                         break;
                     case "Debug:GetDocuments":
                         var args_debug = new DebugEventArgs();

@@ -4,21 +4,11 @@ import * as helper from "../helper";
 
 let fixtureFile : helper.FixtureFile;
 
-
-function getPosition(filename: string, target: string, targetOffset: number): vscode.Position{
-	const text = fixtureFile.getText(filename);
-	const index = text.indexOf(target);
-	const lines = text.substring(0, index + target.length).split("\r\n");
-	const lineIndex = lines.length - 1;
-	const chaStart = lines[lineIndex].indexOf(target);
-	return new vscode.Position(lineIndex, chaStart + targetOffset);
-}
-
 suite("Extension E2E Roslyn Test Suite", () => {	
 	suiteSetup(async () => {
 		const port = await helper.getServerPort();
 		await helper.resetServer(port);
-		
+
 		fixtureFile = new helper.FixtureFile(
 			["c1.cls", "m1.bas", "m2.bas"]
 		);
@@ -34,7 +24,7 @@ suite("Extension E2E Roslyn Test Suite", () => {
 
 		const docUri = helper.getDocUri("m1.bas");
 		const target = "Dim c As Class1";
-		const targetPos = getPosition("m1.bas", target, target.length-3);
+		const targetPos = fixtureFile.getPosition("m1.bas", target, target.length-3);
 		const expContens = [
 			"```vb",
 			"Class1",
@@ -51,7 +41,7 @@ suite("Extension E2E Roslyn Test Suite", () => {
 
 		const docUri = helper.getDocUri("m1.bas");
 		const target = "c1.Hello";
-		const targetPos = getPosition("m1.bas", target, target.length-3);
+		const targetPos = fixtureFile.getPosition("m1.bas", target, target.length-3);
 		const expContens = [
 			"```vb",
 			"Public Sub Hello(val1 As String)",
@@ -74,7 +64,7 @@ suite("Extension E2E Roslyn Test Suite", () => {
 
 		const docUri = helper.getDocUri("m1.bas");
 		const target = "c1.Name";
-		const targetPos = getPosition("m1.bas", target, target.length-3);
+		const targetPos = fixtureFile.getPosition("m1.bas", target, target.length-3);
 		const expContens = [
 			"```vb",
 			"Public Name As String",
@@ -95,7 +85,7 @@ suite("Extension E2E Roslyn Test Suite", () => {
 
 		const docUri = helper.getDocUri("m1.bas");
 		const target = "Sample1() ' call";
-		const targetPos = getPosition("m1.bas", target, 3);
+		const targetPos = fixtureFile.getPosition("m1.bas", target, 3);
 		const expContens = [
 			"```vb",
 			"Public Sub Sample1()",
@@ -116,7 +106,7 @@ suite("Extension E2E Roslyn Test Suite", () => {
 
 		const docUri = helper.getDocUri("m1.bas");
 		const target = "buf = \"ss\"";
-		const targetPos = getPosition("m1.bas", target, 1);
+		const targetPos = fixtureFile.getPosition("m1.bas", target, 1);
 		const expContens = [
 			"```vb",
 			"Private buf As String",
@@ -137,7 +127,7 @@ suite("Extension E2E Roslyn Test Suite", () => {
 
 		const docUri = helper.getDocUri("m1.bas");
 		const target = "Module2Sample1() ' call";
-		const targetPos = getPosition("m1.bas", target, 3);
+		const targetPos = fixtureFile.getPosition("m1.bas", target, 3);
 		const expContens = [
 			"```vb",
 			"Public Sub Module2Sample1()",

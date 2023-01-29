@@ -4,15 +4,6 @@ import * as helper from "../helper";
 
 let fixtureFile : helper.FixtureFile;
 
-function getPosition(filename: string, target: string, targetOffset: number): vscode.Position{
-	const text = fixtureFile.getText(filename);
-	const index = text.indexOf(target);
-	const lines = text.substring(0, index + target.length).split("\r\n");
-	const lineIndex = lines.length - 1;
-	const chaStart = lines[lineIndex].indexOf(target);
-	return new vscode.Position(lineIndex, chaStart + targetOffset);
-}
-
 suite("Extension E2E Completion Test Suite", () => {	
 	suiteSetup(async () => {
 		fixtureFile = new helper.FixtureFile(
@@ -33,7 +24,7 @@ suite("Extension E2E Completion Test Suite", () => {
 
 		const docUri = helper.getDocUri("m1.bas");
 		const target = "c1.";
-		const targetPos = getPosition("m1.bas", target, target.length);
+		const targetPos = fixtureFile.getPosition("m1.bas", target, target.length);
 		await testCompletion(docUri, targetPos, {
 			items: [
 				{
@@ -70,7 +61,7 @@ suite("Extension E2E Completion Test Suite", () => {
 
 		const docUri = helper.getDocUri("m1.bas");
 		const target = "' completion position";
-		const pos = getPosition("m1.bas", target, target.length);
+		const pos = fixtureFile.getPosition("m1.bas", target, target.length);
 		const targetPos = new vscode.Position(pos.line + 1, 0);
 		await testCompletion(docUri, targetPos, {
 			items: [

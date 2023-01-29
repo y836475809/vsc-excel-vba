@@ -34,6 +34,14 @@ export class FixtureFile {
     getText(filename: string): string {
         return this.fileMap.get(filename)!;
     }
+    getPosition(filename: string, target: string, targetOffset: number): vscode.Position{
+        const text = this.getText(filename);
+        const index = text.indexOf(target);
+        const lines = text.substring(0, index + target.length).split("\r\n");
+        const lineIndex = lines.length - 1;
+        const chaStart = lines[lineIndex].indexOf(target);
+        return new vscode.Position(lineIndex, chaStart + targetOffset);
+    }
 }
 
 export const getWorkspaceFolder = () => {

@@ -183,12 +183,14 @@ function getWorkspaceFileUris() : string[] | undefined{
 	let filePaths: string[] = [];
 	const dirPaths = [wsPath, path.join(wsPath, ".vscode")];
 	for(const dirPath of  dirPaths){
-		const fsPaths = fs.readdirSync(dirPath, { withFileTypes: true })
-		.filter(dirent => {
-			return dirent.isFile() 
-				&& (dirent.name.endsWith('.bas') || dirent.name.endsWith('.cls'));
-		}).map(dirent => path.join(dirPath, dirent.name));
-		filePaths = filePaths.concat(fsPaths);
+		if(fs.existsSync(dirPath)){
+			const fsPaths = fs.readdirSync(dirPath, { withFileTypes: true })
+			.filter(dirent => {
+				return dirent.isFile() 
+					&& (dirent.name.endsWith('.bas') || dirent.name.endsWith('.cls'));
+			}).map(dirent => path.join(dirPath, dirent.name));
+			filePaths = filePaths.concat(fsPaths);
+		}
 	} 
 	const uris = filePaths.map(fp => vscode.Uri.file(fp).toString());
 	return uris;

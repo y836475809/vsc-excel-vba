@@ -29,13 +29,6 @@ namespace ConsoleAppServer {
     //    public string Text { get; set; }
     //}
 
-    class ResponseCompletion {
-        public List<CompletionItem> items { get; set; }
-    }
-    class ResponseDefinition {
-        public List<DefinitionItem> items { get; set; }
-    }
-
     //class ResponseCompletion {
     //    public string FilePath { get; set; }
 

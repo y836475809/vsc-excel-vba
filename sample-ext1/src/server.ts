@@ -183,9 +183,8 @@ export class Server {
             Position: pos,
             Text: text
         } as Hoge.Command;
-        let ret = await this.lpsRequest.send(data) as Hoge.CompletionItems;
-        let res_items = ret.items;
-        let comlItems = res_items.map(item => {
+        const items = await this.lpsRequest.send(data) as Hoge.CompletionItem[];
+        let comlItems = items.map(item => {
             const val = this.symbolKindMap.get(item.Kind);
             const kind = val?val:CompletionItemKind.Text;
             return {
@@ -210,10 +209,9 @@ export class Server {
             Position: pos,
             Text: documents.get(uri)?.getText()
         } as Hoge.Command;
-        let ret = await this.lpsRequest.send(data) as Hoge.DefinitionItems;
-        let resItems = ret.items;
+        const items = await this.lpsRequest.send(data) as Hoge.DefinitionItem[];
         const defItems: Location[] = [];
-        resItems.forEach(item => {
+        items.forEach(item => {
             const defUri = URI.file(item.FilePath).toString();
             const start = item.Start;
             const end = item.End;
@@ -240,12 +238,11 @@ export class Server {
             Position: pos,
             Text: documents.get(uri)?.getText()
         } as Hoge.Command;
-        let ret = await this.lpsRequest.send(data) as Hoge.CompletionItems;
-        let resItems = ret.items;
-        if(resItems.length === 0){
+        const items = await this.lpsRequest.send(data) as Hoge.CompletionItem[];
+        if(items.length === 0){
             return undefined;
         }
-        const item = resItems[0];
+        const item = items[0];
         const description = item.Description.replace(/\r/g, "");
         const content: MarkupContent = {
             kind: "markdown",

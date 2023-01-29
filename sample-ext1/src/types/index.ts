@@ -7,10 +7,6 @@ namespace Hoge {
         Kind: string;
     };
 
-    export type CompletionItems = {
-        items: CompletionItem[];
-    };
-
     export type Location = {
         Positon: number;
         Line: number;
@@ -20,9 +16,6 @@ namespace Hoge {
         FilePath: string;
         Start: Location;
         End: Location;
-    };
-    export type DefinitionItems = {
-        items: DefinitionItem[];
     };
 
     type CommandId = 

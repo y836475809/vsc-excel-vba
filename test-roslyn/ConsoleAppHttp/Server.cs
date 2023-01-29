@@ -151,9 +151,7 @@ namespace ConsoleAppServer
 
         private void Response(HttpListenerResponse response, List<CompletionItem> CompletionItems)
         {
-            var res_com = new ResponseCompletion();
-            res_com.items = CompletionItems;
-            var text = Encoding.UTF8.GetBytes(JsonSerializer.Serialize<ResponseCompletion>(res_com));
+            var text = Encoding.UTF8.GetBytes(JsonSerializer.Serialize<List<CompletionItem>>(CompletionItems));
             response.ContentType = "application/json";
             response.ContentLength64 = text.Length;
             response.OutputStream.Write(text, 0, text.Length);
@@ -161,12 +159,10 @@ namespace ConsoleAppServer
         }
 
         private void Response(HttpListenerResponse response, List<DefinitionItem> Items) {
-            var res_def = new ResponseDefinition();
-            res_def.items = Items;
             //res_def.Start = Start;
             //res_def.End = End;
             var text = Encoding.UTF8.GetBytes(
-                JsonSerializer.Serialize<ResponseDefinition>(res_def));
+                JsonSerializer.Serialize<List<DefinitionItem>>(Items));
             response.ContentType = "application/json";
             response.ContentLength64 = text.Length;
             response.OutputStream.Write(text, 0, text.Length);

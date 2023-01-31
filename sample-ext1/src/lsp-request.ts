@@ -3,13 +3,19 @@ import * as http from "http";
 const url = "http://localhost";
 
 export class LPSRequest {
-    private options: http.RequestOptions;
-
+    private port: number;
     constructor(port: number){
-        this.options = {
-            port: port,
+        this.port = port;
+    }
+
+    private getOptions(data: string): http.RequestOptions {
+        return {
+            port: this.port,
             method: "POST",
             headers: {
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                "Content-Length": Buffer.byteLength(data),
+                // eslint-disable-next-line @typescript-eslint/naming-convention
                 "Content-Type": "application/json",
             } 
         };
@@ -17,7 +23,9 @@ export class LPSRequest {
 
     send(json: Hoge.Command): Promise<any> {
         return new Promise((resolve, reject) => {
-            const req = http.request(url, this.options, (res: http.IncomingMessage) => {
+            const jsonStr = JSON.stringify(json);
+            const options = this.getOptions(jsonStr);
+            const req = http.request(url, options, (res: http.IncomingMessage) => {
                 let data = "";
                 res.setEncoding('utf8');
                 res.on('data', (chunk) => {
@@ -34,7 +42,7 @@ export class LPSRequest {
             req.on('error', function(e) {
                 reject(e);
             });
-            req.write(JSON.stringify(json));
+            req.write(jsonStr);
             req.end();    
         });
     }

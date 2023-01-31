@@ -1,21 +1,21 @@
 namespace Hoge {
     export type CompletionItem = {
-        DisplayText: string;
-        CompletionText: string;
-        Description: string;
-        ReturnType: string;
-        Kind: string;
+        displaytext: string;
+        completiontext: string;
+        description: string;
+        returntype: string;
+        kind: string;
     };
 
     export type Location = {
-        Positon: number;
-        Line: number;
-        Character: number;
+        positon: number;
+        line: number;
+        character: number;
     };
     export type DefinitionItem = {
-        FilePath: string;
-        Start: Location;
-        End: Location;
+        filepath: string;
+        start: Location;
+        end: Location;
     };
 
     type CommandId = 
@@ -31,10 +31,10 @@ namespace Hoge {
         | "IgnoreShutdown"
         | "Debug:GetDocuments";
     export type Command = {
-        Id: CommandId;
-        FilePaths: string[];
-        Position: number;
-        Text: string;
+        id: CommandId;
+        filepaths: string[];
+        position: number;
+        text: string;
     };
 
     export type RequestMethod = 
@@ -43,7 +43,7 @@ namespace Hoge {
         | "renameFiles"
         | "changeText";
     export type RequestRenameParam = {
-        oldUri: string,
-        newUri: string
+        olduri: string,
+        newuri: string
     };
 }

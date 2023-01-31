@@ -8,16 +8,16 @@ import { LPSRequest } from "../lsp-request";
 export async function resetServer(port: number): Promise<void>{
     const lpsRequest = new LPSRequest(port);
 	await lpsRequest.send({
-		Id: "Reset",
-		FilePaths: [],
-		Position: 0,
-		Text: ""
+		id: "Reset",
+		filepaths: [],
+		position: 0,
+		text: ""
 	});
 	await lpsRequest.send({
-		Id: "IgnoreShutdown",
-		FilePaths: [],
-		Position: 0,
-		Text: ""
+		id: "IgnoreShutdown",
+		filepaths: [],
+		position: 0,
+		text: ""
 	});
 };
 

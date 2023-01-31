@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Text.Json;
 
 namespace ConsoleAppServer {
     class Helper {
@@ -16,6 +17,19 @@ namespace ConsoleAppServer {
             using (var sr = new StreamReader(filePath)) {
                 return sr.ReadToEnd();
             }
+        }
+
+        public class LowerCaseNamingPolicy : JsonNamingPolicy {
+            public override string ConvertName(string name) =>
+                name.ToLower();
+        }
+
+        public static JsonSerializerOptions getJsonOptions() {
+            var options = new JsonSerializerOptions {
+                PropertyNamingPolicy = new LowerCaseNamingPolicy(),
+                WriteIndented = true
+            };
+            return options;
         }
     }
 }

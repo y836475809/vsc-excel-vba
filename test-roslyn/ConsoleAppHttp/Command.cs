@@ -5,13 +5,13 @@ using System.Text;
 
 namespace ConsoleAppServer {
     class Command {
-        public string Id { get; set; }
+        public string id { get; set; }
 
-        public List<string> FilePaths { get; set; }
+        public List<string> filepaths { get; set; }
 
-        public int Position { get; set; }
+        public int position { get; set; }
 
-        public string Text { get; set; }
+        public string text { get; set; }
     }
 
     //public class AddDocuments {

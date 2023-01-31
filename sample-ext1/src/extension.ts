@@ -43,8 +43,8 @@ async function renameFiles(files: any[]){
 		const oldUri = file.oldUri.toString();
 		const newUri = file.newUri.toString();
 		renameParams.push({
-			oldUri: oldUri,
-			newUri: newUri
+			olduri: oldUri,
+			newuri: newUri
 		});
 	}
 	await client.sendRequest(method, {renameParams});

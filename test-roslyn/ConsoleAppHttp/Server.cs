@@ -20,6 +20,11 @@ namespace ConsoleAppServer
         public event EventHandler<EventArgs> ResetReq;
         public event EventHandler<DebugEventArgs> DebugGetDocumentsEvent;
         private HttpListener listener;
+        private JsonSerializerOptions jsonOptions;
+
+        public Server() {
+            jsonOptions = Helper.getJsonOptions();
+        }
 
         public void Setup(int port)
         {
@@ -50,39 +55,39 @@ namespace ConsoleAppServer
 
                 // レスポンス取得
                 var response = context.Response;
-                switch (cmd?.Id)
+                switch (cmd?.id)
                 {
                     case "AddDocuments":
-                        var args_add = new DocumentAddedEventArgs(cmd.FilePaths);
+                        var args_add = new DocumentAddedEventArgs(cmd.filepaths);
                         DocumentAdded?.Invoke(this, args_add);
                         Response(response, 202);
                         break;
                     case "DeleteDocuments":
-                        var args_del = new DocumentDeletedEventArgs(cmd.FilePaths);
+                        var args_del = new DocumentDeletedEventArgs(cmd.filepaths);
                         DocumentDeleted?.Invoke(this, args_del);
                         Response(response, 202);
                         break;
                     case "RenameDocument":
-                        var args_rename = new DocumentRenamedEventArgs(cmd.FilePaths[0], cmd.FilePaths[1]);
+                        var args_rename = new DocumentRenamedEventArgs(cmd.filepaths[0], cmd.filepaths[1]);
                         DocumentRenamed?.Invoke(this, args_rename);
                         Response(response, 202);
                         break;
                     case "ChangeDocument":
-                        DocumentChanged?.Invoke(this, new DocumentChangedEventArgs(cmd.FilePaths[0], cmd.Text));
+                        DocumentChanged?.Invoke(this, new DocumentChangedEventArgs(cmd.filepaths[0], cmd.text));
                         Response(response, 202);
                         break;
                     case "Completion":
-                        var args = new CompletionEventArgs(cmd.FilePaths[0], cmd.Text, cmd.Position);
+                        var args = new CompletionEventArgs(cmd.filepaths[0], cmd.text, cmd.position);
                         CompletionReq?.Invoke(this, args);
                         Response(response, args.Items);
                         break;
                     case "Definition":
-                        var args_def = new DefinitionEventArgs(cmd.FilePaths[0], cmd.Text, cmd.Position);
+                        var args_def = new DefinitionEventArgs(cmd.filepaths[0], cmd.text, cmd.position);
                         DefinitionReq?.Invoke(this, args_def);
                         Response(response, args_def.Items);
                         break;
                     case "Hover":
-                        var args_hover = new CompletionEventArgs(cmd.FilePaths[0], cmd.Text, cmd.Position);
+                        var args_hover = new CompletionEventArgs(cmd.filepaths[0], cmd.text, cmd.position);
                         HoverReq?.Invoke(this, args_hover);
                         Response(response, args_hover.Items);
                         break;
@@ -151,7 +156,8 @@ namespace ConsoleAppServer
 
         private void Response(HttpListenerResponse response, List<CompletionItem> CompletionItems)
         {
-            var text = Encoding.UTF8.GetBytes(JsonSerializer.Serialize<List<CompletionItem>>(CompletionItems));
+            var text = Encoding.UTF8.GetBytes(
+                JsonSerializer.Serialize<List<CompletionItem>>(CompletionItems, jsonOptions));
             response.ContentType = "application/json";
             response.ContentLength64 = text.Length;
             response.OutputStream.Write(text, 0, text.Length);
@@ -162,7 +168,7 @@ namespace ConsoleAppServer
             //res_def.Start = Start;
             //res_def.End = End;
             var text = Encoding.UTF8.GetBytes(
-                JsonSerializer.Serialize<List<DefinitionItem>>(Items));
+                JsonSerializer.Serialize<List<DefinitionItem>>(Items, jsonOptions));
             response.ContentType = "application/json";
             response.ContentLength64 = text.Length;
             response.OutputStream.Write(text, 0, text.Length);

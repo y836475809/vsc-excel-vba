@@ -142,6 +142,19 @@ suite("Extension E2E Roslyn Test Suite", () => {
 		];
 		await testHover(docUri, targetPos, expContens);
 	});
+
+	test("hover top position", async () => {
+		await helper.activateExtension();
+
+		const docUri = helper.getDocUri("m1.bas");
+		const targetPos = new vscode.Position(0, 0);
+		const hover = (await vscode.commands.executeCommand(
+			"vscode.executeHoverProvider",
+			docUri,
+			targetPos
+		));
+		assert.deepEqual(hover, []);
+	});
 });
 
 async function testHover(

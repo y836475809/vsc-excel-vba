@@ -113,6 +113,14 @@ suite("Extension E2E Completion Test Suite", () => {
 			]
 		});
 	});
+
+	test("completion top position", async () => {
+		await helper.activateExtension();
+
+		const docUri = helper.getDocUri("m1.bas");
+		const targetPos = new vscode.Position(0, 0);
+		await testCompletion(docUri, targetPos, {items: []});
+	});
 });
 
 async function testCompletion(
@@ -132,7 +140,8 @@ async function testCompletion(
 	};
 
 	const actualCompletionItems = actualCompletionList.items.filter(x => {
-		return x.kind !== vscode.CompletionItemKind.Snippet;
+		return x.kind !== vscode.CompletionItemKind.Snippet
+			&& x.kind !== vscode.CompletionItemKind.Text;
 	}).sort(sotrFunc);
 	const expectedCompletionItems = expectedCompletionList.items.sort(sotrFunc);
 

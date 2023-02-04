@@ -47,16 +47,25 @@ namespace ConsoleAppServer {
                 var vbCodeInfo = codeAdapter.GetVbCodeInfo(e.FilePath);
                 var vbCode = vbCodeInfo.VbCode;
                 var posOffset = vbCodeInfo.PositionOffset;
-                var Items = await mc.GetCompletions(e.FilePath, vbCode, e.Position + posOffset);
+                var position = e.Position + posOffset;
+                if (position < 0) {
+                    e.Items = new List<CompletionItem>();
+                    return;
+                }
+                var Items = await mc.GetCompletions(e.FilePath, vbCode, position);
                 e.Items = Items;
             };
             server.DefinitionReq += async (object sender, DefinitionEventArgs e) => {
+                var list = new List<DefinitionItem>();
                 var vbCodeInfo = codeAdapter.GetVbCodeInfo(e.FilePath);
                 var vbCode = vbCodeInfo.VbCode;
                 var posOffset = vbCodeInfo.PositionOffset;
-                var Items = await mc.GetDefinitions(e.FilePath, vbCode, e.Position + posOffset);
-                var list = new List<DefinitionItem>();
-
+                var position = e.Position + posOffset;
+                if (position < 0) {
+                    e.Items = list;
+                    return;
+                }
+                var Items = await mc.GetDefinitions(e.FilePath, vbCode, position);
                 Location adjustLocation(Location location, int lineOffset,  int chaOffset) {
                     location.Line += lineOffset;
                     location.Positon += chaOffset;
@@ -92,7 +101,12 @@ namespace ConsoleAppServer {
                 var vbCodeInfo = codeAdapter.GetVbCodeInfo(e.FilePath);
                 var vbCode = vbCodeInfo.VbCode;
                 var posOffset = vbCodeInfo.PositionOffset;
-                var Items = await mc.GetDefinitions(e.FilePath, vbCode, e.Position + posOffset);
+                var position = e.Position + posOffset;
+                if (position < 0) {
+                    e.Items = list;
+                    return;
+                }
+                var Items = await mc.GetDefinitions(e.FilePath, vbCode, position);
                 foreach (var item in Items) {
                     var sp = item.Start.Positon;
                     var ep = item.End.Positon;

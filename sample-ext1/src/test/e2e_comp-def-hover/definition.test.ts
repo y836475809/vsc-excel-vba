@@ -155,6 +155,19 @@ suite("Extension E2E Definition Test Suite", () => {
 			]
 		);
 	});
+
+	test("definition top position", async () => {
+		await helper.activateExtension();
+
+		const docUri = helper.getDocUri("m1.bas");
+		const targetPos = new vscode.Position(0, 0);
+		const actualLocationList = (await vscode.commands.executeCommand(
+			"vscode.executeDefinitionProvider",
+			docUri,
+			targetPos
+		));
+		assert.deepEqual(actualLocationList, []);
+	});
 });
 
 async function testDefinition(

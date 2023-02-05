@@ -1,4 +1,4 @@
-﻿using ConsoleApp1;
+using ConsoleApp1;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -40,8 +40,9 @@ namespace ConsoleAppServer {
 
             };
             server.DocumentChanged += (object sender, DocumentChangedEventArgs e) => {
-                mc.ChangeDocument(e.FilePath, e.Text);
                 codeAdapter.SetCode(e.FilePath, e.Text);
+                var vbCode = codeAdapter.GetVbCodeInfo(e.FilePath).VbCode;
+                mc.ChangeDocument(e.FilePath, vbCode);     
             };
             server.CompletionReq += async (object sender, CompletionEventArgs e) => {
                 var vbCodeInfo = codeAdapter.GetVbCodeInfo(e.FilePath);

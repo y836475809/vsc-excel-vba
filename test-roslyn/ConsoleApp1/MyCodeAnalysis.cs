@@ -1,4 +1,4 @@
-﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.FindSymbols;
 using Microsoft.CodeAnalysis.Host.Mef;
 using Microsoft.CodeAnalysis.Recommendations;
@@ -8,6 +8,8 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
+using System.Linq;
+using Microsoft.CodeAnalysis.VisualBasic.Syntax;
 
 namespace ConsoleApp1 {
     public class MyCodeAnalysis {
@@ -192,6 +194,58 @@ namespace ConsoleApp1 {
                 //completions.Add(completionItem);
             }
             return completionItem;
+        }
+
+        private async Task<SourceText> RewriteSetStatementAsync(Document document) {
+            var syntaxRoot = await document.GetSyntaxRootAsync();
+            var forStmt = syntaxRoot.DescendantNodes().OfType<EmptyStatementSyntax>().ToList();
+            var allChanges = new List<TextChange>();
+            // 'Let' および 'Set' 代入ステートメントはサポートされなくなりました。
+            const string code = "BC30807";
+            foreach (var f1 in forStmt) {
+                var f1txt = f1.Empty.TrailingTrivia.Where(x => {
+                    return x.GetDiagnostics().SingleOrDefault(x => x.Id == code) != null;
+                }); 
+                var changes = f1txt.Select(x => {
+                    return new TextChange(x.Span, new string(' ', x.Span.Length));
+                });
+                if(changes.Count() > 0) {
+                    allChanges = allChanges.Concat(changes).ToList();
+                }
+            }
+            if (allChanges.Count() == 0) {
+                return null;
+            }
+            return syntaxRoot.GetText().WithChanges(allChanges);
+        }
+
+        public async Task<List<DiagnosticItem>> GetDiagnostics(string name) {
+            var docId = doc_id_dict[name];
+            var doc = workspace.CurrentSolution.GetDocument(docId);
+            var reSourceText = await RewriteSetStatementAsync(doc);
+            if (reSourceText != null) {
+                ChangeDocument(name, reSourceText.ToString());
+                doc = workspace.CurrentSolution.GetDocument(docId);
+            }
+            var codes = new string[] { 
+                "BC35000",  // ランタイム ライブラリ関数 が定義されていないため、
+                                   // 要求された操作を実行できません。
+                "BC30804"   // 'Variant' 型はサポートされなくなりました。
+                                   // 'Object' 型を使用してください
+            };       
+            var result = await doc.GetSemanticModelAsync();
+            var diagnostics = result.GetDiagnostics();
+            var items = diagnostics.Where(x => !codes.Contains(x.Id)).Select(x => {
+                // Hidden = 0,
+                // Info = 1,
+                // Warning = 2,
+                // Error = 3
+                var severity = x.Severity.ToString();
+                var msg = x.GetMessage();
+                var span = x.Location.SourceSpan;
+                return new DiagnosticItem(severity, msg, span.Start, span.End);
+            }).ToList();
+            return items;
         }
 
         public DescriptionItem ParseDescriptionXML(string xml) {

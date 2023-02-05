@@ -1,4 +1,4 @@
-using ConsoleApp1;
+﻿using ConsoleApp1;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -115,6 +115,16 @@ namespace ConsoleAppServer {
                     list.Add(hoverItem);
                 }
                 e.Items = list;
+            };
+            server.DiagnosticReq += async (object sender, DiagnosticEventArgs e) => {   
+                var vbCodeInfo = codeAdapter.GetVbCodeInfo(e.FilePath);
+                var posOffset = vbCodeInfo.PositionOffset;
+                var items = await mc.GetDiagnostics(e.FilePath);
+                foreach (var item in items) {
+                    item.Start += posOffset;
+                    item.End += posOffset;
+                }
+                e.Items = items;
             };
             server.DebugGetDocumentsEvent += (object sender, DebugEventArgs e) => {
                 e.Text = JsonSerializer.Serialize(codeAdapter.getVbCodeDict());

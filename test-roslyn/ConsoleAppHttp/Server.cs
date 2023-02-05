@@ -17,6 +17,7 @@ namespace ConsoleAppServer
         public event EventHandler<CompletionEventArgs> CompletionReq;
         public event EventHandler<DefinitionEventArgs> DefinitionReq;
         public event EventHandler<CompletionEventArgs> HoverReq;
+        public event EventHandler<DiagnosticEventArgs> DiagnosticReq;
         public event EventHandler<EventArgs> ResetReq;
         public event EventHandler<DebugEventArgs> DebugGetDocumentsEvent;
         private HttpListener listener;
@@ -91,6 +92,11 @@ namespace ConsoleAppServer
                         HoverReq?.Invoke(this, args_hover);
                         Response(response, args_hover.Items);
                         break;
+                    case "Diagnostic":
+                        var args_diagnostic = new DiagnosticEventArgs(cmd.filepaths[0]);
+                        DiagnosticReq?.Invoke(this, args_diagnostic);
+                        Response(response, args_diagnostic.Items);
+                        break;
                     //case "Exit":
                     case "Shutdown":
                         if (!ignoreShutdown) {
@@ -152,6 +158,15 @@ namespace ConsoleAppServer
             response.ContentType = "application/json";
             response.ContentLength64 = data.Length;
             response.OutputStream.Write(data, 0, data.Length);
+        }
+
+        private void Response<T>(HttpListenerResponse response, T CompletionItems) {
+            var text = Encoding.UTF8.GetBytes(
+                JsonSerializer.Serialize<T>(CompletionItems, jsonOptions));
+            response.ContentType = "application/json";
+            response.ContentLength64 = text.Length;
+            response.OutputStream.Write(text, 0, text.Length);
+            //response.Close();
         }
 
         private void Response(HttpListenerResponse response, List<CompletionItem> CompletionItems)

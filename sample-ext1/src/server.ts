@@ -28,6 +28,7 @@ import * as fs from "fs";
 import { LPSRequest } from "./lsp-request";
 import path = require('path');
 import { EphemeralKeyInfo } from 'tls';
+import { diagnosticsRequest } from './diagnostics-request';
 
 const connection = createConnection(ProposedFeatures.all);
 const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
@@ -166,6 +167,9 @@ export class Server {
                 text: doc.getText()
             } as Hoge.Command;
             await this.lpsRequest.send(data);
+
+            const items = await diagnosticsRequest(doc, fsPath, this.lpsRequest);
+            connection.sendDiagnostics({uri: doc.uri, diagnostics: items});
         }
     }
 

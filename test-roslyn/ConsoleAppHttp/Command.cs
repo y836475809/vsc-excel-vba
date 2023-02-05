@@ -116,6 +116,16 @@ namespace ConsoleAppServer {
         }
     }
 
+    public class DiagnosticEventArgs : EventArgs {
+        public string FilePath { get; set; }
+
+        public List<DiagnosticItem> Items { get; set; }
+
+        public DiagnosticEventArgs(string FilePath) {
+            this.FilePath = FilePath;
+        }
+    }
+
     public class DebugEventArgs : EventArgs {
         public string Text { get; set; }
         public DebugEventArgs() {

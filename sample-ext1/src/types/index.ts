@@ -18,6 +18,18 @@ namespace Hoge {
         end: Location;
     };
 
+    type Severity = 
+        "Hidden"
+        | "Info"
+        | "Warning"
+        | "Error";
+    export type DiagnosticItem = {
+        severity: Severity;
+        message: string;
+        start: number;
+        end: number;
+    };
+
     type CommandId = 
         "AddDocuments" 
         | "DeleteDocuments" 
@@ -26,6 +38,7 @@ namespace Hoge {
         | "Completion" 
         | "Definition" 
         | "Hover" 
+        | "Diagnostic"
         | "Shutdown"
         | "Reset"
         | "IgnoreShutdown"

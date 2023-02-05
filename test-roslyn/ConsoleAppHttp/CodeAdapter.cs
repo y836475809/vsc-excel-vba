@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -76,7 +76,7 @@ namespace ConsoleAppServer {
                 var post = $"{rn}End Module";
                 code = $"{pre}{body}{post}";
                 lineOffset = headerLines.Length - 1;
-                posOffset = pre.Length - header.Length;
+                posOffset = header.Length - pre.Length;
             }
             vbCodeInfo = new VbCodeInfo {
                 VbCode = code,

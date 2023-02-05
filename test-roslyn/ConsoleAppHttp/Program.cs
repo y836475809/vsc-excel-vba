@@ -48,7 +48,7 @@ namespace ConsoleAppServer {
                 var vbCodeInfo = codeAdapter.GetVbCodeInfo(e.FilePath);
                 var vbCode = vbCodeInfo.VbCode;
                 var posOffset = vbCodeInfo.PositionOffset;
-                var position = e.Position + posOffset;
+                var position = e.Position - posOffset;
                 if (position < 0) {
                     e.Items = new List<CompletionItem>();
                     return;
@@ -61,7 +61,7 @@ namespace ConsoleAppServer {
                 var vbCodeInfo = codeAdapter.GetVbCodeInfo(e.FilePath);
                 var vbCode = vbCodeInfo.VbCode;
                 var posOffset = vbCodeInfo.PositionOffset;
-                var position = e.Position + posOffset;
+                var position = e.Position - posOffset;
                 if (position < 0) {
                     e.Items = list;
                     return;
@@ -102,7 +102,7 @@ namespace ConsoleAppServer {
                 var vbCodeInfo = codeAdapter.GetVbCodeInfo(e.FilePath);
                 var vbCode = vbCodeInfo.VbCode;
                 var posOffset = vbCodeInfo.PositionOffset;
-                var position = e.Position + posOffset;
+                var position = e.Position - posOffset;
                 if (position < 0) {
                     e.Items = list;
                     return;

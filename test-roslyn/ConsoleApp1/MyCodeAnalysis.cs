@@ -198,24 +198,8 @@ namespace ConsoleApp1 {
 
         private async Task<SourceText> RewriteSetStatementAsync(Document document) {
             var syntaxRoot = await document.GetSyntaxRootAsync();
-            var forStmt = syntaxRoot.DescendantNodes().OfType<EmptyStatementSyntax>().ToList();
-            var allChanges = new List<TextChange>();
-            // 'Let' および 'Set' 代入ステートメントはサポートされなくなりました。
-            const string code = "BC30807";
-            foreach (var f1 in forStmt) {
-                var f1txt = f1.Empty.TrailingTrivia.Where(x => {
-                    return x.GetDiagnostics().SingleOrDefault(x => x.Id == code) != null;
-                }); 
-                var changes = f1txt.Select(x => {
-                    return new TextChange(x.Span, new string(' ', x.Span.Length));
-                });
-                if(changes.Count() > 0) {
-                    allChanges = allChanges.Concat(changes).ToList();
-                }
-            }
-            if (allChanges.Count() == 0) {
-                return null;
-            }
+            var rewrite = new DiagnosticRewrite();
+            var allChanges = rewrite.RewriteStatement(syntaxRoot.DescendantNodes());
             return syntaxRoot.GetText().WithChanges(allChanges);
         }
 
@@ -230,8 +214,6 @@ namespace ConsoleApp1 {
             var codes = new string[] { 
                 "BC35000",  // ランタイム ライブラリ関数 が定義されていないため、
                                    // 要求された操作を実行できません。
-                "BC30804"   // 'Variant' 型はサポートされなくなりました。
-                                   // 'Object' 型を使用してください
             };       
             var result = await doc.GetSemanticModelAsync();
             var diagnostics = result.GetDiagnostics();

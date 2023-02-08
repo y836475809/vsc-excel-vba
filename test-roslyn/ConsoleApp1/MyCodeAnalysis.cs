@@ -1,4 +1,4 @@
-using Microsoft.CodeAnalysis;
+﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.FindSymbols;
 using Microsoft.CodeAnalysis.Host.Mef;
 using Microsoft.CodeAnalysis.Recommendations;
@@ -60,16 +60,16 @@ namespace ConsoleApp1 {
         }
 
         private bool IsCompletionItem(ISymbol symbol) {
-            if (symbol.ContainingType?.Name == "Object") {
-                return false;
-            }
-            if (symbol is INamedTypeSymbol namedType) {
-                if(namedType.TypeKind == TypeKind.Module) {
+            var names = new string[] {
+                   "Int64", "Int32", "Double", "Byte",
+                   "String", "Boolean", "Object"
+            };
+            var name = symbol.ContainingType?.Name;
+            if(name != null) {
+                //Console.WriteLine($"name={name}");
+                if (names.Contains(name)) {
                     return false;
                 }
-            }
-            if (symbol.Kind == SymbolKind.Namespace) {
-                return false;
             }
             return true;
         }
@@ -86,7 +86,7 @@ namespace ConsoleApp1 {
             foreach (var symbol in symbols) {
                 var completionItem = new CompletionItem();
                 if (!IsCompletionItem(symbol)) {
-                    continue;
+                    break;
                 }
                 completionItem.DisplayText = symbol.ToDisplayString();
                 completionItem.CompletionText = symbol.MetadataName;

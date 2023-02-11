@@ -29,11 +29,6 @@ async function setupFiles(context: vscode.ExtensionContext){
 	}
 	const project = new Project();
 	await project.setupConfig();
-	for(const fn of ["collection.cls", "dictionary.cls"]){
-		await project.copy( 
-			context.asAbsolutePath(`assets/${fn}`), 
-			path.join(wsPath, ".vscode", fn));
-	}
 }
 
 async function renameFiles(files: any[]){
@@ -175,30 +170,42 @@ async function waitUntilClientIsRunning(){
 	}
 }
 
-function getWorkspaceFileUris() : string[] | undefined{
-	const wsPath = getWorkspacePath();
-	if(!wsPath){
-		return undefined;
+function getDefinitionFileUris(context: vscode.ExtensionContext): string[] {
+	const dirPath = context.asAbsolutePath("d.vb");
+	if(!fs.existsSync(dirPath)){
+		return [];
 	}
-	let filePaths: string[] = [];
-	const dirPaths = [wsPath, path.join(wsPath, ".vscode")];
-	for(const dirPath of  dirPaths){
-		if(fs.existsSync(dirPath)){
-			const fsPaths = fs.readdirSync(dirPath, { withFileTypes: true })
-			.filter(dirent => {
-				return dirent.isFile() 
-					&& (dirent.name.endsWith('.bas') || dirent.name.endsWith('.cls'));
-			}).map(dirent => path.join(dirPath, dirent.name));
-			filePaths = filePaths.concat(fsPaths);
-		}
-	} 
-	const uris = filePaths.map(fp => vscode.Uri.file(fp).toString());
+	const fsPaths = fs.readdirSync(dirPath, { withFileTypes: true })
+	.filter(dirent => {
+		return dirent.isFile() && (dirent.name.endsWith(".d.vb"));
+	}).map(dirent => path.join(dirPath, dirent.name));
+	const uris = fsPaths.map(fp => vscode.Uri.file(fp).toString());
+	return uris;
+}
+
+function getWorkspaceFileUris() : string[] {
+	const dirPath = getWorkspacePath();
+	if(!dirPath){
+		return [];
+	}
+	if(!fs.existsSync(dirPath)){
+		return [];
+	}
+	const fsPaths = fs.readdirSync(dirPath, { withFileTypes: true })
+	.filter(dirent => {
+		return dirent.isFile() 
+			&& (dirent.name.endsWith('.bas') || dirent.name.endsWith('.cls'));
+	}).map(dirent => path.join(dirPath, dirent.name));
+	const uris = fsPaths.map(fp => vscode.Uri.file(fp).toString());
 	return uris;
 }
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export async function activate(context: vscode.ExtensionContext) {
+	const config = vscode.workspace.getConfiguration();
+	const loadDefinitionFiles = await config.get("sample-ext1.loadDefinitionFiles");
+
 	setupWorkspaceFileEvent(context);
 
 	context.subscriptions.push(vscode.commands.registerCommand("sample-ext1.setupFiles", async () => {
@@ -213,8 +220,10 @@ export async function activate(context: vscode.ExtensionContext) {
 		await startLanguageServer(context);	
 
 		await waitUntilClientIsRunning();
-		const uris = getWorkspaceFileUris();
-		if(uris){
+		const uris1 = getWorkspaceFileUris();
+		const uris2 = loadDefinitionFiles?getDefinitionFileUris(context):[];
+		const uris = uris1.concat(uris2);
+		if(uris.length > 0){
 			const method: Hoge.RequestMethod = "createFiles";
 			await client.sendRequest(method, {uris});
 		}
@@ -226,8 +235,10 @@ export async function activate(context: vscode.ExtensionContext) {
 		await startLanguageServer(context);	
 
 		await waitUntilClientIsRunning();
-		const uris = getWorkspaceFileUris();
-		if(uris){
+		const uris1 = getWorkspaceFileUris();
+		const uris2 = loadDefinitionFiles?getDefinitionFileUris(context):[];
+		const uris = uris1.concat(uris2);
+		if(uris.length > 0){
 			const method: Hoge.RequestMethod = "createFiles";
 			await client.sendRequest(method, {uris});
 		}

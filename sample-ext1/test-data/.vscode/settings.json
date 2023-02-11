@@ -4,5 +4,6 @@
         "comments": "off",
         "strings": "off"
     },
-    "files.autoGuessEncoding": true
+    "files.autoGuessEncoding": true,
+    "sample-ext1.loadDefinitionFiles": true
 }

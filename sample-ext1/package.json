@@ -23,7 +23,12 @@
           "type": "number",
           "default": 9088,
           "description": "server port"
-        }
+        },
+        "sample-ext1.loadDefinitionFiles": {
+          "type": "boolean",
+          "default": true,
+          "description": "load d.vb files"
+        } 
       }
     },
     "languages": [

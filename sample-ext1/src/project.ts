@@ -1,5 +1,3 @@
-import * as fs from "fs";
-import * as path from "path";
 import * as vscode from "vscode";
 
 export class Project {
@@ -15,16 +13,5 @@ export class Project {
             );
         }
         await config.update("files.autoGuessEncoding", true);
-    }
-
-    async copy(sourcePath:string, destPath:string){
-        const wsedit = new vscode.WorkspaceEdit();
-        const data = await vscode.workspace.fs.readFile(
-            vscode.Uri.file(sourcePath)
-        );
-        const filePath = vscode.Uri.file(destPath);
-        wsedit.createFile(filePath, { ignoreIfExists: true });
-        await vscode.workspace.fs.writeFile(filePath, data);
-        let isDone = await vscode.workspace.applyEdit(wsedit);
     }
 }

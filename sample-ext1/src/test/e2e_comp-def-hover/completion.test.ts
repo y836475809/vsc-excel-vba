@@ -96,14 +96,14 @@ suite("Extension E2E Completion Test Suite", () => {
 					kind: vscode.CompletionItemKind.Method
 				},
 				{
-					label: "public Sub Module2Sample2()",
-					insertText: "Module2Sample2",
-					kind: vscode.CompletionItemKind.Method
-				},
-				{
 					label: "Public Sub call1()",
 					insertText: "call1",
 					kind: vscode.CompletionItemKind.Method
+				},
+				{
+					label: "c",
+					insertText: "c",
+					kind: vscode.CompletionItemKind.Variable
 				},
 				{
 					label: "c1",

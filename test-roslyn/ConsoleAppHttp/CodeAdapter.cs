@@ -35,6 +35,15 @@ namespace ConsoleAppServer {
         }
 
         public void parse(string filePath, string vbaCode, out VbCodeInfo vbCodeInfo) {
+            if(filePath.EndsWith(".d.vb")) {
+                vbCodeInfo = new VbCodeInfo {
+                    VbCode = vbaCode,
+                    LineOffset = 0,
+                    PositionOffset = 0
+                };
+                return;
+            }
+
             var headerCount = 0;
             var name = string.Empty;
             StringReader rs = new StringReader(vbaCode);

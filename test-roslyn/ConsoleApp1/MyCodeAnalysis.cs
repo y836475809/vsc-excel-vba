@@ -203,6 +203,17 @@ namespace ConsoleApp1 {
             return syntaxRoot.GetText().WithChanges(allChanges);
         }
 
+        private async Task<List<DiagnosticItem>> getDiagnosticCallStatementAsync(Document document) {
+            var d = new DiagnosticCallStatement();
+            var locations =  await d.mmAsync(document);
+            return locations.Select(x => {
+                var severity = DiagnosticSeverity.Error.ToString();
+                var msg = "Call is required";
+                var positon = x.Positon;
+                return new DiagnosticItem(severity, msg, positon, positon);
+            }).ToList();
+        }
+
         public async Task<List<DiagnosticItem>> GetDiagnostics(string name) {
             var docId = doc_id_dict[name];
             var doc = workspace.CurrentSolution.GetDocument(docId);
@@ -227,6 +238,8 @@ namespace ConsoleApp1 {
                 var span = x.Location.SourceSpan;
                 return new DiagnosticItem(severity, msg, span.Start, span.End);
             }).ToList();
+            var diagnosticCall = await getDiagnosticCallStatementAsync(doc);
+            items.AddRange(diagnosticCall);
             return items;
         }
 

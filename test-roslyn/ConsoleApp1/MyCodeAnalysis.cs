@@ -1,4 +1,4 @@
-﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.FindSymbols;
 using Microsoft.CodeAnalysis.Host.Mef;
 using Microsoft.CodeAnalysis.Recommendations;
@@ -74,7 +74,7 @@ namespace ConsoleApp1 {
             return true;
         }
 
-        public async Task<List<CompletionItem>> GetCompletions(string name, string text, int position) {
+        public async Task<List<CompletionItem>> GetCompletions(string name, string text, int line, int chara) {
             ChangeDocument(name, text);
             var completions = new List<CompletionItem>();
             if (!doc_id_dict.ContainsKey(name)) {
@@ -82,6 +82,7 @@ namespace ConsoleApp1 {
             }
             var docId = doc_id_dict[name];
             var doc = workspace.CurrentSolution.GetDocument(docId);
+            var position = doc.GetTextAsync().Result.Lines.GetPosition(new LinePosition(line, chara));
             var symbols = await Recommender.GetRecommendedSymbolsAtPositionAsync(doc, position);
             foreach (var symbol in symbols) {
                 var completionItem = new CompletionItem();
@@ -107,7 +108,7 @@ namespace ConsoleApp1 {
             return completions;
         }
 
-        public async Task<List<DefinitionItem>> GetDefinitions(string name, string text, int position) {
+        public async Task<List<DefinitionItem>> GetDefinitions(string name, string text, int line, int chara) {
             var items = new List<DefinitionItem>();
             if (!doc_id_dict.ContainsKey(name)) {
                 return items;
@@ -116,6 +117,7 @@ namespace ConsoleApp1 {
             if (workspace.CurrentSolution.ContainsDocument(docId)) {
                 var doc = workspace.CurrentSolution.GetDocument(docId);
                 var model = await doc.GetSemanticModelAsync();
+                var position = doc.GetTextAsync().Result.Lines.GetPosition(new LinePosition(line, chara));
                 var symbol = await SymbolFinder.FindSymbolAtPositionAsync(model, position, workspace);
 
                 if (symbol == null) {
@@ -210,7 +212,9 @@ namespace ConsoleApp1 {
                 var severity = DiagnosticSeverity.Error.ToString();
                 var msg = "Call is required";
                 var positon = x.Positon;
-                return new DiagnosticItem(severity, msg, positon, positon);
+                return new DiagnosticItem(severity, msg,
+                    x.Line, x.Character,
+                    x.Line, x.Character);
             }).ToList();
         }
 
@@ -235,8 +239,11 @@ namespace ConsoleApp1 {
                 // Error = 3
                 var severity = x.Severity.ToString();
                 var msg = x.GetMessage();
-                var span = x.Location.SourceSpan;
-                return new DiagnosticItem(severity, msg, span.Start, span.End);
+                var s = x.Location.GetLineSpan().StartLinePosition;
+                var e = x.Location.GetLineSpan().EndLinePosition;
+                return new DiagnosticItem(severity, msg, 
+                    s.Line, s.Character,
+                    e.Line, e.Character);
             }).ToList();
             var diagnosticCall = await getDiagnosticCallStatementAsync(doc);
             items.AddRange(diagnosticCall);

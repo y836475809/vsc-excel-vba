@@ -10,13 +10,15 @@ export async function resetServer(port: number): Promise<void>{
 	await lpsRequest.send({
 		id: "Reset",
 		filepaths: [],
-		position: 0,
+        line: 0,
+        chara: 0,
 		text: ""
 	});
 	await lpsRequest.send({
 		id: "IgnoreShutdown",
 		filepaths: [],
-		position: 0,
+        line: 0,
+        chara: 0,
 		text: ""
 	});
 };

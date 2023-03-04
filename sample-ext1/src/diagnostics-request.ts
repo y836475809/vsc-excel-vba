@@ -13,7 +13,8 @@ export async function diagnosticsRequest(doc: TextDocument , fsPath: string, lps
     const data = {
     id: "Diagnostic",
         filepaths: [fsPath],
-        position: 0,
+        line: 0,
+        chara: 0,
         text: ""
     } as Hoge.Command;
     const items = await lpsRequest.send(data) as Hoge.DiagnosticItem[];
@@ -22,8 +23,14 @@ export async function diagnosticsRequest(doc: TextDocument , fsPath: string, lps
         const diagnostic: Diagnostic = {
             severity: severity,
             range: {
-                start: doc.positionAt(item.start),
-                end: doc.positionAt(item.end)
+                start: {
+                    line: item.startline,
+                    character:item.startchara
+                },
+                end: {
+                    line: item.endline,
+                    character:item.endchara
+                }
             },
             message: item.message,
             source: "server",

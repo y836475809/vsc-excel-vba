@@ -78,17 +78,17 @@ namespace ConsoleAppServer
                         Response(response, 202);
                         break;
                     case "Completion":
-                        var args = new CompletionEventArgs(cmd.filepaths[0], cmd.text, cmd.position);
+                        var args = new CompletionEventArgs(cmd.filepaths[0], cmd.text, cmd.line, cmd.chara);
                         CompletionReq?.Invoke(this, args);
                         Response(response, args.Items);
                         break;
                     case "Definition":
-                        var args_def = new DefinitionEventArgs(cmd.filepaths[0], cmd.text, cmd.position);
+                        var args_def = new DefinitionEventArgs(cmd.filepaths[0], cmd.text, cmd.line, cmd.chara);
                         DefinitionReq?.Invoke(this, args_def);
                         Response(response, args_def.Items);
                         break;
                     case "Hover":
-                        var args_hover = new CompletionEventArgs(cmd.filepaths[0], cmd.text, cmd.position);
+                        var args_hover = new CompletionEventArgs(cmd.filepaths[0], cmd.text, cmd.line, cmd.chara);
                         HoverReq?.Invoke(this, args_hover);
                         Response(response, args_hover.Items);
                         break;

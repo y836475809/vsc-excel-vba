@@ -26,8 +26,10 @@ namespace Hoge {
     export type DiagnosticItem = {
         severity: Severity;
         message: string;
-        start: number;
-        end: number;
+        startline: number;
+        startchara: number;
+        endline: number;
+        endchara: number;
     };
 
     type CommandId = 
@@ -46,7 +48,8 @@ namespace Hoge {
     export type Command = {
         id: CommandId;
         filepaths: string[];
-        position: number;
+        line: number;
+        chara: number;
         text: string;
     };
 

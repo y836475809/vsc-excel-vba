@@ -48,12 +48,12 @@ namespace ConsoleAppServer {
                 var vbCodeInfo = codeAdapter.GetVbCodeInfo(e.FilePath);
                 var vbCode = vbCodeInfo.VbCode;
                 var posOffset = vbCodeInfo.PositionOffset;
-                var position = e.Position - posOffset;
-                if (position < 0) {
+                var line = e.Line - vbCodeInfo.LineOffset;
+                if (line < 0) {
                     e.Items = new List<CompletionItem>();
                     return;
                 }
-                var Items = await mc.GetCompletions(e.FilePath, vbCode, position);
+                var Items = await mc.GetCompletions(e.FilePath, vbCode, line, e.Chara);
                 e.Items = Items;
             };
             server.DefinitionReq += async (object sender, DefinitionEventArgs e) => {
@@ -61,12 +61,12 @@ namespace ConsoleAppServer {
                 var vbCodeInfo = codeAdapter.GetVbCodeInfo(e.FilePath);
                 var vbCode = vbCodeInfo.VbCode;
                 var posOffset = vbCodeInfo.PositionOffset;
-                var position = e.Position - posOffset;
-                if (position < 0) {
+                var line = e.Line - vbCodeInfo.LineOffset;
+                if (line < 0) {
                     e.Items = list;
                     return;
                 }
-                var Items = await mc.GetDefinitions(e.FilePath, vbCode, position);
+                var Items = await mc.GetDefinitions(e.FilePath, vbCode, line, e.Chara);
                 Location adjustLocation(Location location, int lineOffset,  int chaOffset) {
                     location.Line += lineOffset;
                     location.Positon += chaOffset;
@@ -102,12 +102,12 @@ namespace ConsoleAppServer {
                 var vbCodeInfo = codeAdapter.GetVbCodeInfo(e.FilePath);
                 var vbCode = vbCodeInfo.VbCode;
                 var posOffset = vbCodeInfo.PositionOffset;
-                var position = e.Position - posOffset;
-                if (position < 0) {
+                var line = e.Line - vbCodeInfo.LineOffset;
+                if (line < 0) {
                     e.Items = list;
                     return;
                 }
-                var Items = await mc.GetDefinitions(e.FilePath, vbCode, position);
+                var Items = await mc.GetDefinitions(e.FilePath, vbCode, line, e.Chara);
                 foreach (var item in Items) {
                     var sp = item.Start.Positon;
                     var ep = item.End.Positon;
@@ -118,11 +118,11 @@ namespace ConsoleAppServer {
             };
             server.DiagnosticReq += async (object sender, DiagnosticEventArgs e) => {   
                 var vbCodeInfo = codeAdapter.GetVbCodeInfo(e.FilePath);
-                var posOffset = vbCodeInfo.PositionOffset;
+                var lineOffset = vbCodeInfo.LineOffset;
                 var items = await mc.GetDiagnostics(e.FilePath);
                 foreach (var item in items) {
-                    item.Start += posOffset;
-                    item.End += posOffset;
+                    item.StartLine += lineOffset;
+                    item.EndLine += lineOffset;
                 }
                 e.Items = items;
             };

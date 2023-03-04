@@ -113,7 +113,8 @@ export class Server {
             const data = {
                 id: "AddDocuments",
                 filepaths: filePaths,
-                position: 0,
+                line: 0,
+                chara: 0,
                 text: ""
             } as Hoge.Command;
             await this.lpsRequest.send(data);
@@ -126,7 +127,8 @@ export class Server {
             const data = {
                 id: "DeleteDocuments",
                 filepaths: fsPaths,
-                position: 0,
+                line: 0,
+                chara: 0,
                 text: ""
             } as Hoge.Command;  
             await this.lpsRequest.send(data);
@@ -144,7 +146,8 @@ export class Server {
                 const data = {
                     id: "RenameDocument",
                     filepaths: [oldFsPath, newFsPath],
-                    position: 0,
+                    line: 0,
+                    chara: 0,
                     text: ""
                 } as Hoge.Command;  
                 await this.lpsRequest.send(data);
@@ -164,6 +167,8 @@ export class Server {
                 id: "ChangeDocument",
                 filepaths: [fsPath],
                 position: 0,
+                line: 0,
+                chara: 0,
                 text: doc.getText()
             } as Hoge.Command;
             await this.lpsRequest.send(data);
@@ -179,12 +184,12 @@ export class Server {
         if(!doc){
             return [];
         }
-        const pos = doc.offsetAt(_textDocumentPosition.position);
         const text = doc.getText();
         const data = {
             id: "Completion",
             filepaths: [fp],
-            position: pos,
+            line: _textDocumentPosition.position.line,
+            chara: _textDocumentPosition.position.character,
             text: text
         } as Hoge.Command;
         const items = await this.lpsRequest.send(data) as Hoge.CompletionItem[];
@@ -203,14 +208,14 @@ export class Server {
     async onDefinition(params: DefinitionParams): Promise<Location[]> {
         const uri = params.textDocument.uri;
         const fp = URI.parse(uri).fsPath;
-        const pos = documents.get(uri)?.offsetAt(params.position);
         if(!documents.get(uri)){
             return  new Array<Location>();
         }
         const data = {
             id: "Definition",
             filepaths: [fp],
-            position: pos,
+            line: params.position.line,
+            chara: params.position.character,
             text: documents.get(uri)?.getText()
         } as Hoge.Command;
         const items = await this.lpsRequest.send(data) as Hoge.DefinitionItem[];
@@ -234,12 +239,11 @@ export class Server {
         if(!doc){
             return undefined;
         }
-        
-        const pos = doc.offsetAt(params.position);
         const data = {
             id: "Hover",
             filepaths: [fp],
-            position: pos,
+            line: params.position.line,
+            chara: params.position.character,
             text: documents.get(uri)?.getText()
         } as Hoge.Command;
         const items = await this.lpsRequest.send(data) as Hoge.CompletionItem[];
@@ -266,7 +270,8 @@ export class Server {
         const data = {
             id: "Shutdown",
             filepaths: [],
-            position: 0,
+            line: 0,
+            chara: 0,
             text: ""
         } as Hoge.Command;
         await this.lpsRequest.send(data);

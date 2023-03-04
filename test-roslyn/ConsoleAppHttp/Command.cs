@@ -9,7 +9,8 @@ namespace ConsoleAppServer {
 
         public List<string> filepaths { get; set; }
 
-        public int position { get; set; }
+        public int line { get; set; }
+        public int chara { get; set; }
 
         public string text { get; set; }
     }
@@ -86,13 +87,15 @@ namespace ConsoleAppServer {
     public class CompletionEventArgs : EventArgs {
         public string FilePath { get; set; }
         public string Text { get; set; }
-        public int Position { get; set; }
+        public int Line { get; set; }
+        public int Chara { get; set; }
         public List<CompletionItem> Items { get; set; }
 
-        public CompletionEventArgs(string FilePath, string Text, int Position) {
+        public CompletionEventArgs(string FilePath, string Text, int Line, int Chara) {
             this.FilePath = FilePath;
             this.Text = Text;
-            this.Position = Position;
+            this.Line = Line;
+            this.Chara = Chara;
         }
     }
 
@@ -105,14 +108,16 @@ namespace ConsoleAppServer {
     public class DefinitionEventArgs : EventArgs {
         public string FilePath { get; set; }
         public string Text { get; set; }
-        public int Position { get; set; }
+        public int Line { get; set; }
+        public int Chara { get; set; }
 
         public List<DefinitionItem> Items { get; set; }
 
-        public DefinitionEventArgs(string FilePath, string Text, int Position) {
+        public DefinitionEventArgs(string FilePath, string Text, int Line, int Chara) {
             this.FilePath = FilePath;
             this.Text = Text;
-            this.Position = Position;
+            this.Line = Line;
+            this.Chara = Chara;
         }
     }
 

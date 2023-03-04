@@ -10,7 +10,8 @@ async function getServerFileMap(): Promise<Map<string, string>>{
 	const data = await lpsRequest.send({
 		id: "Debug:GetDocuments",
 		filepaths: [],
-		position: 0,
+		line: 0,
+		chara: 0,
 		text: ""
 	});
 	const fileMap = new Map<string, string>();

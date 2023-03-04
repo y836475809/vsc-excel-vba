@@ -28,8 +28,7 @@ async function main() {
 					extensionDevelopmentPath, extensionTestsPath,
 					launchArgs: [
 						testWorkspace, 
-						"--disable-extensions",
-						'--user-data-dir', path.join(os.tmpdir(), "_vscode-test-userdata")
+						"--disable-extensions"
 					]
 				});
 			} catch (err) {

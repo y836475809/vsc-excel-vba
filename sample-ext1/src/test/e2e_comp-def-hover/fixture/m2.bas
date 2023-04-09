@@ -1,6 +1,6 @@
 Attribute VB_Name = "Module2"
 ''' <summary>
-'''  Module2ãƒ¡ã‚½ãƒƒãƒ‰
+'''  Module2ƒƒ\ƒbƒh
 ''' </summary>
 Public Sub Module2Sample1()
 End Sub

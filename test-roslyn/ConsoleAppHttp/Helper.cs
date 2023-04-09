@@ -14,7 +14,8 @@ namespace ConsoleAppServer {
         //    return code.LastIndexOf(target) + target.Length;
         //}
         public static string getCode(string filePath) {
-            using (var sr = new StreamReader(filePath)) {
+            var enc = Encoding.GetEncoding("shift_jis");
+            using (var sr = new StreamReader(filePath, enc)) {
                 return sr.ReadToEnd();
             }
         }

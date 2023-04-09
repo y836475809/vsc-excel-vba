@@ -11,11 +11,11 @@ Attribute VB_Exposed = False
 Option Explicit On
 
 ''' <summary>
-'''  蛟倶ｺｺ
+'''  個人
 ''' </summary>
 
 ''' <summary>
-'''  繝｡繝ｳ繝仙､画焚
+'''  メンバ変数
 ''' </summary> 
 Public Name As String
 
@@ -23,7 +23,7 @@ Private Age As Long
 Public Mother As Person
 
 ''' <summary>
-'''  繝�繧ｹ繝医Γ繝�繧ｻ繝ｼ繧ｸ
+'''  テストメッセージ
 ''' </summary>
 ''' <param name='val1'></param>
 ''' <param name='val2'></param>

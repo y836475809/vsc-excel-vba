@@ -1,12 +1,12 @@
 Attribute VB_Name = "Module1"
 
 ''' <summary>
-'''  繝｢繧ｸ繝･繝ｼ繝ｫbuf
+'''  モジュールbuf
 ''' </summary>
 Private buf As String
 
 ''' <summary>
-'''  繝｢繧ｸ繝･繝ｼ繝ｫ髢｢謨ｰ
+'''  モジュール関数
 ''' </summary>
 Public Sub Sample1()
 End Sub

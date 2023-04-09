@@ -1,15 +1,19 @@
 Attribute VB_Name = "m1"
 
 ''' <summary>
-'''  繝｢繧ｸ繝･繝ｼ繝ｫbuf
+'''  モジュールbuf
 ''' </summary>
 Private buf As String
 
+' Function Range()
+
+' End Function
 ''' <summary>
-'''  繝�繧ｹ繝医Γ繝�繧ｻ繝ｼ繧ｸ
+'''  テストメッセージ
 ''' </summary>
 ''' <returns></returns>
 Sub Sample1()
+    'Range("A1").
     Range("A1") = "tanaka"
 End Sub
 
@@ -25,6 +29,8 @@ Sub Sample3()
 End Sub
 
 Sub Sample4()
+    Dim x As MSXML2.DOMDocument60
+    x.getElementsByTagName()
     Dim numL as Long
     numL = 10
 
@@ -39,23 +45,28 @@ Sub Sample4()
 
     Dim numDate as Date
     numDate = "2000/12/31"
+    numDate.
 
     Dim numBool as Boolean
     numBool = True
-
     Dim numObj as Object
     numObj = "Object"
 
     Dim numVa as Variant
     numVa = "Variant"
-
+    Dim numVa2 as Variant
+    numVa2 = "Variant"
 End Sub
 
 Sub call1()
     Dim p2 As New Person
     ' Set p2 = New Person
     buf = "ss"
-    p2.SayHello
+    'buf.
+    'thisModule.Range("").
+    'Range("A3:E5").
+    'Sample2()
+    p2.QSayHell
     ' completion position
 
 End Sub

@@ -8,7 +8,7 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
 ''' <summary>
-'''  ãƒ¡ãƒ³ãƒå¤‰æ•°
+'''  ƒƒ“ƒo•Ï”
 ''' </summary>
 Public Name As String
 
@@ -20,7 +20,7 @@ Public Property Prop1(index As Long) As Long
 End Property
 
 ''' <summary>
-'''  ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸è¡¨ç¤º
+'''  ƒƒbƒZ[ƒW•\¦
 ''' </summary>
 ''' <param name='val1'></param>
 ''' <returns></returns>
@@ -29,10 +29,10 @@ Public Sub Hello(val1 As String)
 End Sub
 
 ''' <summary>
-'''  ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸å–å¾—
+'''  ƒƒbƒZ[ƒWæ“¾
 ''' </summary>
 ''' <param name='val1'></param>
-''' <returns>ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸</returns>
+''' <returns>ƒƒbƒZ[ƒW</returns>
 Public Function GetHello(val As String) As String
     Hello = "Hello!"
 End Sub

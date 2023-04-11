@@ -1,5 +1,6 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
+using Microsoft.CodeAnalysis.VisualBasic;
 using Microsoft.CodeAnalysis.VisualBasic.Syntax;
 using System;
 using System.Collections.Generic;
@@ -8,17 +9,46 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace ConsoleApp1 {
-    public class DiagnosticRewrite {
+    public class Rewrite {
+        private RewriteSetting setting;
+        public Rewrite(RewriteSetting setting) {
+            this.setting = setting;
+        }
 
-        public List<TextChange> RewriteStatement(IEnumerable<SyntaxNode> node) {
+        public List<TextChange> RewriteStatement(Document doc) {
+            var docRoot = doc.GetSyntaxRootAsync().Result;
+            var nodes = docRoot.DescendantNodes();
             var changes = new List<TextChange>();
-            changes = changes.Concat(RewriteSetStatement(node)).ToList();
-            changes = changes.Concat(LocalDeclarationStatement(node)).ToList();
-            changes = changes.Concat(FieldDeclarationStatement(node)).ToList();
+            changes = changes.Concat(ReplaceStatement(nodes)).ToList();
+            changes = changes.Concat(SetStatement(nodes)).ToList();
+            changes = changes.Concat(LocalDeclarationStatement(nodes)).ToList();
+            changes = changes.Concat(FieldDeclarationStatement(nodes)).ToList();
             return changes;
         }
 
-        private List<TextChange> RewriteSetStatement(IEnumerable<SyntaxNode> node) {
+        public List<TextChange> ReplaceStatement(IEnumerable<SyntaxNode> node) {
+            var ns = setting.NameSpace;
+            var rewriteDict = setting.getRewriteDict();
+            var allChanges = new List<TextChange>();
+            //var docRoot = doc.GetSyntaxRootAsync().Result;
+            var forStmt = node.OfType<InvocationExpressionSyntax>();
+            var set = new HashSet<string>();
+            foreach (var stmt in forStmt) {
+                var tt = stmt.GetFirstToken().Text;
+                if (rewriteDict.ContainsKey(tt) && stmt.ArgumentList != null) {
+                    var sp = stmt.GetFirstToken().Span;
+                    var k = $"{sp.Start}-{sp.End}";
+                    if (!set.Contains(k)) {
+                        var rename = $"{ns}.{rewriteDict[tt]}";
+                        allChanges.Add(new TextChange(stmt.GetFirstToken().Span, rename));
+                    }
+                    set.Add(k);
+                }
+            }
+            return allChanges;
+        }
+
+        private List<TextChange> SetStatement(IEnumerable<SyntaxNode> node) {
             var forStmt = node.OfType<EmptyStatementSyntax>();
             var allChanges = new List<TextChange>();
             // 'Let' および 'Set' 代入ステートメントはサポートされなくなりました。

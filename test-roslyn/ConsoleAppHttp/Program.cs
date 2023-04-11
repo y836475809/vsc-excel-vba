@@ -1,4 +1,5 @@
 ﻿using ConsoleApp1;
+using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -11,8 +12,10 @@ namespace ConsoleAppServer {
         static void Main(string[] args) {
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
             var codeAdapter = new CodeAdapter();
-            var mc = new MyCodeAnalysis();
             var server = new Server();
+            var mc = new MyCodeAnalysis();
+            var settings  = LoadConfig();
+            mc.setSetting(settings.RewriteSetting);
 
             server.ResetReq += (object sender, EventArgs e) => {
                 mc = new MyCodeAnalysis();
@@ -175,6 +178,16 @@ namespace ConsoleAppServer {
             //} catch (Exception e) {
             //    Console.WriteLine(e.Message);
             //}
+        }
+
+        private static Settings LoadConfig() {
+            var builder = new ConfigurationBuilder();
+            builder.AddJsonFile("app.json");
+            var config = builder.Build();
+            var settings = new Settings();
+            config.GetSection("App").Bind(settings);
+            settings.convert();
+            return settings;
         }
 
         private static void Server_HoverReq(object sender, CompletionEventArgs e) {

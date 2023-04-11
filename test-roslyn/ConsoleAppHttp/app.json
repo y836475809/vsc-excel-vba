@@ -1,0 +1,10 @@
+﻿{
+	"App": {
+		"RewriteSetting": {
+			"namespace": "f",
+			"mapping": [
+				[ "Range", "Ran" ]
+			]
+		}
+	}
+}

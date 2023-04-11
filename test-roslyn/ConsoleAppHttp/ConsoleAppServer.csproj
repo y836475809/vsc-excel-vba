@@ -7,10 +7,20 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.VisualBasic.Workspaces" Version="4.4.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="7.0.4" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="7.0.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\ConsoleApp1\ConsoleApp1.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <None Update="app.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ProjectExtensions><VisualStudio><UserProperties app_1json__JsonSchema="" /></VisualStudio></ProjectExtensions>
 
 </Project>

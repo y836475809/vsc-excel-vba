@@ -25,6 +25,7 @@ namespace ConsoleApp1 {
             var codes = new string[] {
                 "BC35000",  // ランタイム ライブラリ関数 が定義されていないため、
                                    // 要求された操作を実行できません。
+                "BC30627", // 'Option' ステートメントは、宣言または 'Imports' ステートメントの前に記述しなければなりません
             };
             var node = doc.GetSyntaxRootAsync().Result;
             var result = await doc.GetSemanticModelAsync();

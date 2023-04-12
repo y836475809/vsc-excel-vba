@@ -29,7 +29,12 @@ namespace ConsoleApp1 {
         private Dictionary<string, string> Rewrite;
         private Dictionary<string, string> Restore;
 
-        public Dictionary<string, string> getRewriteDict() {
+		public RewriteSetting() {
+			Rewrite = new Dictionary<string, string>();
+			Restore = new Dictionary<string, string>();
+		}
+
+		public Dictionary<string, string> getRewriteDict() {
             return Rewrite;
         }
         public Dictionary<string, string> getRestoreDict() {

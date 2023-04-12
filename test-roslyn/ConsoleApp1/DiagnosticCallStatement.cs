@@ -27,7 +27,8 @@ namespace ConsoleApp1 {
                 }
                 if (symbol is IMethodSymbol mth) {
                     if (mth.ReturnsVoid) {
-                        if (!node.Parent.IsKind(SyntaxKind.CallStatement)) {
+                        var token = node.GetFirstToken().GetPreviousToken();
+                        if (!token.IsKind(SyntaxKind.CallKeyword)) {
                             var loc = node.GetLocation();
                             var span = loc?.SourceSpan;
                             var tree = loc?.SourceTree;

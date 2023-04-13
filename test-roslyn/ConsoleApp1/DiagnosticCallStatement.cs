@@ -27,8 +27,15 @@ namespace ConsoleApp1 {
                 }
                 if (symbol is IMethodSymbol mth) {
                     if (mth.ReturnsVoid) {
-                        var token = node.GetFirstToken().GetPreviousToken();
-                        if (!token.IsKind(SyntaxKind.CallKeyword)) {
+                        var token = node.GetFirstToken();
+                        var preToken = token.GetPreviousToken();
+                        var neToken = token.GetNextToken();
+                        if (!preToken.IsKind(SyntaxKind.CallKeyword)) {
+                                if (!neToken.IsKind(SyntaxKind.OpenParenToken)) {
+                                    continue;
+                                }
+                        } 
+                        if (!preToken.IsKind(SyntaxKind.CallKeyword)) {
                             var loc = node.GetLocation();
                             var span = loc?.SourceSpan;
                             var tree = loc?.SourceTree;

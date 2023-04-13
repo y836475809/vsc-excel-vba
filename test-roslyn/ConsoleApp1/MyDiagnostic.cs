@@ -37,6 +37,24 @@ namespace ConsoleApp1 {
                 if(IsRewriteFunction(x, node)) {
                     return false;
 				}
+                if (x.Id == "BC30800") {
+                    var sym = SymbolFinder.FindSymbolAtPositionAsync(
+                        doc, x.Location.SourceSpan.Start - 1).Result;
+                    if (sym is IMethodSymbol mth) {
+                        if (mth.ReturnsVoid) {
+                            var token = node.FindNode(x.Location.SourceSpan).GetFirstToken();
+                            var preToken = token.GetPreviousToken();
+                            if (!preToken.IsKind(SyntaxKind.CallKeyword)) {
+                                var neToken = token.GetNextToken();
+                                if (!neToken.IsKind(SyntaxKind.OpenParenToken)) {
+                                    // method "test"の場合(Callなしカッコなしの呼び出し)のエラーはエラーにしない
+                                    return false;
+                                }
+                            }
+                        }
+                    }
+                }
+
                 return true;
             });
             var items = items1.Select(x => {

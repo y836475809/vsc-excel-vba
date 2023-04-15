@@ -2,6 +2,7 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as path from 'path';
 import * as vscode from 'vscode';
+import { spawn } from "child_process";
 
 import {
 	ExecuteCommandRequest,
@@ -241,6 +242,25 @@ export async function activate(context: vscode.ExtensionContext) {
 		if(uris.length > 0){
 			const method: Hoge.RequestMethod = "createFiles";
 			await client.sendRequest(method, {uris});
+		}
+	}));
+
+	context.subscriptions.push(vscode.commands.registerCommand("testView.startLSPServer", async () => {
+		const prop = "sample-ext1.serverExeFilePath";
+		const fp = await config.get(prop) as string;
+		try {
+			if(!fp){
+				throw new Error(`${prop} is not set`);
+			}
+			if(!fs.existsSync(fp)){
+				throw new Error(`${prop}, Not find: ${fp}`);
+			}
+			const p = spawn("cmd.exe", ["/c", fp], { detached: true });
+			p.on("error", (error)=> {
+				throw error;
+			});
+		} catch (error) {
+			vscode.window.showErrorMessage("Error start LSP server: " + error);
 		}
 	}));
 

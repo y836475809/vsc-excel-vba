@@ -28,6 +28,11 @@
           "type": "boolean",
           "default": true,
           "description": "load d.vb files"
+        },
+        "sample-ext1.serverExeFilePath": {
+          "type": ["string", "null"],
+          "default": null,
+          "description": "LSP server file path"
         } 
       }
     },
@@ -67,8 +72,8 @@
         "title": "deleteFiles"
       },
       {
-        "command": "testView.addEntry",
-        "title": "Add"
+        "command": "testView.startLSPServer",
+        "title": "start server"
       },
       {
         "command": "testView.myCommand",
@@ -86,7 +91,7 @@
     "menus": {
       "view/title": [
         {
-          "command": "testView.addEntry",
+          "command": "testView.startLSPServer",
           "when": "view == testView",
           "group": "navigation"
         }

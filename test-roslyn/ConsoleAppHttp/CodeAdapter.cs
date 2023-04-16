@@ -100,6 +100,10 @@ namespace ConsoleAppServer {
             vbCodeInfoDict[filePath] = vbCodeInfo;;
         } 
 
+        public bool Has(string filePath) {
+            return vbCodeInfoDict.ContainsKey(filePath);
+        }
+
         public VbCodeInfo GetVbCodeInfo(string filePath) {
             return vbCodeInfoDict[filePath];
         }

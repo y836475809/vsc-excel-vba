@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using System.Text.Json;
 
@@ -10,9 +11,11 @@ namespace ConsoleAppServer {
 		private CodeAdapter codeAdapter;
 		private Server server;
 		private MyCodeAnalysis mc;
+        private Logger logger;
 
-		public App() {
+        public App() {
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+            logger = new Logger();
         }
 
         public void Run(int port) {
@@ -32,8 +35,8 @@ namespace ConsoleAppServer {
 
             server = new Server();
             server.ResetReq += (object sender, EventArgs e) => {
-                mc = new MyCodeAnalysis();
-                codeAdapter = new CodeAdapter();
+                Reset();
+                logger.Info("ResetReq");
             };
             server.DocumentAdded += (object sender, DocumentAddedEventArgs e) => {
                 foreach (var FilePath in e.FilePaths) {
@@ -41,12 +44,14 @@ namespace ConsoleAppServer {
                     var vbCode = codeAdapter.GetVbCodeInfo(FilePath).VbCode;
                     mc.AddDocument(FilePath, vbCode);
                 }
+                logger.Info("DocumentAdded");
             };
             server.DocumentDeleted += (object sender, DocumentDeletedEventArgs e) => {
                 foreach (var FilePath in e.FilePaths) {
                     mc.DeleteDocument(FilePath);
                     codeAdapter.Delete(FilePath);
                 }
+                logger.Info("DocumentDeleted");
             };
             server.DocumentRenamed += (object sender, DocumentRenamedEventArgs e) => {
                 mc.DeleteDocument(e.OldFilePath);
@@ -54,33 +59,46 @@ namespace ConsoleAppServer {
                 codeAdapter.SetCode(e.NewFilePath, Helper.getCode(e.NewFilePath));
                 var vbCode = codeAdapter.GetVbCodeInfo(e.NewFilePath).VbCode;
                 mc.AddDocument(e.NewFilePath, vbCode);
-
+                logger.Info("DocumentRenamed");
             };
             server.DocumentChanged += (object sender, DocumentChangedEventArgs e) => {
                 codeAdapter.SetCode(e.FilePath, e.Text);
                 var vbCode = codeAdapter.GetVbCodeInfo(e.FilePath).VbCode;
                 mc.ChangeDocument(e.FilePath, vbCode);
+                logger.Info("DocumentChanged");
             };
             server.CompletionReq += async (object sender, CompletionEventArgs e) => {
+                e.Items = new List<CompletionItem>();
+				if (!codeAdapter.Has(e.FilePath)) {
+                    logger.Info($"CompletionReq, non: {Path.GetFileName(e.FilePath)}");
+                    return;
+				}
                 var vbCodeInfo = codeAdapter.GetVbCodeInfo(e.FilePath);
                 var vbCode = vbCodeInfo.VbCode;
                 var posOffset = vbCodeInfo.PositionOffset;
                 var line = e.Line - vbCodeInfo.LineOffset;
                 if (line < 0) {
-                    e.Items = new List<CompletionItem>();
+                    logger.Info($"CompletionReq, line={line}: {Path.GetFileName(e.FilePath)}");
                     return;
                 }
                 var Items = await mc.GetCompletions(e.FilePath, vbCode, line, e.Chara);
                 e.Items = Items;
+                logger.Info("CompletionReq");
             };
             server.DefinitionReq += async (object sender, DefinitionEventArgs e) => {
                 var list = new List<DefinitionItem>();
+                if (!codeAdapter.Has(e.FilePath)) {
+                    e.Items = list;
+                    logger.Info($"DefinitionReq, non: {Path.GetFileName(e.FilePath)}");
+                    return;
+                }
                 var vbCodeInfo = codeAdapter.GetVbCodeInfo(e.FilePath);
                 var vbCode = vbCodeInfo.VbCode;
                 var posOffset = vbCodeInfo.PositionOffset;
                 var line = e.Line - vbCodeInfo.LineOffset;
                 if (line < 0) {
                     e.Items = list;
+                    logger.Info($"DefinitionReq, line={line}: {Path.GetFileName(e.FilePath)}");
                     return;
                 }
                 var Items = await mc.GetDefinitions(e.FilePath, vbCode, line, e.Chara);
@@ -113,15 +131,22 @@ namespace ConsoleAppServer {
                     list.Add(item);
                 }
                 e.Items = list;
+                logger.Info("DefinitionReq");
             };
             server.HoverReq += async (object sender, CompletionEventArgs e) => {
                 var list = new List<CompletionItem>();
+                if (!codeAdapter.Has(e.FilePath)) {
+                    e.Items = list;
+                    logger.Info($"HoverReq, non: {Path.GetFileName(e.FilePath)}");
+                    return;
+                }
                 var vbCodeInfo = codeAdapter.GetVbCodeInfo(e.FilePath);
                 var vbCode = vbCodeInfo.VbCode;
                 var posOffset = vbCodeInfo.PositionOffset;
                 var line = e.Line - vbCodeInfo.LineOffset;
                 if (line < 0) {
                     e.Items = list;
+                    logger.Info($"HoverReq, non: {Path.GetFileName(e.FilePath)}");
                     return;
                 }
                 var Items = await mc.GetDefinitions(e.FilePath, vbCode, line, e.Chara);
@@ -132,8 +157,13 @@ namespace ConsoleAppServer {
                     list.Add(hoverItem);
                 }
                 e.Items = list;
+                logger.Info("HoverReq");
             };
             server.DiagnosticReq += async (object sender, DiagnosticEventArgs e) => {
+                if (!codeAdapter.Has(e.FilePath)) {
+                    logger.Info($"DiagnosticReq, non: {Path.GetFileName(e.FilePath)}");
+                    return;
+                }
                 var vbCodeInfo = codeAdapter.GetVbCodeInfo(e.FilePath);
                 var lineOffset = vbCodeInfo.LineOffset;
                 var items = await mc.GetDiagnostics(e.FilePath);
@@ -142,10 +172,12 @@ namespace ConsoleAppServer {
                     item.EndLine += lineOffset;
                 }
                 e.Items = items;
+                logger.Info("DiagnosticReq");
             };
             server.DebugGetDocumentsEvent += (object sender, DebugEventArgs e) => {
                 e.Text = JsonSerializer.Serialize(codeAdapter.getVbCodeDict());
             };
+            logger.Info("Initialized");
         }
         private Settings LoadConfig() {
             var builder = new ConfigurationBuilder();

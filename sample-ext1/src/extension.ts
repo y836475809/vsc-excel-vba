@@ -15,6 +15,7 @@ import {
 import { TreeDataProvider } from './treeDataProvider';
 import { Project } from './project';
 import * as fs from "fs";
+import { LPSRequest } from "./lsp-request";
 
 let client: LanguageClient;
 
@@ -201,11 +202,101 @@ function getWorkspaceFileUris() : string[] {
 	return uris;
 }
 
+async function shutdownServerApp(port: number): Promise<void>{
+	const req = new LPSRequest(port);
+	const data = {
+		id: "Shutdown",
+		filepaths: [],
+		line: 0,
+		chara: 0,
+		text: ""
+	} as Hoge.Command;
+	try {
+		await req.send(data);
+		await waitUntilServerApp(port, "shutdown");
+	} catch (error) {
+		// 
+	}
+}
+
+async function resetServerApp(){
+	if (client && client.state === State.Running) {
+		await client.sendRequest("reset");
+	}
+}
+
+async function waitUntilServerApp(port: number, state: "ready"|"shutdown"){
+	const req = new LPSRequest(port);
+	let waitCount = 0;
+	while(true){
+		if(waitCount > 30){
+			throw new Error(`Timed out waiting for server ${state}`);
+		}
+		waitCount++;
+		await new Promise(resolve => {
+			setTimeout(resolve, 200);
+		});
+		const data = {
+			id: "IsReady",
+			filepaths: [],
+			line: 0,
+			chara: 0,
+			text: ""
+		} as Hoge.Command;
+		try {
+			await req.send(data);
+			if(state === "ready"){
+				break;
+			}
+		} catch (error) {
+			if(state === "shutdown"){
+				break;
+			}
+		}
+	}
+}
+
+async function isReadyServerApp(port: number): Promise<boolean>{
+	const req = new LPSRequest(port);
+	const data = {
+		id: "IsReady",
+		filepaths: [],
+		line: 0,
+		chara: 0,
+		text: ""
+	} as Hoge.Command;
+	try {
+		await req.send(data);
+		return true;
+	} catch (error) {
+		return false;
+	}
+}
+
+async function launchServerApp(port: number, serverExeFilePath: string){
+	const prop = "sample-ext1.serverExeFilePath";
+	if(!serverExeFilePath){
+		throw new Error(`${prop} is not set`);
+	}
+	if(!fs.existsSync(serverExeFilePath)){
+		throw new Error(`${prop}, Not find: ${serverExeFilePath}`);
+	}
+	const p = spawn("cmd.exe", ["/c", serverExeFilePath], { detached: true });
+	p.on("error", (error)=> {
+		throw error;
+	});
+
+	await waitUntilServerApp(port, "ready");
+}
+
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export async function activate(context: vscode.ExtensionContext) {
 	const config = vscode.workspace.getConfiguration();
+	const serverAppPort = await config.get("sample-ext1.serverPort") as number;
 	const loadDefinitionFiles = await config.get("sample-ext1.loadDefinitionFiles");
+	const autoLaunchServerApp = await config.get("sample-ext1.autoLaunchServerApp") as boolean;
+	const serverExeFilePath = await config.get("sample-ext1.serverExeFilePath") as string;
 
 	setupWorkspaceFileEvent(context);
 
@@ -231,11 +322,19 @@ export async function activate(context: vscode.ExtensionContext) {
 	}));
 
 	context.subscriptions.push(vscode.commands.registerCommand("sample-ext1.start", async () => {
-		await setupFiles(context);
 		await stopLanguageServer();
+		
+		if(autoLaunchServerApp){
+			await shutdownServerApp(serverAppPort);
+			if(!await isReadyServerApp(serverAppPort)){
+				await launchServerApp(serverAppPort, serverExeFilePath);
+			}
+		}
+		await setupFiles(context);
 		await startLanguageServer(context);	
 
 		await waitUntilClientIsRunning();
+		await resetServerApp();
 		const uris1 = getWorkspaceFileUris();
 		const uris2 = loadDefinitionFiles?getDefinitionFileUris(context):[];
 		const uris = uris1.concat(uris2);
@@ -245,23 +344,9 @@ export async function activate(context: vscode.ExtensionContext) {
 		}
 	}));
 
-	context.subscriptions.push(vscode.commands.registerCommand("testView.startLSPServer", async () => {
-		const prop = "sample-ext1.serverExeFilePath";
-		const fp = await config.get(prop) as string;
-		try {
-			if(!fp){
-				throw new Error(`${prop} is not set`);
-			}
-			if(!fs.existsSync(fp)){
-				throw new Error(`${prop}, Not find: ${fp}`);
-			}
-			const p = spawn("cmd.exe", ["/c", fp], { detached: true });
-			p.on("error", (error)=> {
-				throw error;
-			});
-		} catch (error) {
-			vscode.window.showErrorMessage("Error start LSP server: " + error);
-		}
+	context.subscriptions.push(vscode.commands.registerCommand("sample-ext1.stop", async () => {
+		await stopLanguageServer();
+		await shutdownServerApp(serverAppPort);
 	}));
 
 	context.subscriptions.push(vscode.commands.registerCommand("sample-ext1.renameFiles", async (oldUri, newUri) => {

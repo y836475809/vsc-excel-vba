@@ -43,6 +43,7 @@ namespace Hoge {
         | "Diagnostic"
         | "Shutdown"
         | "Reset"
+        | "IsReady"
         | "IgnoreShutdown"
         | "Debug:GetDocuments";
     export type Command = {
@@ -57,7 +58,8 @@ namespace Hoge {
         "createFiles"
         | "deleteFiles"
         | "renameFiles"
-        | "changeText";
+        | "changeText"
+        | "reset";
     export type RequestRenameParam = {
         olduri: string,
         newuri: string

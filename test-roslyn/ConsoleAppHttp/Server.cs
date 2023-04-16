@@ -58,6 +58,9 @@ namespace ConsoleAppServer
                 var response = context.Response;
                 switch (cmd?.id)
                 {
+                    case "IsReady":
+                        Response(response, 202);
+                        break;
                     case "AddDocuments":
                         var args_add = new DocumentAddedEventArgs(cmd.filepaths);
                         DocumentAdded?.Invoke(this, args_add);

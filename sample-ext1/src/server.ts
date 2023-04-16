@@ -176,6 +176,16 @@ export class Server {
             const items = await diagnosticsRequest(doc, fsPath, this.lpsRequest);
             connection.sendDiagnostics({uri: doc.uri, diagnostics: items});
         }
+        if(requestMethod === "reset"){
+            const data = {
+                id: "Reset",
+                filepaths: [],
+                line: 0,
+                chara: 0,
+                text: ""
+            } as Hoge.Command;  
+            await this.lpsRequest.send(data);
+        }
     }
 
     async onCompletion(_textDocumentPosition: TextDocumentPositionParams): Promise<CompletionItem[]>{
@@ -286,7 +296,7 @@ export function startLspServer() {
     connection.onCompletion(server.onCompletion.bind(server));
     connection.onDefinition(server.onDefinition.bind(server));
     connection.onHover(server.onHover.bind(server));
-    connection.onShutdown(server.onShutdown.bind(server));
+    // connection.onShutdown(server.onShutdown.bind(server));
     // Make the text document manager listen on the connection
     // for open, change and close text document events
     documents.listen(connection);

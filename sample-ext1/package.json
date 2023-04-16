@@ -33,7 +33,12 @@
           "type": ["string", "null"],
           "default": null,
           "description": "LSP server file path"
-        } 
+        },
+        "sample-ext1.autoLaunchServerApp": {
+          "type": "boolean",
+          "default": true,
+          "description": "auto launch server app"
+        }
       }
     },
     "languages": [
@@ -53,7 +58,13 @@
     "commands": [
       {
         "command": "sample-ext1.start",
-        "title": "Hello World"
+        "title": "sample-ext1 start",
+        "icon": "$(run)"
+      },
+      {
+        "command": "sample-ext1.stop",
+        "title": "sample-ext1 stop",
+        "icon": "$(stop)"
       },
       {
         "command": "sample-ext1.startLanguageServer",
@@ -72,10 +83,6 @@
         "title": "deleteFiles"
       },
       {
-        "command": "testView.startLSPServer",
-        "title": "start server"
-      },
-      {
         "command": "testView.myCommand",
         "title": "testView reg"
       }
@@ -91,7 +98,12 @@
     "menus": {
       "view/title": [
         {
-          "command": "testView.startLSPServer",
+          "command": "sample-ext1.start",
+          "when": "view == testView",
+          "group": "navigation"
+        },
+        {
+          "command": "sample-ext1.stop",
           "when": "view == testView",
           "group": "navigation"
         }

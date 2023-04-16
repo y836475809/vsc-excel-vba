@@ -281,7 +281,7 @@ async function launchServerApp(port: number, serverExeFilePath: string){
 	if(!fs.existsSync(serverExeFilePath)){
 		throw new Error(`${prop}, Not find: ${serverExeFilePath}`);
 	}
-	const p = spawn("cmd.exe", ["/c", serverExeFilePath], { detached: true });
+	const p = spawn("cmd.exe", ["/c", `${serverExeFilePath} ${port}`], { detached: true });
 	p.on("error", (error)=> {
 		throw error;
 	});

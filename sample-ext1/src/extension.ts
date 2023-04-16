@@ -293,10 +293,21 @@ async function launchServerApp(port: number, serverExeFilePath: string){
 // Your extension is activated the very first time the command is executed
 export async function activate(context: vscode.ExtensionContext) {
 	const config = vscode.workspace.getConfiguration();
-	const serverAppPort = await config.get("sample-ext1.serverPort") as number;
-	const loadDefinitionFiles = await config.get("sample-ext1.loadDefinitionFiles");
-	const autoLaunchServerApp = await config.get("sample-ext1.autoLaunchServerApp") as boolean;
-	const serverExeFilePath = await config.get("sample-ext1.serverExeFilePath") as string;
+	let serverAppPort = await config.get("sample-ext1.serverPort") as number;
+	let loadDefinitionFiles = await config.get("sample-ext1.loadDefinitionFiles");
+	let autoLaunchServerApp = await config.get("sample-ext1.autoLaunchServerApp") as boolean;
+	let serverExeFilePath = await config.get("sample-ext1.serverExeFilePath") as string;
+
+	vscode.workspace.onDidChangeConfiguration(async event => {
+		if(!event.affectsConfiguration("sample-ext1")){
+			return;
+		}
+		const config = vscode.workspace.getConfiguration();
+		serverAppPort = await config.get("sample-ext1.serverPort") as number;
+		loadDefinitionFiles = await config.get("sample-ext1.loadDefinitionFiles");
+		autoLaunchServerApp = await config.get("sample-ext1.autoLaunchServerApp") as boolean;
+		serverExeFilePath = await config.get("sample-ext1.serverExeFilePath") as string;
+	});
 
 	setupWorkspaceFileEvent(context);
 

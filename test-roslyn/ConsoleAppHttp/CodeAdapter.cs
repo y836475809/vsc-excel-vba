@@ -96,7 +96,9 @@ namespace ConsoleAppServer {
 
         public void SetCode(string filePath, string vbaCode) {
             VbCodeInfo vbCodeInfo;
-            parse(filePath, vbaCode, out vbCodeInfo);
+			var cnvEOL = vbaCode.Replace("\r\n", "\n")
+				.Replace("\r", "\n").Replace("\n", Environment.NewLine);
+			parse(filePath, cnvEOL, out vbCodeInfo);
             vbCodeInfoDict[filePath] = vbCodeInfo;;
         } 
 

@@ -64,4 +64,9 @@ namespace Hoge {
         olduri: string,
         newuri: string
     };
+
+    export type ProjectData = {
+        targetfilename: string;
+        srcdir: string;
+    };
 }

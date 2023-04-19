@@ -24,15 +24,6 @@ function getWorkspacePath(): string | undefined{
 	return (wf && (wf.length > 0)) ? wf[0].uri.fsPath : undefined;
 }
 
-async function setupFiles(context: vscode.ExtensionContext){
-	const wsPath = getWorkspacePath();
-	if(!wsPath){
-		return;
-	}
-	const project = new Project();
-	await project.setupConfig();
-}
-
 async function renameFiles(files: any[]){
 	const method: Hoge.RequestMethod = "renameFiles";
 	let renameParams: Hoge.RequestRenameParam[] = [];
@@ -292,6 +283,8 @@ async function launchServerApp(port: number, serverExeFilePath: string){
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export async function activate(context: vscode.ExtensionContext) {
+	const project = new Project("project.json");
+
 	const config = vscode.workspace.getConfiguration();
 	let serverAppPort = await config.get("sample-ext1.serverPort") as number;
 	let loadDefinitionFiles = await config.get("sample-ext1.loadDefinitionFiles");
@@ -311,10 +304,6 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	setupWorkspaceFileEvent(context);
 
-	context.subscriptions.push(vscode.commands.registerCommand("sample-ext1.setupFiles", async () => {
-		await setupFiles(context);
-	}));
-
 	context.subscriptions.push(vscode.commands.registerCommand("sample-ext1.stopLanguageServer", async () => {
 		await stopLanguageServer();
 	}));
@@ -332,7 +321,30 @@ export async function activate(context: vscode.ExtensionContext) {
 		}
 	}));
 
+	context.subscriptions.push(vscode.commands.registerCommand("testView.myCommand", async (args) => {
+		const wsPath = getWorkspacePath();
+		if(!wsPath){
+			return;
+		}
+		try {
+			const targetFilePath = args.fsPath;		
+			await project.setupConfig();
+			await project.createProject(targetFilePath);
+			vscode.window.showInformationMessage(`Create ${project.projectFileName}`);
+		} catch (error: unknown) {
+			if(error instanceof Error){
+				vscode.window.showErrorMessage(error.message);
+			}else{
+				vscode.window.showErrorMessage("Fail create project");
+			}
+		}
+	}));
+
 	context.subscriptions.push(vscode.commands.registerCommand("sample-ext1.start", async () => {
+		if(!project.hasProject(getWorkspacePath())){
+			vscode.window.showInformationMessage(`Not find ${project.projectFileName}`);
+			return;
+		}
 		await stopLanguageServer();
 		
 		if(autoLaunchServerApp){
@@ -341,12 +353,13 @@ export async function activate(context: vscode.ExtensionContext) {
 				await launchServerApp(serverAppPort, serverExeFilePath);
 			}
 		}
-		await setupFiles(context);
-		await startLanguageServer(context);	
 
+		await startLanguageServer(context);	
 		await waitUntilClientIsRunning();
 		await resetServerApp();
-		const uris1 = getWorkspaceFileUris();
+
+		project.readProject(getWorkspacePath()!);
+		const uris1 = await project.getSrcFileUris();
 		const uris2 = loadDefinitionFiles?getDefinitionFileUris(context):[];
 		const uris = uris1.concat(uris2);
 		if(uris.length > 0){

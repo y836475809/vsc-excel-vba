@@ -17,3 +17,37 @@ https://qiita.com/S_SenSq/items/15066857044342d30747
 https://zenn.dev/murachi/articles/246c3d97168d728f5df8
 https://stackoverflow.com/questions/46092437/running-macro-through-powershell
 
+https://qiita.com/PrsPrsBK/items/d71b13e733f3bbacf8b5
+https://stackoverflow.com/questions/46045245/how-to-enable-go-to-symbol-with-a-custom-language-in-vscode
+
+```
+Option Explicit
+
+Dim fileListPath
+fileListPath = Wscript.Arguments.Item(0)
+
+Dim arr
+Set arr = CreateObject("System.Collections.ArrayList")
+
+Call GetFileList(fso.GetFolder(fileListPath))
+
+MsgBox arr.Count
+
+' 処理終了
+WScript.Quit
+
+Function GetFileList(Byval targetPath)
+	Dim folder, file
+	For Each folder In targetPath.SubFolders
+		GetFileList(folder)
+	Next
+	For Each file In targetPath.files
+        If InStr(file, ".bas") > 0 Then
+            arr.Add file
+        End If
+        If InStr(file, ".cls") > 0 Then
+            arr.Add file
+        End If
+	Next
+End Function
+```

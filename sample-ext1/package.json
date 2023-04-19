@@ -110,7 +110,7 @@
       ],
       "explorer/context": [
         {
-          "when": "!explorerResourceIsFolder",
+          "when": "resourceExtname == .xlsm",
           "command": "testView.myCommand",
           "group": "myGroup"
         }

@@ -18,6 +18,7 @@ import * as fs from "fs";
 import { LPSRequest } from "./lsp-request";
 
 let client: LanguageClient;
+let wsFileEventDisps: vscode.Disposable[]  = [];
 
 function getWorkspacePath(): string | undefined{
 	const wf = vscode.workspace.workspaceFolders;
@@ -58,38 +59,57 @@ function debounce(fn: any, interval: number){
     };
 };
 
-function setupWorkspaceFileEvent(context: vscode.ExtensionContext){
-	vscode.workspace.onDidCreateFiles(async (e: vscode.FileCreateEvent) => {
+function isInProjectSrc(srcDir: string, uri: vscode.Uri): boolean{
+	return path.dirname(uri.fsPath) === srcDir;
+}
+
+function setupWorkspaceFileEvent(context: vscode.ExtensionContext, srcDir: string) {
+	wsFileEventDisps.forEach(x => {
+		x.dispose();
+	});
+
+	wsFileEventDisps.push(vscode.workspace.onDidCreateFiles(async (e: vscode.FileCreateEvent) => {
 		if(!client || client.state !== State.Running){
 			return;
 		}
 		const method: Hoge.RequestMethod = "createFiles";
-		const uris = e.files.map(uri => uri.toString());
+		const uris = e.files.filter(file => isInProjectSrc(srcDir, file)).map(uri => uri.toString());
+		if(!uris.length){
+			return;
+		}
 		await client.sendRequest(method, {uris});
-	}, null, context.subscriptions);
-	vscode.workspace.onDidDeleteFiles(async (e: vscode.FileDeleteEvent) => {
+	}, null, context.subscriptions));
+
+	wsFileEventDisps.push(vscode.workspace.onDidDeleteFiles(async (e: vscode.FileDeleteEvent) => {
 		if(!client || client.state !== State.Running){
 			return;
 		}
-		const files = e.files.map(file => {
+		const files = e.files.filter(file => isInProjectSrc(srcDir, file)).map(file => {
 			return file;
 		});
+		if(!files.length){
+			return;
+		}
 		await deleteFiles(files);
-	}, null, context.subscriptions);
-	vscode.workspace.onDidRenameFiles(async (e: vscode.FileRenameEvent) => {
+	}, null, context.subscriptions));
+
+	wsFileEventDisps.push(vscode.workspace.onDidRenameFiles(async (e: vscode.FileRenameEvent) => {
 		if(!client || client.state !== State.Running){
 			return;
 		}
-		const files = e.files.map(file => {
+		const files = e.files.filter(file => isInProjectSrc(srcDir, file.newUri)).map(file => {
 			return {
 				oldUri: file.oldUri,
 				newUri: file.newUri
 			};
 		});
+		if(!files.length){
+			return;
+		}
 		await renameFiles(files);
-	}, null, context.subscriptions);
+	}, null, context.subscriptions));
 
-	vscode.workspace.onDidChangeTextDocument(
+	wsFileEventDisps.push(vscode.workspace.onDidChangeTextDocument(
 		debounce(async (e: vscode.TextDocumentChangeEvent) => {
 			if(!client || client.state !== State.Running){
 				return;
@@ -104,15 +124,13 @@ function setupWorkspaceFileEvent(context: vscode.ExtensionContext){
 			// isDirty=false, e.reason!=undefined
 			// ->undo or redoで変更をもどした場合なので更新通知必要
 
-			const wsPath = getWorkspacePath();
-			const fname = e.document.fileName;
-			if(path.dirname(fname) !== wsPath){
+			if(!isInProjectSrc(srcDir, e.document.uri)){
 				return;
 			}
 			const method: Hoge.RequestMethod = "changeText";
 			const uri = e.document.uri.toString();
 			await client.sendRequest(method, {uri});
-	}, 500), null, context.subscriptions);
+	}, 500), null, context.subscriptions));
 }
 
 async function startLanguageServer(context: vscode.ExtensionContext){
@@ -302,8 +320,6 @@ export async function activate(context: vscode.ExtensionContext) {
 		serverExeFilePath = await config.get("sample-ext1.serverExeFilePath") as string;
 	});
 
-	setupWorkspaceFileEvent(context);
-
 	context.subscriptions.push(vscode.commands.registerCommand("sample-ext1.stopLanguageServer", async () => {
 		await stopLanguageServer();
 	}));
@@ -358,7 +374,9 @@ export async function activate(context: vscode.ExtensionContext) {
 		await waitUntilClientIsRunning();
 		await resetServerApp();
 
-		project.readProject(getWorkspacePath()!);
+		await project.readProject(getWorkspacePath()!);
+		setupWorkspaceFileEvent(context, project.srcDir);
+
 		const uris1 = await project.getSrcFileUris();
 		const uris2 = loadDefinitionFiles?getDefinitionFileUris(context):[];
 		const uris = uris1.concat(uris2);

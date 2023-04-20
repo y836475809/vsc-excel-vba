@@ -5,9 +5,11 @@ import * as fs from "fs";
  
 
 export class Project {
+    srcDir: string;
     projectData: Hoge.ProjectData; 
     projectFileName: string;
     constructor(projectFileName: string){
+        this.srcDir = "";
         this.projectFileName = projectFileName;
         this.projectData = {
             targetfilename:"",
@@ -44,14 +46,14 @@ export class Project {
         const projectFp = path.join(dir,this.projectFileName);
         const json = await fs.promises.readFile(projectFp);
         this.projectData = JSON.parse(json.toString()) as Hoge.ProjectData;
+        this.srcDir = path.join(dir,this.projectData.srcdir);
     }
 
     async getSrcFileUris(): Promise<string[]> {
-        const dir = this.projectData.srcdir;
         const listFiles = (dir: string): string[] =>
         fs.readdirSync(dir, { withFileTypes: true }).flatMap(dirent =>
             dirent.isFile() ? [`${dir}/${dirent.name}`] : listFiles(`${dir}/${dirent.name}`));
-        const files = listFiles(dir);
+        const files = listFiles(this.srcDir);
         const srcFiles = files.filter(x => {
             return x.endsWith(".cls") || x.endsWith(".bas");
         });

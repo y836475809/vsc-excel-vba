@@ -403,9 +403,15 @@ export async function activate(context: vscode.ExtensionContext) {
 }
 
 // This method is called when your extension is deactivated
-export function deactivate(): Thenable<void> | undefined {
+export async function deactivate() {
 	if (!client) {
 		return undefined;
 	}
+	
+	// TODO
+	const config = vscode.workspace.getConfiguration();
+	let serverAppPort = await config.get("sample-ext1.serverPort") as number;
+	await shutdownServerApp(serverAppPort);
+
 	return client.stop();
 }

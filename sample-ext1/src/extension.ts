@@ -383,57 +383,71 @@ export async function activate(context: vscode.ExtensionContext) {
 		}
 	}));
 
-	context.subscriptions.push(vscode.commands.registerCommand("sample-ext1.start", async () => {
-		logger.info("Start");
-		try {
-			if(!project.hasProject(getWorkspacePath())){
-				const msg = `Not find ${project.projectFileName}`;
-				logger.info(msg);
-				vscode.window.showInformationMessage(msg);
-				return;
-			}
-
-			setupOutline(context);
-
-			await stopLanguageServer();
-			logger.info("stopLanguageServer");
-
-			if(autoLaunchServerApp){
-				await shutdownServerApp(serverAppPort);
-				logger.info("shutdownServerApp");
-				if(!await isReadyServerApp(serverAppPort)){
-					await launchServerApp(serverAppPort, serverExeFilePath);
-					logger.info("launchServerApp");
-				}
-			}
-
-			await startLanguageServer(context);	
-			await waitUntilClientIsRunning();
-
-			logger.info("Ready LanguageServer");
-			await resetServerApp();
-			logger.info("resetServerApp");
-
-			await project.readProject(getWorkspacePath()!);
-
-			setupWorkspaceFileEvent(context, project.srcDir);
-
-			const uris1 = await project.getSrcFileUris();
-			const uris2 = loadDefinitionFiles?getDefinitionFileUris(context):[];
-			const uris = uris1.concat(uris2);
-			if(uris.length > 0){
-				const method: Hoge.RequestMethod = "createFiles";
-				await client.sendRequest(method, {uris});
-			}
-			logger.info("Finish");
-		} catch (error) {
-			let errorMsg = "Fail start";
-			if(error instanceof Error){
-				errorMsg = `${error.message}`;
-			}
-			logger.info(`Fail start, ${errorMsg}`);
-			vscode.window.showErrorMessage(`Fail start\n${errorMsg}\nPlease restart again`, { modal: true });
+	const startServer = async (report: (msg: string)=>void) => {
+		report("Start server");
+		if(!project.hasProject(getWorkspacePath())){
+			const msg = `Not find ${project.projectFileName}`;
+			report(msg);
+			return;
 		}
+		
+		setupOutline(context);
+
+		await stopLanguageServer();
+		report("stopLanguageServer");
+
+		if(autoLaunchServerApp){
+			await shutdownServerApp(serverAppPort);
+			report("shutdownServerApp");
+			if(!await isReadyServerApp(serverAppPort)){
+				await launchServerApp(serverAppPort, serverExeFilePath);
+				report("launchServerApp");
+			}
+		}
+
+		await startLanguageServer(context);	
+		await waitUntilClientIsRunning();
+		report("Initialized LanguageServer");
+
+		await resetServerApp();
+		report("resetServerApp");
+
+		await project.readProject(getWorkspacePath()!);
+
+		setupWorkspaceFileEvent(context, project.srcDir);
+
+		const uris1 = await project.getSrcFileUris();
+		const uris2 = loadDefinitionFiles?getDefinitionFileUris(context):[];
+		const uris = uris1.concat(uris2);
+		if(uris.length > 0){
+			const method: Hoge.RequestMethod = "createFiles";
+			await client.sendRequest(method, {uris});
+			report("Send source uris to server");
+		}
+		report("Server started successfully");
+	};
+
+	context.subscriptions.push(vscode.commands.registerCommand("sample-ext1.start", async () => {
+		const options: vscode.ProgressOptions = {
+			location: vscode.ProgressLocation.Notification,
+			title: "Server status"
+		};
+		vscode.window.withProgress(options, async progress => {
+			try {	
+				await startServer((msg) => {
+					logger.info(msg);
+					progress.report({ message: msg });
+				});
+				vscode.window.showInformationMessage("Server started successfully");
+			} catch (error) {
+				let errorMsg = "Fail start";
+				if(error instanceof Error){
+					errorMsg = `${error.message}`;
+				}
+				logger.info(`Fail start, ${errorMsg}`);
+				vscode.window.showErrorMessage(`Fail start\n${errorMsg}\nPlease restart again`, { modal: true });
+			}
+		});
 	}));
 
 	context.subscriptions.push(vscode.commands.registerCommand("sample-ext1.stop", async () => {

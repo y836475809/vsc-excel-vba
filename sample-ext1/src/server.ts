@@ -29,9 +29,11 @@ import { LPSRequest } from "./lsp-request";
 import path = require('path');
 import { EphemeralKeyInfo } from 'tls';
 import { diagnosticsRequest } from './diagnostics-request';
+import { Logger } from "./logger";
 
 const connection = createConnection(ProposedFeatures.all);
 const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
+let logger: Logger;
 
 async function getSetting(){
     const settings = await connection.workspace.getConfiguration(
@@ -103,10 +105,15 @@ export class Server {
         const setting = await getSetting();
         const port = setting.serverPort as number;
         this.lpsRequest = new LPSRequest(port);
+        
+        logger = new Logger((msg: string) => {
+            connection.console.log(msg);
+        });
     }
 
     async onRequest(method: string, params: any) {
         const requestMethod = method as Hoge.RequestMethod;
+        logger.info(`onRequest: requestMethod=${requestMethod}`);
         if(requestMethod === "createFiles"){
             const uris = params.uris as string[];
             const filePaths = uris.map(uri => URI.parse(uri).fsPath);

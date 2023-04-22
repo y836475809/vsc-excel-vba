@@ -17,10 +17,13 @@ import { Project } from './project';
 import * as fs from "fs";
 import { LPSRequest } from "./lsp-request";
 import { VbaDocumentSymbolProvider } from "./vba-documentsymbolprovider";
+import { Logger } from "./logger";
 
 let client: LanguageClient;
 let wsFileEventDisps: vscode.Disposable[]  = [];
 let outlineDisp: vscode.Disposable;
+let outputChannel: vscode.OutputChannel;
+let logger: Logger;
 
 function getWorkspacePath(): string | undefined{
 	const wf = vscode.workspace.workspaceFolders;
@@ -157,7 +160,8 @@ async function startLanguageServer(context: vscode.ExtensionContext){
 		}
 	};
 	let clientOptions: LanguageClientOptions = {
-		documentSelector: [{ scheme: 'file', language: 'vb' },]
+		documentSelector: [{ scheme: 'file', language: 'vb' },],
+		outputChannel: outputChannel
 	};
 	// Create the language client and start the client.
 	client = new LanguageClient(
@@ -314,6 +318,12 @@ async function launchServerApp(port: number, serverExeFilePath: string){
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export async function activate(context: vscode.ExtensionContext) {
+	const extName = context.extension.packageJSON.name;
+	outputChannel = vscode.window.createOutputChannel(extName);
+	logger = new Logger((msg: string) => {
+		outputChannel.appendLine(msg);
+	});
+
 	const project = new Project("project.json");
 
 	const config = vscode.workspace.getConfiguration();
@@ -333,9 +343,10 @@ export async function activate(context: vscode.ExtensionContext) {
 		serverExeFilePath = await config.get("sample-ext1.serverExeFilePath") as string;
 	});
 
-	context.subscriptions.push(vscode.languages.registerDocumentSymbolProvider(
-		{ language: "vb" }, new VbaDocumentSymbolProvider()
-	));
+	vscode.window.registerTreeDataProvider("testView", new TreeDataProvider());
+	vscode.commands.registerCommand('nodeDependencies.editEntry', () => 
+		vscode.window.showInformationMessage(`Successfully called edit entry on .`));
+
 	context.subscriptions.push(vscode.commands.registerCommand("sample-ext1.stopLanguageServer", async () => {
 		await stopLanguageServer();
 	}));
@@ -373,26 +384,35 @@ export async function activate(context: vscode.ExtensionContext) {
 	}));
 
 	context.subscriptions.push(vscode.commands.registerCommand("sample-ext1.start", async () => {
+		logger.info("Start");
 		try {
 			if(!project.hasProject(getWorkspacePath())){
-				vscode.window.showInformationMessage(`Not find ${project.projectFileName}`);
+				const msg = `Not find ${project.projectFileName}`;
+				logger.info(msg);
+				vscode.window.showInformationMessage(msg);
 				return;
 			}
 
 			setupOutline(context);
 
 			await stopLanguageServer();
-			
+			logger.info("stopLanguageServer");
+
 			if(autoLaunchServerApp){
 				await shutdownServerApp(serverAppPort);
+				logger.info("shutdownServerApp");
 				if(!await isReadyServerApp(serverAppPort)){
 					await launchServerApp(serverAppPort, serverExeFilePath);
+					logger.info("launchServerApp");
 				}
 			}
 
 			await startLanguageServer(context);	
 			await waitUntilClientIsRunning();
+
+			logger.info("Ready LanguageServer");
 			await resetServerApp();
+			logger.info("resetServerApp");
 
 			await project.readProject(getWorkspacePath()!);
 
@@ -405,11 +425,13 @@ export async function activate(context: vscode.ExtensionContext) {
 				const method: Hoge.RequestMethod = "createFiles";
 				await client.sendRequest(method, {uris});
 			}
+			logger.info("Finish");
 		} catch (error) {
 			let errorMsg = "Fail start";
 			if(error instanceof Error){
 				errorMsg = `${error.message}`;
 			}
+			logger.info(`Fail start, ${errorMsg}`);
 			vscode.window.showErrorMessage(`Fail start\n${errorMsg}\nPlease restart again`, { modal: true });
 		}
 	}));

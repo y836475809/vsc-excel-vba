@@ -16,6 +16,7 @@ import { TreeDataProvider } from './treeDataProvider';
 import { Project } from './project';
 import * as fs from "fs";
 import { LPSRequest } from "./lsp-request";
+import { VbaDocumentSymbolProvider } from "./vba-documentsymbolprovider";
 
 let client: LanguageClient;
 let wsFileEventDisps: vscode.Disposable[]  = [];
@@ -320,6 +321,9 @@ export async function activate(context: vscode.ExtensionContext) {
 		serverExeFilePath = await config.get("sample-ext1.serverExeFilePath") as string;
 	});
 
+	context.subscriptions.push(vscode.languages.registerDocumentSymbolProvider(
+		{ language: "vb" }, new VbaDocumentSymbolProvider()
+	));
 	context.subscriptions.push(vscode.commands.registerCommand("sample-ext1.stopLanguageServer", async () => {
 		await stopLanguageServer();
 	}));

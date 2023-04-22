@@ -242,7 +242,8 @@ async function shutdownServerApp(port: number): Promise<void>{
 
 async function resetServerApp(){
 	if (client && client.state === State.Running) {
-		await client.sendRequest("reset");
+		const method: Hoge.RequestMethod = "reset";
+		await client.sendRequest(method);
 	}
 }
 

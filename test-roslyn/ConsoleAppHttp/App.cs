@@ -67,7 +67,7 @@ namespace ConsoleAppServer {
                 mc.ChangeDocument(e.FilePath, vbCode);
                 logger.Info("DocumentChanged");
             };
-            server.CompletionReq += async (object sender, CompletionEventArgs e) => {
+            server.CompletionReq += (object sender, CompletionEventArgs e) => {
                 e.Items = new List<CompletionItem>();
 				if (!codeAdapter.Has(e.FilePath)) {
                     logger.Info($"CompletionReq, non: {Path.GetFileName(e.FilePath)}");
@@ -81,11 +81,11 @@ namespace ConsoleAppServer {
                     logger.Info($"CompletionReq, line={line}: {Path.GetFileName(e.FilePath)}");
                     return;
                 }
-                var Items = await mc.GetCompletions(e.FilePath, vbCode, line, e.Chara);
+                var Items = mc.GetCompletions(e.FilePath, vbCode, line, e.Chara).Result;
                 e.Items = Items;
                 logger.Info("CompletionReq");
             };
-            server.DefinitionReq += async (object sender, DefinitionEventArgs e) => {
+            server.DefinitionReq += (object sender, DefinitionEventArgs e) => {
                 var list = new List<DefinitionItem>();
                 if (!codeAdapter.Has(e.FilePath)) {
                     e.Items = list;
@@ -101,7 +101,7 @@ namespace ConsoleAppServer {
                     logger.Info($"DefinitionReq, line={line}: {Path.GetFileName(e.FilePath)}");
                     return;
                 }
-                var Items = await mc.GetDefinitions(e.FilePath, vbCode, line, e.Chara);
+                var Items = mc.GetDefinitions(e.FilePath, vbCode, line, e.Chara).Result;
                 Location adjustLocation(Location location, int lineOffset, int chaOffset) {
                     location.Line += lineOffset;
                     location.Positon += chaOffset;
@@ -133,7 +133,7 @@ namespace ConsoleAppServer {
                 e.Items = list;
                 logger.Info("DefinitionReq");
             };
-            server.HoverReq += async (object sender, CompletionEventArgs e) => {
+            server.HoverReq += (object sender, CompletionEventArgs e) => {
                 var list = new List<CompletionItem>();
                 if (!codeAdapter.Has(e.FilePath)) {
                     e.Items = list;
@@ -149,24 +149,24 @@ namespace ConsoleAppServer {
                     logger.Info($"HoverReq, non: {Path.GetFileName(e.FilePath)}");
                     return;
                 }
-                var Items = await mc.GetDefinitions(e.FilePath, vbCode, line, e.Chara);
+                var Items = mc.GetDefinitions(e.FilePath, vbCode, line, e.Chara).Result;
                 foreach (var item in Items) {
                     var sp = item.Start.Positon;
                     var ep = item.End.Positon;
-                    var hoverItem = await mc.GetHover(item.FilePath, e.Text, (int)((sp + ep) / 2));
+                    var hoverItem = mc.GetHover(item.FilePath, e.Text, (int)((sp + ep) / 2)).Result;
                     list.Add(hoverItem);
                 }
                 e.Items = list;
                 logger.Info("HoverReq");
             };
-            server.DiagnosticReq += async (object sender, DiagnosticEventArgs e) => {
+            server.DiagnosticReq += (object sender, DiagnosticEventArgs e) => {
                 if (!codeAdapter.Has(e.FilePath)) {
                     logger.Info($"DiagnosticReq, non: {Path.GetFileName(e.FilePath)}");
                     return;
                 }
                 var vbCodeInfo = codeAdapter.GetVbCodeInfo(e.FilePath);
                 var lineOffset = vbCodeInfo.LineOffset;
-                var items = await mc.GetDiagnostics(e.FilePath);
+                var items = mc.GetDiagnostics(e.FilePath).Result;
                 foreach (var item in items) {
                     item.StartLine += lineOffset;
                     item.EndLine += lineOffset;

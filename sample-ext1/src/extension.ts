@@ -137,6 +137,18 @@ function setupWorkspaceFileEvent(context: vscode.ExtensionContext, srcDir: strin
 			const uri = e.document.uri.toString();
 			await client.sendRequest(method, {uri});
 	}, 500), null, context.subscriptions));
+
+	wsFileEventDisps.push(vscode.window.onDidChangeActiveTextEditor(
+		debounce(async (e: vscode.TextEditor) => {
+			if(!client || client.state !== State.Running){
+				return;
+			}
+			const fname = e.document.fileName;
+			if(fname.endsWith(".bas") || fname.endsWith(".cls")){
+				const method: Hoge.RequestMethod = "diagnostics";
+				await client.sendRequest(method, {uri:e.document.uri.toString()});
+			}
+	}, 1000), null, context.subscriptions));
 }
 
 function setupOutline(context: vscode.ExtensionContext) {
@@ -430,6 +442,16 @@ export async function activate(context: vscode.ExtensionContext) {
 			await client.sendRequest(method, {uris});
 			report("Send source uris to server");
 		}
+
+		const activeUri = vscode.window.activeTextEditor?.document.uri;
+		if(activeUri){
+			if(activeUri.fsPath.endsWith(".bas") || activeUri.fsPath.endsWith(".cls")){
+				const method: Hoge.RequestMethod = "diagnostics";
+				await client.sendRequest(method, {uri:activeUri.toString()});
+				report("Diagnose active document");
+			}
+		}
+
 		report("Server started successfully");
 	};
 

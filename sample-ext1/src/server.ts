@@ -183,6 +183,19 @@ export class Server {
             const items = await diagnosticsRequest(doc, fsPath, this.lpsRequest);
             connection.sendDiagnostics({uri: doc.uri, diagnostics: items});
         }
+        if(requestMethod === "diagnostics"){
+            const uri = params.uri as string;
+            if(!uri){
+                return;
+            }
+            const doc = documents.get(uri);
+            if(!doc){
+                return;
+            }
+            const fsPath = URI.parse(uri).fsPath;
+            const items = await diagnosticsRequest(doc, fsPath, this.lpsRequest);
+            connection.sendDiagnostics({uri: doc.uri, diagnostics: items});
+        }
         if(requestMethod === "reset"){
             const data = {
                 id: "Reset",

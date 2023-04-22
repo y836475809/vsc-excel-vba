@@ -23,6 +23,8 @@ namespace ConsoleAppServer
         private HttpListener listener;
         private JsonSerializerOptions jsonOptions;
 
+        private const int ResponseOK = 200;
+
         public Server() {
             jsonOptions = Helper.getJsonOptions();
         }
@@ -56,111 +58,83 @@ namespace ConsoleAppServer
 
                 // レスポンス取得
                 var response = context.Response;
-                switch (cmd?.id)
-                {
-                    case "IsReady":
-                        Response(response, 202);
-                        break;
-                    case "AddDocuments":
-                        var args_add = new DocumentAddedEventArgs(cmd.filepaths);
-                        DocumentAdded?.Invoke(this, args_add);
-                        Response(response, 202);
-                        break;
-                    case "DeleteDocuments":
-                        var args_del = new DocumentDeletedEventArgs(cmd.filepaths);
-                        DocumentDeleted?.Invoke(this, args_del);
-                        Response(response, 202);
-                        break;
-                    case "RenameDocument":
-                        var args_rename = new DocumentRenamedEventArgs(cmd.filepaths[0], cmd.filepaths[1]);
-                        DocumentRenamed?.Invoke(this, args_rename);
-                        Response(response, 202);
-                        break;
-                    case "ChangeDocument":
-                        DocumentChanged?.Invoke(this, new DocumentChangedEventArgs(cmd.filepaths[0], cmd.text));
-                        Response(response, 202);
-                        break;
-                    case "Completion":
-                        var args = new CompletionEventArgs(cmd.filepaths[0], cmd.text, cmd.line, cmd.chara);
-                        CompletionReq?.Invoke(this, args);
-                        Response(response, args.Items);
-                        break;
-                    case "Definition":
-                        var args_def = new DefinitionEventArgs(cmd.filepaths[0], cmd.text, cmd.line, cmd.chara);
-                        DefinitionReq?.Invoke(this, args_def);
-                        Response(response, args_def.Items);
-                        break;
-                    case "Hover":
-                        var args_hover = new CompletionEventArgs(cmd.filepaths[0], cmd.text, cmd.line, cmd.chara);
-                        HoverReq?.Invoke(this, args_hover);
-                        Response(response, args_hover.Items);
-                        break;
-                    case "Diagnostic":
-                        var args_diagnostic = new DiagnosticEventArgs(cmd.filepaths[0]);
-                        DiagnosticReq?.Invoke(this, args_diagnostic);
-                        Response(response, args_diagnostic.Items);
-                        break;
-                    //case "Exit":
-                    case "Shutdown":
-                        if (!ignoreShutdown) {
-                            run = false;
-                        }
-                        break;
-                    case "Reset":
-                        ResetReq?.Invoke(this, new EventArgs());
-                        Response(response, 202);
-                        break;
-                    case "IgnoreShutdown":
-                        ignoreShutdown = true;
-                        Response(response, 202);
-                        break;
-                    case "Debug:GetDocuments":
-                        var args_debug = new DebugEventArgs();
-                        string debugInfo = string.Empty;
-                        DebugGetDocumentsEvent?.Invoke(this, args_debug);
-                        Response(response, args_debug.Text);
-                        break;
-                }
+				try {
+                    switch (cmd?.id) {
+                        case "IsReady":
+                            Response(response, ResponseOK);
+                            break;
+                        case "AddDocuments":
+                            var args_add = new DocumentAddedEventArgs(cmd.filepaths);
+                            DocumentAdded?.Invoke(this, args_add);
+                            Response(response, ResponseOK);
+                            break;
+                        case "DeleteDocuments":
+                            var args_del = new DocumentDeletedEventArgs(cmd.filepaths);
+                            DocumentDeleted?.Invoke(this, args_del);
+                            Response(response, ResponseOK);
+                            break;
+                        case "RenameDocument":
+                            var args_rename = new DocumentRenamedEventArgs(cmd.filepaths[0], cmd.filepaths[1]);
+                            DocumentRenamed?.Invoke(this, args_rename);
+                            Response(response, ResponseOK);
+                            break;
+                        case "ChangeDocument":
+                            DocumentChanged?.Invoke(this, new DocumentChangedEventArgs(cmd.filepaths[0], cmd.text));
+                            Response(response, ResponseOK);
+                            break;
+                        case "Completion":
+                            var args = new CompletionEventArgs(cmd.filepaths[0], cmd.text, cmd.line, cmd.chara);
+                            CompletionReq?.Invoke(this, args);
+                            Response(response, args.Items);
+                            break;
+                        case "Definition":
+                            var args_def = new DefinitionEventArgs(cmd.filepaths[0], cmd.text, cmd.line, cmd.chara);
+                            DefinitionReq?.Invoke(this, args_def);
+                            Response(response, args_def.Items);
+                            break;
+                        case "Hover":
+                            var args_hover = new CompletionEventArgs(cmd.filepaths[0], cmd.text, cmd.line, cmd.chara);
+                            HoverReq?.Invoke(this, args_hover);
+                            Response(response, args_hover.Items);
+                            break;
+                        case "Diagnostic":
+                            var args_diagnostic = new DiagnosticEventArgs(cmd.filepaths[0]);
+                            DiagnosticReq?.Invoke(this, args_diagnostic);
+                            Response(response, args_diagnostic.Items);
+                            break;
+                        //case "Exit":
+                        case "Shutdown":
+                            if (!ignoreShutdown) {
+                                run = false;
+                            }
+                            break;
+                        case "Reset":
+                            ResetReq?.Invoke(this, new EventArgs());
+                            Response(response, ResponseOK);
+                            break;
+                        case "IgnoreShutdown":
+                            ignoreShutdown = true;
+                            Response(response, ResponseOK);
+                            break;
+                        case "Debug:GetDocuments":
+                            var args_debug = new DebugEventArgs();
+                            string debugInfo = string.Empty;
+                            DebugGetDocumentsEvent?.Invoke(this, args_debug);
+                            Response(response, args_debug.Text);
+                            break;
+                    }
+                } catch (Exception e) {
+                    response.StatusDescription = e.Message;
+                    Response(response, 500); ;
+				}
                 if (run) {
                     response.Close();
                 }
-
-
-                //// HTMLを表示する
-                //if (request != null)
-                //{
-                //    var res_com = new ResponseCompletion();
-                //    res_com.items = new List<string>() { "aaa", "bbb" };
-                //    var text = Encoding.UTF8.GetBytes(JsonSerializer.Serialize<ResponseCompletion>(res_com));
-                //    response.ContentType = "application/json";
-                //    response.ContentLength64 = text.Length;
-                //    response.OutputStream.Write(text, 0, text.Length);
-                //}
-                //else
-                //{
-                //    response.StatusCode = 404;
-                //}
-                //response.Close();
             }
-
         }
 
         private void Response(HttpListenerResponse response, int StatusCode) {
             response.StatusCode = StatusCode;
-            //response.Close();
-        }
-        //private void Response(HttpListenerResponse response, AddDocumentItem Item) {
-        //    var text = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(Item));
-        //    response.ContentType = "application/json";
-        //    response.ContentLength64 = text.Length;
-        //    response.OutputStream.Write(text, 0, text.Length);
-        //}
-
-        private void Response(HttpListenerResponse response, string text) {
-            var data = Encoding.UTF8.GetBytes(text);
-            response.ContentType = "application/json";
-            response.ContentLength64 = data.Length;
-            response.OutputStream.Write(data, 0, data.Length);
         }
 
         private void Response<T>(HttpListenerResponse response, T CompletionItems) {
@@ -169,28 +143,7 @@ namespace ConsoleAppServer
             response.ContentType = "application/json";
             response.ContentLength64 = text.Length;
             response.OutputStream.Write(text, 0, text.Length);
-            //response.Close();
-        }
-
-        private void Response(HttpListenerResponse response, List<CompletionItem> CompletionItems)
-        {
-            var text = Encoding.UTF8.GetBytes(
-                JsonSerializer.Serialize<List<CompletionItem>>(CompletionItems, jsonOptions));
-            response.ContentType = "application/json";
-            response.ContentLength64 = text.Length;
-            response.OutputStream.Write(text, 0, text.Length);
-            //response.Close();
-        }
-
-        private void Response(HttpListenerResponse response, List<DefinitionItem> Items) {
-            //res_def.Start = Start;
-            //res_def.End = End;
-            var text = Encoding.UTF8.GetBytes(
-                JsonSerializer.Serialize<List<DefinitionItem>>(Items, jsonOptions));
-            response.ContentType = "application/json";
-            response.ContentLength64 = text.Length;
-            response.OutputStream.Write(text, 0, text.Length);
-            //response.Close();
+            response.StatusCode = ResponseOK;
         }
     }
 }

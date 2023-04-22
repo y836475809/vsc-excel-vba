@@ -373,35 +373,44 @@ export async function activate(context: vscode.ExtensionContext) {
 	}));
 
 	context.subscriptions.push(vscode.commands.registerCommand("sample-ext1.start", async () => {
-		if(!project.hasProject(getWorkspacePath())){
-			vscode.window.showInformationMessage(`Not find ${project.projectFileName}`);
-			return;
-		}
-
-		setupOutline(context);
-
-		await stopLanguageServer();
-		
-		if(autoLaunchServerApp){
-			await shutdownServerApp(serverAppPort);
-			if(!await isReadyServerApp(serverAppPort)){
-				await launchServerApp(serverAppPort, serverExeFilePath);
+		try {
+			if(!project.hasProject(getWorkspacePath())){
+				vscode.window.showInformationMessage(`Not find ${project.projectFileName}`);
+				return;
 			}
-		}
 
-		await startLanguageServer(context);	
-		await waitUntilClientIsRunning();
-		await resetServerApp();
+			setupOutline(context);
 
-		await project.readProject(getWorkspacePath()!);
-		setupWorkspaceFileEvent(context, project.srcDir);
+			await stopLanguageServer();
+			
+			if(autoLaunchServerApp){
+				await shutdownServerApp(serverAppPort);
+				if(!await isReadyServerApp(serverAppPort)){
+					await launchServerApp(serverAppPort, serverExeFilePath);
+				}
+			}
 
-		const uris1 = await project.getSrcFileUris();
-		const uris2 = loadDefinitionFiles?getDefinitionFileUris(context):[];
-		const uris = uris1.concat(uris2);
-		if(uris.length > 0){
-			const method: Hoge.RequestMethod = "createFiles";
-			await client.sendRequest(method, {uris});
+			await startLanguageServer(context);	
+			await waitUntilClientIsRunning();
+			await resetServerApp();
+
+			await project.readProject(getWorkspacePath()!);
+
+			setupWorkspaceFileEvent(context, project.srcDir);
+
+			const uris1 = await project.getSrcFileUris();
+			const uris2 = loadDefinitionFiles?getDefinitionFileUris(context):[];
+			const uris = uris1.concat(uris2);
+			if(uris.length > 0){
+				const method: Hoge.RequestMethod = "createFiles";
+				await client.sendRequest(method, {uris});
+			}
+		} catch (error) {
+			let errorMsg = "Fail start";
+			if(error instanceof Error){
+				errorMsg = `${error.message}`;
+			}
+			vscode.window.showErrorMessage(`Fail start\n${errorMsg}\nPlease restart again`, { modal: true });
 		}
 	}));
 

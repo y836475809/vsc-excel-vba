@@ -32,6 +32,10 @@ export class LPSRequest {
                     data += chunk;
                 });
                 res.on('end', () => {
+                    if(res.statusCode !== 200){
+                        reject(new Error(`statusCode=${res.statusCode}, ${res.statusMessage}`));
+                        return;
+                    }
                     if(data.length === 0){
                         resolve({});
                     }else{

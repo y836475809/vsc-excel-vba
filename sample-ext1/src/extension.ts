@@ -315,9 +315,15 @@ async function launchServerApp(port: number, serverExeFilePath: string){
 	await waitUntilServerApp(port, "ready");
 }
 
+function setServerStartEnable(enable: boolean){
+	vscode.commands.executeCommand("setContext", "sample-ext1.start.enable", enable);
+}
+
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export async function activate(context: vscode.ExtensionContext) {
+	setServerStartEnable(true);
+
 	const extName = context.extension.packageJSON.name;
 	outputChannel = vscode.window.createOutputChannel(extName);
 	logger = new Logger((msg: string) => {
@@ -433,6 +439,7 @@ export async function activate(context: vscode.ExtensionContext) {
 			title: "Server status"
 		};
 		vscode.window.withProgress(options, async progress => {
+			setServerStartEnable(false);
 			try {	
 				await startServer((msg) => {
 					logger.info(msg);
@@ -447,6 +454,7 @@ export async function activate(context: vscode.ExtensionContext) {
 				logger.info(`Fail start, ${errorMsg}`);
 				vscode.window.showErrorMessage(`Fail start\n${errorMsg}\nPlease restart again`, { modal: true });
 			}
+			setServerStartEnable(true);
 		});
 	}));
 

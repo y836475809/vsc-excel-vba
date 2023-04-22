@@ -59,7 +59,8 @@
       {
         "command": "sample-ext1.start",
         "title": "sample-ext1 start",
-        "icon": "$(run)"
+        "icon": "$(run)",
+        "enablement": "sample-ext1.start.enable"
       },
       {
         "command": "sample-ext1.stop",

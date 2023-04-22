@@ -20,6 +20,7 @@ import { VbaDocumentSymbolProvider } from "./vba-documentsymbolprovider";
 
 let client: LanguageClient;
 let wsFileEventDisps: vscode.Disposable[]  = [];
+let outlineDisp: vscode.Disposable;
 
 function getWorkspacePath(): string | undefined{
 	const wf = vscode.workspace.workspaceFolders;
@@ -132,6 +133,15 @@ function setupWorkspaceFileEvent(context: vscode.ExtensionContext, srcDir: strin
 			const uri = e.document.uri.toString();
 			await client.sendRequest(method, {uri});
 	}, 500), null, context.subscriptions));
+}
+
+function setupOutline(context: vscode.ExtensionContext) {
+	if(outlineDisp){
+		outlineDisp.dispose();
+	}
+	outlineDisp = vscode.languages.registerDocumentSymbolProvider(
+		{ language: "vb" }, new VbaDocumentSymbolProvider());
+	context.subscriptions.push(outlineDisp);
 }
 
 async function startLanguageServer(context: vscode.ExtensionContext){
@@ -365,6 +375,9 @@ export async function activate(context: vscode.ExtensionContext) {
 			vscode.window.showInformationMessage(`Not find ${project.projectFileName}`);
 			return;
 		}
+
+		setupOutline(context);
+
 		await stopLanguageServer();
 		
 		if(autoLaunchServerApp){
@@ -391,6 +404,9 @@ export async function activate(context: vscode.ExtensionContext) {
 	}));
 
 	context.subscriptions.push(vscode.commands.registerCommand("sample-ext1.stop", async () => {
+		if(outlineDisp){
+			outlineDisp.dispose();
+		}
 		await stopLanguageServer();
 		await shutdownServerApp(serverAppPort);
 	}));

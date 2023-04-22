@@ -69,6 +69,7 @@ function setupWorkspaceFileEvent(context: vscode.ExtensionContext, srcDir: strin
 	wsFileEventDisps.forEach(x => {
 		x.dispose();
 	});
+	wsFileEventDisps = [];
 
 	wsFileEventDisps.push(vscode.workspace.onDidCreateFiles(async (e: vscode.FileCreateEvent) => {
 		if(!client || client.state !== State.Running){
@@ -404,6 +405,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	}));
 
 	context.subscriptions.push(vscode.commands.registerCommand("sample-ext1.stop", async () => {
+		wsFileEventDisps.forEach(x => x.dispose());
 		if(outlineDisp){
 			outlineDisp.dispose();
 		}

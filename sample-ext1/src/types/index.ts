@@ -32,6 +32,12 @@ namespace Hoge {
         endchara: number;
     };
 
+    export type ReferencesItem = {
+        filepath: string;
+        start: Location;
+        end: Location;
+    };
+
     type CommandId = 
         "AddDocuments" 
         | "DeleteDocuments" 
@@ -45,6 +51,7 @@ namespace Hoge {
         | "Reset"
         | "IsReady"
         | "IgnoreShutdown"
+        | "References"
         | "Debug:GetDocuments";
     export type Command = {
         id: CommandId;

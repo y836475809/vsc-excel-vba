@@ -15,6 +15,7 @@ import {
     Location,
     HoverParams,
     Hover,
+    ReferenceParams,
     MarkupContent,
     ExecuteCommandParams,
     TextDocumentChangeEvent,
@@ -70,6 +71,7 @@ export class Server {
                 },
                 definitionProvider: true,
                 hoverProvider: true,
+                referencesProvider: true,
             },
         };
         if (this.hasWorkspaceFolderCapability) {
@@ -306,6 +308,30 @@ export class Server {
         } as Hoge.Command;
         await this.lpsRequest.send(data);
     }
+
+    async onReferences(params: ReferenceParams): Promise<Location[]> {
+        const uri = params.textDocument.uri;
+        const fp = URI.parse(uri).fsPath;
+        const position = params.position;
+        const data = {
+            id: "References",
+            filepaths: [fp],
+            line: position.line,
+            chara: position.character,
+            text: ""
+        } as Hoge.Command;
+        const items = await this.lpsRequest.send(data) as Hoge.ReferencesItem[];
+        const locs = items.map(x => {
+            return {
+                uri: URI.file(x.filepath).toString(),
+                range: {
+                    start:{ line: x.start.line, character: x.start.character },
+                    end: { line: x.end.line, character: x.end.character }
+                }    
+            };
+        });
+        return locs;
+    }
 }
 
 export function startLspServer() {
@@ -316,6 +342,7 @@ export function startLspServer() {
     connection.onCompletion(server.onCompletion.bind(server));
     connection.onDefinition(server.onDefinition.bind(server));
     connection.onHover(server.onHover.bind(server));
+    connection.onReferences(server.onReferences.bind(server));
     // connection.onShutdown(server.onShutdown.bind(server));
     // Make the text document manager listen on the connection
     // for open, change and close text document events

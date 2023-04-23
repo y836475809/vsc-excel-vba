@@ -177,6 +177,24 @@ namespace ConsoleAppServer {
             server.DebugGetDocumentsEvent += (object sender, DebugEventArgs e) => {
                 e.Text = JsonSerializer.Serialize(codeAdapter.getVbCodeDict());
             };
+			server.ReferencesReq += (object sender, ReferencesEventArgs e) => {
+                if (!codeAdapter.Has(e.FilePath)) {
+                    logger.Info($"ReferencesReq, non: {Path.GetFileName(e.FilePath)}");
+                    return;
+                }
+                var vbCodeInfo = codeAdapter.GetVbCodeInfo(e.FilePath);
+                var line = e.Line - vbCodeInfo.LineOffset;
+                var items = mc.GetReferences(e.FilePath, line, e.Chara).Result;
+                foreach (var item in items) {
+					if (codeAdapter.Has(item.FilePath)) {
+                        var lineOffset = codeAdapter.GetVbCodeInfo(item.FilePath).LineOffset; 
+                        item.Start.Line += lineOffset;
+                        item.End.Line += lineOffset;
+                    }
+                }
+                e.Items = items;
+                logger.Info("ReferencesReq");
+            };
             logger.Info("Initialized");
         }
         private Settings LoadConfig() {

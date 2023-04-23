@@ -136,4 +136,17 @@ namespace ConsoleAppServer {
         public DebugEventArgs() {
         }
     }
+
+    public class ReferencesEventArgs : EventArgs {
+        public string FilePath { get; set; }
+        public int Line { get; set; }
+        public int Chara { get; set; }
+        public List<ReferenceItem> Items { get; set; }
+
+        public ReferencesEventArgs(string FilePath, int Line, int Chara) {
+            this.FilePath = FilePath;
+            this.Line = Line;
+            this.Chara = Chara;
+        }
+    }
 }

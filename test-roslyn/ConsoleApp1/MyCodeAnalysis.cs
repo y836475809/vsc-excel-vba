@@ -1,4 +1,4 @@
-using Microsoft.CodeAnalysis;
+﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.FindSymbols;
 using Microsoft.CodeAnalysis.Host.Mef;
 using Microsoft.CodeAnalysis.Recommendations;
@@ -244,6 +244,48 @@ namespace ConsoleApp1 {
 			var doc = workspace.CurrentSolution.GetDocument(docId);
 			return await myDiagnostic.GetDiagnostics(doc);
          }
+
+        public async Task<List<ReferenceItem>> GetReferences(string name, int line, int chara) {
+            var items = new List<ReferenceItem>();
+            if (!doc_id_dict.ContainsKey(name)) {
+                return items;
+            }
+            var docId = doc_id_dict[name];
+            if (!workspace.CurrentSolution.ContainsDocument(docId)) {
+                return items;
+            }
+
+            var doc = workspace.CurrentSolution.GetDocument(docId);
+            var model = await doc.GetSemanticModelAsync();
+            var position = doc.GetTextAsync().Result.Lines.GetPosition(new LinePosition(line, chara));
+            var symbol = await SymbolFinder.FindSymbolAtPositionAsync(model, position, workspace);
+            if (symbol == null) {
+                return items;
+            }
+			if (symbol.IsDefinition) {
+                foreach (var loc in symbol.Locations) {
+                    var filePath = loc.SourceTree.FilePath;
+                    var start = loc.GetLineSpan().StartLinePosition;
+                    var end = loc.GetLineSpan().EndLinePosition;
+                    var startLoc = new Location(0, start.Line, start.Character);
+                    var endLoc = new Location(0, end.Line, end.Character);
+                    items.Add(new ReferenceItem(filePath, startLoc, endLoc));
+                }
+            }
+
+            var refItems = SymbolFinder.FindReferencesAsync(symbol, workspace.CurrentSolution).Result;
+            foreach (var refItem in refItems) {
+                foreach (var loc in refItem.Locations) {
+                    var filePath = loc.Document.FilePath;
+                    var start = loc.Location.GetLineSpan().StartLinePosition;
+                    var end = loc.Location.GetLineSpan().EndLinePosition;
+                    var startLoc = new Location(0, start.Line, start.Character);
+                    var endLoc = new Location(0, end.Line, end.Character);
+                    items.Add(new ReferenceItem(filePath, startLoc, endLoc));
+                }
+            }
+            return items;
+        }
 
         public DescriptionItem ParseDescriptionXML(string xml) {
             var doc = XElement.Parse(xml);

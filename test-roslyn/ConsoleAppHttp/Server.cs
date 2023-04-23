@@ -20,6 +20,7 @@ namespace ConsoleAppServer
         public event EventHandler<DiagnosticEventArgs> DiagnosticReq;
         public event EventHandler<EventArgs> ResetReq;
         public event EventHandler<DebugEventArgs> DebugGetDocumentsEvent;
+        public event EventHandler<ReferencesEventArgs> ReferencesReq;
         private HttpListener listener;
         private JsonSerializerOptions jsonOptions;
 
@@ -121,6 +122,11 @@ namespace ConsoleAppServer
                             string debugInfo = string.Empty;
                             DebugGetDocumentsEvent?.Invoke(this, args_debug);
                             Response(response, args_debug.Text);
+                            break;
+                        case "References":
+                            var args_refs = new ReferencesEventArgs(cmd.filepaths[0], cmd.line, cmd.chara);
+                            ReferencesReq?.Invoke(this, args_refs);
+                            Response(response, args_refs.Items);
                             break;
                     }
                 } catch (Exception e) {

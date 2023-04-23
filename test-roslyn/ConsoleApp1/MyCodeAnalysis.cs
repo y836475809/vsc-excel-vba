@@ -1,4 +1,4 @@
-﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.FindSymbols;
 using Microsoft.CodeAnalysis.Host.Mef;
 using Microsoft.CodeAnalysis.Recommendations;
@@ -47,6 +47,8 @@ namespace ConsoleApp1 {
                         docId, SourceText.From(text)));
             } else {
                 var doc = workspace.AddDocument(project.Id, name, SourceText.From(text));
+                workspace.TryApplyChanges(
+                    workspace.CurrentSolution.WithDocumentFilePath(doc.Id, name));
                 doc_id_dict.Add(name, doc.Id);
             }
             ChangeDocument(name, text);

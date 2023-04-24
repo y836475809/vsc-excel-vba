@@ -115,7 +115,7 @@ export class Server {
 
     async onRequest(method: string, params: any) {
         const requestMethod = method as Hoge.RequestMethod;
-        logger.info(`onRequest: requestMethod=${requestMethod}`);
+        logger.info(`onRequest: ${requestMethod}`);
         if(requestMethod === "createFiles"){
             const uris = params.uris as string[];
             const filePaths = uris.map(uri => URI.parse(uri).fsPath);

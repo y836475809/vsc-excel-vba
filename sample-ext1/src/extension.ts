@@ -411,24 +411,25 @@ export async function activate(context: vscode.ExtensionContext) {
 		
 		setupOutline(context);
 
-		await stopLanguageServer();
-		report("stopLanguageServer");
+		report("stop ServerAppr");
+		await stopLanguageServer();	
 
 		if(autoLaunchServerApp){
-			await shutdownServerApp(serverAppPort);
 			report("shutdownServerApp");
+			await shutdownServerApp(serverAppPort);
 			if(!await isReadyServerApp(serverAppPort)){
-				await launchServerApp(serverAppPort, serverExeFilePath);
 				report("launchServerApp");
+				await launchServerApp(serverAppPort, serverExeFilePath);
 			}
 		}
 
+		report("Initialize ServerAppr");
 		await startLanguageServer(context);	
 		await waitUntilClientIsRunning();
-		report("Initialized LanguageServer");
-
-		await resetServerApp();
+		
 		report("resetServerApp");
+		await resetServerApp();
+		
 
 		await project.readProject(getWorkspacePath()!);
 
@@ -438,21 +439,21 @@ export async function activate(context: vscode.ExtensionContext) {
 		const uris2 = loadDefinitionFiles?getDefinitionFileUris(context):[];
 		const uris = uris1.concat(uris2);
 		if(uris.length > 0){
+			report("Send source uris to ServerAppr");
 			const method: Hoge.RequestMethod = "createFiles";
 			await client.sendRequest(method, {uris});
-			report("Send source uris to server");
 		}
 
 		const activeUri = vscode.window.activeTextEditor?.document.uri;
 		if(activeUri){
 			if(activeUri.fsPath.endsWith(".bas") || activeUri.fsPath.endsWith(".cls")){
+				report("Diagnose active document");
 				const method: Hoge.RequestMethod = "diagnostics";
 				await client.sendRequest(method, {uri:activeUri.toString()});
-				report("Diagnose active document");
 			}
 		}
 
-		report("Server started successfully");
+		report("ServerAppr started successfully");
 	};
 
 	context.subscriptions.push(vscode.commands.registerCommand("sample-ext1.start", async () => {

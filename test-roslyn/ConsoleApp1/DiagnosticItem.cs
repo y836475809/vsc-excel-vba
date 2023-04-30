@@ -21,5 +21,14 @@ namespace ConsoleApp1 {
             this.EndLine = EndLine;
             this.EndChara = EndChara;
         }
+
+        public bool Eq(
+            int StartLine, int StartChara,
+            int EndLine, int EndChara) {
+            return this.StartLine == StartLine
+                && this.StartChara == StartChara
+                && this.EndLine == EndLine
+                && this.EndChara == EndChara;
+        }
     }
 }

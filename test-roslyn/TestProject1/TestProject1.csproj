@@ -22,6 +22,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ConsoleApp1\ConsoleApp1.csproj" />
+    <ProjectReference Include="..\ConsoleAppHttp\ConsoleAppServer.csproj" />
   </ItemGroup>
 
 </Project>

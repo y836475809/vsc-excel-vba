@@ -61,6 +61,16 @@ Sub Sample4()
     numVa2 = "Variant"
 End Sub
 
+Function callFunc() As Long
+    Dim p2 As New Person
+    p2.SayHello(1,1)
+
+    Dim datFile As String
+    Dim Output As String
+    Open datFile For Output As #1
+
+End Function
+
 Sub call1()
     Dim p2 As New Person
     Set p2 = New Person
@@ -71,6 +81,7 @@ Sub call1()
     'thisModule.Range("").
     'Range("A3:E5").
     Call Sample2()
+    p2.SayHello(1,1)
     p2.QSayHell
     ' completion position
 

@@ -86,6 +86,27 @@
       {
         "command": "testView.myCommand",
         "title": "testView reg"
+      },
+      {
+        "command": "sample-ext1.import",
+        "title": "import"
+      },
+      {
+        "command": "sample-ext1.compile",
+        "title": "compile"
+      },
+      {
+        "command": "sample-ext1.gotoVBA",
+        "title": "gotoVBA"
+      },
+      {
+        "command": "sample-ext1.gotoVSCode",
+        "title": "gotoVSCode"
+      },
+      {
+        "command": "sample-ext1.runViewItem",
+        "title": "Run",
+        "icon": "$(run)"
       }
     ],
     "views": {
@@ -109,10 +130,23 @@
           "group": "navigation"
         }
       ],
+      "view/item/context": [
+        {
+          "command": "sample-ext1.runViewItem",
+          "when": "view == testView",
+          "group": "inline"
+        }
+      ],
       "explorer/context": [
         {
           "when": "resourceExtname == .xlsm",
           "command": "testView.myCommand",
+          "group": "myGroup"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "sample-ext1.gotoVBA",
           "group": "myGroup"
         }
       ]

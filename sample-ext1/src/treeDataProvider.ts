@@ -1,5 +1,13 @@
 import * as vscode from 'vscode';
 
+export class MyTreeItem extends vscode.TreeItem {
+    vbaCommand: string;
+    constructor(label: string, vbaCommand: string) {
+        super(label);
+        this.vbaCommand = vbaCommand;
+    }
+}
+
 export class TreeDataProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
     getTreeItem(element: vscode.TreeItem): vscode.TreeItem {
         return element;
@@ -7,9 +15,10 @@ export class TreeDataProvider implements vscode.TreeDataProvider<vscode.TreeItem
 
     getChildren(element?: vscode.TreeItem): vscode.TreeItem[] {
         return [
-            new vscode.TreeItem('test1'), 
-            new vscode.TreeItem('test2'), 
-            new vscode.TreeItem('test3')
+            new MyTreeItem("GotoVSCode", "gotoVSCode"),
+            new MyTreeItem("GotoVBA", "gotoVBA"),
+            new MyTreeItem("Import", "import"),
+            new MyTreeItem("Compile", "compile"),  
         ];
     }
 }

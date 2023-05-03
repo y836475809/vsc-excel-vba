@@ -12,7 +12,8 @@ import {
 	State,
 	TransportKind
 } from 'vscode-languageclient/node';
-import { TreeDataProvider } from './treeDataProvider';
+import { MyTreeItem, TreeDataProvider } from './treeDataProvider';
+import { VBACommands } from './vba-commands';
 import { Project } from './project';
 import * as fs from "fs";
 import { LPSRequest } from "./lsp-request";
@@ -343,6 +344,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	});
 
 	const project = new Project("project.json");
+	const vbaCommand = new VBACommands(context.asAbsolutePath("scripts"));
 
 	const config = vscode.workspace.getConfiguration();
 	let serverAppPort = await config.get("sample-ext1.serverPort") as number;
@@ -362,8 +364,21 @@ export async function activate(context: vscode.ExtensionContext) {
 	});
 
 	vscode.window.registerTreeDataProvider("testView", new TreeDataProvider());
-	vscode.commands.registerCommand('nodeDependencies.editEntry', () => 
-		vscode.window.showInformationMessage(`Successfully called edit entry on .`));
+	context.subscriptions.push(vscode.commands.registerCommand("sample-ext1.runViewItem", async (args: MyTreeItem) => {
+		await vbaCommand.exceue(project, args.vbaCommand);
+	}));
+	context.subscriptions.push(vscode.commands.registerCommand("sample-ext1.gotoVBA", async () => {
+		await vbaCommand.exceue(project, "gotoVBA");
+	}));
+	context.subscriptions.push(vscode.commands.registerCommand("sample-ext1.gotoVSCode", async () => {
+		await vbaCommand.exceue(project, "gotoVSCode");
+	}));
+	context.subscriptions.push(vscode.commands.registerCommand("sample-ext1.import", async () => {
+		await vbaCommand.exceue(project, "import");
+	}));
+	context.subscriptions.push(vscode.commands.registerCommand("sample-ext1.compile", async () => {
+		await vbaCommand.exceue(project, "compile");
+	}));
 
 	context.subscriptions.push(vscode.commands.registerCommand("sample-ext1.stopLanguageServer", async () => {
 		await stopLanguageServer();

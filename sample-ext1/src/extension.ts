@@ -416,6 +416,35 @@ export async function activate(context: vscode.ExtensionContext) {
 		}
 	}));
 
+	context.subscriptions.push(vscode.commands.registerCommand("sample-ext1.runVBASubProc", async (args) => {
+		const editor = vscode.window.activeTextEditor;
+		if(!editor){
+			return;
+		}
+		const sel = editor.selection;
+		const uri = editor.document.uri;
+		const symbols = await vscode.commands.executeCommand<vscode.DocumentSymbol[]>(
+			"vscode.executeDocumentSymbolProvider", uri);
+		if(!symbols.length){
+			return;
+		}
+		const targetSymbols = symbols[0].children.filter(x => {
+			return x.kind === vscode.SymbolKind.Function 
+				&& x.range.start.line <= sel.start.line 
+				&& sel.end.line <= x.range.end.line;
+		});
+		if(!targetSymbols.length){
+			return;
+		}
+		const symName = targetSymbols[0].name;
+		const mt = symName.match(/Sub\s+(.+)\(\s*\)/);
+		if(mt && mt.length > 1){
+			const procName = mt[1];
+			const xlsmFileName = project.projectData.targetfilename;
+			await vbaCommand.runVBASubProc(xlsmFileName, procName);
+		}
+	}));
+
 	const startServer = async (report: (msg: string)=>void) => {
 		report("Start server");
 		if(!project.hasProject(getWorkspacePath())){

@@ -120,6 +120,11 @@ export class VBACommands {
         await this.run("compile.ps1", []);
     }
 
+    async runVBASubProc(xlsmFileName: string, procName: string){
+        this.xlsmFileName = xlsmFileName;
+        await this.run("run-vba-proc.ps1", [procName]);
+    }
+
     private async run(scriptFileName: string, args: string[]): Promise<VBAResponse> {
         const scriptFilePath = path.join(this.scriptDirPath, scriptFileName);
         const ret = await this.spawnAsync(this.cmd, 

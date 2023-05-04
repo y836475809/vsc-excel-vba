@@ -104,6 +104,10 @@
         "title": "gotoVSCode"
       },
       {
+        "command": "sample-ext1.runVBASubProc",
+        "title": "Run Sub proc"
+      },
+      {
         "command": "sample-ext1.runViewItem",
         "title": "Run",
         "icon": "$(run)"
@@ -147,6 +151,10 @@
       "editor/context": [
         {
           "command": "sample-ext1.gotoVBA",
+        },
+        {
+          "command": "sample-ext1.runVBASubProc",
+          "when": "resourceExtname == .bas",
           "group": "myGroup"
         }
       ]

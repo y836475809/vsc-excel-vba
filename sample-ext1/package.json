@@ -92,6 +92,10 @@
         "title": "import"
       },
       {
+        "command": "sample-ext1.export",
+        "title": "export"
+      },
+      {
         "command": "sample-ext1.compile",
         "title": "compile"
       },

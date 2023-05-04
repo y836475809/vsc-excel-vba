@@ -39,6 +39,9 @@ export class VBACommands {
             if(cmd === "import"){
                 await this.import(project.srcDir);
             }
+            if(cmd === "export"){
+                await this.export(project.srcDir);
+            }
             if(cmd === "compile"){
                 await this.compile();
             }
@@ -113,7 +116,8 @@ export class VBACommands {
     }
 
     async import(srcDir: string){
-        await this.run("import.ps1", [srcDir]);
+    async export(distDir: string){
+        await this.run("export.ps1", [`"${distDir}"`]);
     }
 
     async compile(){

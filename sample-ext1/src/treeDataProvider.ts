@@ -18,6 +18,7 @@ export class TreeDataProvider implements vscode.TreeDataProvider<vscode.TreeItem
             new MyTreeItem("GotoVSCode", "gotoVSCode"),
             new MyTreeItem("GotoVBA", "gotoVBA"),
             new MyTreeItem("Import", "import"),
+            new MyTreeItem("Export", "export"),
             new MyTreeItem("Compile", "compile"),  
         ];
     }

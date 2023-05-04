@@ -22,7 +22,7 @@ export class VBACommands {
         this.xlsmFileName = "";
     }
 
-    async exceue(project: Project, cmd: string, srcFileUris: string[]=[]){
+    async exceue(project: Project, cmd: string){
         try {
             this.xlsmFileName = project.projectData.targetfilename;
             if(!this.xlsmFileName){

@@ -23,6 +23,19 @@ export async function resetServer(port: number): Promise<void>{
 	});
 };
 
+export async function addDocuments(port: number, uris: vscode.Uri[]): Promise<void>{
+    const lpsRequest = new LPSRequest(port);
+    const filePaths = uris.map(uri => uri.fsPath);
+    const data = {
+        id: "AddDocuments",
+        filepaths: filePaths,
+        line: 0,
+        chara: 0,
+        text: ""
+    } as Hoge.Command;
+    await lpsRequest.send(data);
+};
+
 export class FixtureFile {
     fileMap: Map<string, string>;
     constructor(filenames: string[]){

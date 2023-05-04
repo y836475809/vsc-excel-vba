@@ -13,6 +13,13 @@ suite("Extension E2E Completion Test Suite", () => {
 		const port = await helper.getServerPort();
 		await helper.resetServer(port);
 
+		const uris = [
+			helper.getDocUri("m1.bas"),
+			helper.getDocUri("m2.bas"),
+			helper.getDocUri("c1.cls"),
+		];
+		await helper.addDocuments(port, uris);
+
         await vscode.commands.executeCommand("sample-ext1.startLanguageServer");
 		await helper.sleep(500);
     });

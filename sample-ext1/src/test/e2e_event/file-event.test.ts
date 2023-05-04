@@ -14,9 +14,10 @@ async function getServerFileMap(): Promise<Map<string, string>>{
 		chara: 0,
 		text: ""
 	});
+	const json = JSON.parse(data);
 	const fileMap = new Map<string, string>();
-	for (const k in data) {
-		fileMap.set(k, data[k]);
+	for (const k in json) {
+		fileMap.set(k, json[k]);
 	}
 	return fileMap;
 }
@@ -33,16 +34,42 @@ const vbModuleCode = [
 	"End Module"
 ];
 
+let disps: vscode.Disposable[]  = [];
+
 suite("Extension E2E Roslyn Test Suite", () => {	
 	suiteSetup(async () => {
 		const port = await helper.getServerPort();
 		lpsRequest = new LPSRequest(port);
 		await helper.resetServer(port);
 
+		const uris = [
+			helper.getDocUri("m1.bas"),
+			helper.getDocUri("c1.cls"),
+		];
+		await helper.addDocuments(port, uris);
+
+		const disp = vscode.workspace.onDidChangeTextDocument(async (e: vscode.TextDocumentChangeEvent) =>{
+			const fsPath = e.document.uri.fsPath;
+            const data = {
+                id: "ChangeDocument",
+                filepaths: [fsPath],
+                position: 0,
+                line: 0,
+                chara: 0,
+                text: e.document.getText()
+            } as Hoge.Command;
+            await lpsRequest.send(data);
+		});
+		disps.push(disp);
+
         await vscode.commands.executeCommand("sample-ext1.startLanguageServer");
 		await helper.sleep(500);
     });
     suiteTeardown(async () => {
+		disps.forEach(x => {
+			x.dispose();
+		});
+
 		const renamed = helper.getDocPath("re_m1.bas");
 		if(fs.existsSync(renamed)){
 			const renamedUri = helper.getDocUri("re_m1.bas");

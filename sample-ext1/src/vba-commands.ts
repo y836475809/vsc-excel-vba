@@ -116,6 +116,9 @@ export class VBACommands {
     }
 
     async import(srcDir: string){
+        await this.run("import.ps1", [`"${srcDir}"`]);
+    }
+
     async export(distDir: string){
         await this.run("export.ps1", [`"${distDir}"`]);
     }
@@ -133,7 +136,7 @@ export class VBACommands {
         const scriptFilePath = path.join(this.scriptDirPath, scriptFileName);
         const ret = await this.spawnAsync(this.cmd, 
             ["-NoProfile", "-ExecutionPolicy", "Unrestricted", 
-            scriptFilePath, this.xlsmFileName, ...args]);
+            `"${scriptFilePath}"`, this.xlsmFileName, ...args]);
         
         const res: VBAResponse = JSON.parse(ret);
         if(res.code === "error"){

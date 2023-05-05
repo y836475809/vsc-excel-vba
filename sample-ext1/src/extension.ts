@@ -197,7 +197,7 @@ async function stopLanguageServer(){
 async function waitUntilClientIsRunning(){
 	let waitCount = 0;
 	while(true){
-		if(waitCount > 30){
+		if(waitCount > 100){
 			throw new Error("Timed out waiting for client ready");
 		}
 		waitCount++;

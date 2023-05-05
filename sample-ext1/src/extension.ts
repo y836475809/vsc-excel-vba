@@ -363,6 +363,20 @@ export async function activate(context: vscode.ExtensionContext) {
 		serverExeFilePath = await config.get("sample-ext1.serverExeFilePath") as string;
 	});
 
+	vscode.debug.onDidChangeBreakpoints(async e => {
+		if(e.removed.length > 1){
+			await vbaCommand.exceue(project, "clearBreakpoits");
+			return;
+		}
+		const bps = e.added.concat(e.removed);
+		const xlsmFileName = project.projectData.targetfilename;
+		for (const x of bps) {
+			const s = x as vscode.SourceBreakpoint;
+			const loc = s.location;	
+			await vbaCommand.toggleBreakpoint(xlsmFileName, loc.uri, loc.range.start.line);
+		}
+    });
+
 	vscode.window.registerTreeDataProvider("testView", new TreeDataProvider());
 	context.subscriptions.push(vscode.commands.registerCommand("sample-ext1.runViewItem", async (args: MyTreeItem) => {
 		await vbaCommand.exceue(project, args.vbaCommand);

@@ -45,6 +45,12 @@ export class VBACommands {
             if(cmd === "compile"){
                 await this.compile();
             }
+            if(cmd === "clearBreakpoits"){
+                await this.clearBreakpoints();
+            }
+            if(cmd === "resetBreakpoints"){
+                await this.resetBreakpoints();
+            }
             vscode.window.showInformationMessage(`Successfully ${cmd}`);
         } catch (error: unknown) {
             let msg = `Failed to ${cmd}`;
@@ -127,6 +133,45 @@ export class VBACommands {
         await this.run("compile.ps1", []);
     }
 
+    async toggleBreakpoint(xlsmFileName: string, uri: vscode.Uri, vscodeLine: number){
+        this.xlsmFileName = xlsmFileName;
+        const ret = this.getVBALine(uri, vscodeLine);
+        if(!ret){
+            return;
+        }
+        const modulename = ret[0];
+        const line = ret[1];
+        await this.run("togglebreakpoit.ps1", [modulename, line.toString()]);
+    }
+
+    async clearBreakpoints(){
+        await this.run("clearbreakpoits.ps1", []);
+    }
+
+    async resetBreakpoints(){
+        const dict = new Map<string, number[]>();
+       
+        vscode.debug.breakpoints.forEach(x => {
+            const s = x as vscode.SourceBreakpoint;
+            const loc = s.location;
+            const ret = this.getVBALine(loc.uri, loc.range.start.line);
+            if(ret){
+                const modulename = ret[0];
+                const line = ret[1];
+                if(!dict.has(modulename)){
+                    dict.set(modulename, []);
+                }
+                dict.get(modulename)?.push(line);
+            }
+        });
+        const args: string[] = [];
+        // m1:1-2-3 m2:2
+        for (const [key, value] of dict) {
+            args.push(`${key}:${value.join("-")}`);
+        }
+        await this.run("resetbreakpoints.ps1", args);
+    }
+
     async runVBASubProc(xlsmFileName: string, procName: string){
         this.xlsmFileName = xlsmFileName;
         await this.run("run-vba-proc.ps1", [procName]);
@@ -164,4 +209,18 @@ export class VBACommands {
 			});
 		});
   	};
+
+    private getVBALine(uri: vscode.Uri, vscodeLine: number) : [string, number] | undefined{
+        const fsPath = path.parse(uri.fsPath);
+        const modulename = fsPath.name;
+        const ext = fsPath.ext;
+        let line = vscodeLine + 1;
+        if(ext === ".bas"){
+            line -= basLineOffset;
+        }
+        if(ext === ".cls"){
+            line -= clsLineOffset;
+        }
+        return [modulename, line];
+    }
 }

@@ -20,6 +20,7 @@ export class TreeDataProvider implements vscode.TreeDataProvider<vscode.TreeItem
             new MyTreeItem("Import", "import"),
             new MyTreeItem("Export", "export"),
             new MyTreeItem("Compile", "compile"),  
+            new MyTreeItem("ResetBreakpoints", "resetBreakpoints"), 
         ];
     }
 }

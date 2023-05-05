@@ -45,9 +45,6 @@ export class VBACommands {
             if(cmd === "compile"){
                 await this.compile();
             }
-            if(cmd === "clearBreakpoits"){
-                await this.clearBreakpoints();
-            }
             if(cmd === "resetBreakpoints"){
                 await this.resetBreakpoints();
             }
@@ -131,21 +128,6 @@ export class VBACommands {
 
     async compile(){
         await this.run("compile.ps1", []);
-    }
-
-    async toggleBreakpoint(xlsmFileName: string, uri: vscode.Uri, vscodeLine: number){
-        this.xlsmFileName = xlsmFileName;
-        const ret = this.getVBALine(uri, vscodeLine);
-        if(!ret){
-            return;
-        }
-        const modulename = ret[0];
-        const line = ret[1];
-        await this.run("togglebreakpoit.ps1", [modulename, line.toString()]);
-    }
-
-    async clearBreakpoints(){
-        await this.run("clearbreakpoits.ps1", []);
     }
 
     async resetBreakpoints(){

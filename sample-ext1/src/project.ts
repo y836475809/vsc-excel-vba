@@ -28,7 +28,12 @@ export class Project {
                 vscode.ConfigurationTarget.Workspace
             );
         }
-        await config.update("files.autoGuessEncoding", true);
+
+        await config.update(
+            "[vb]", { 
+                "files.encoding": "shiftjis",
+                "files.autoGuessEncoding": false
+            }, false);
     }
 
     async createProject(targetFilePath: string){

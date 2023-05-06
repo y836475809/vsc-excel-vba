@@ -56,6 +56,10 @@ export class Server {
             ["Local", CompletionItemKind.Variable],
             ["Class", CompletionItemKind.Class],
         ]);
+        
+        logger = new Logger((msg: string) => {
+            connection.console.log(msg);
+        });
     }
 
     onInitialize(params: InitializeParams){
@@ -103,17 +107,14 @@ export class Server {
                 connection.console.log('Workspace folder change event received.');
             });
         }
-
-        const setting = await getSetting();
-        const port = setting.serverPort as number;
-        this.lpsRequest = new LPSRequest(port);
-        
-        logger = new Logger((msg: string) => {
-            connection.console.log(msg);
-        });
     }
 
     async onRequest(method: string, params: any) {
+        if(!this.lpsRequest){
+            const setting = await getSetting();
+            const port = setting.serverPort as number;
+            this.lpsRequest = new LPSRequest(port);
+        }
         const requestMethod = method as Hoge.RequestMethod;
         logger.info(`onRequest: ${requestMethod}`);
         if(requestMethod === "createFiles"){

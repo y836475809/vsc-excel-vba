@@ -19,6 +19,7 @@ import * as fs from "fs";
 import { LPSRequest } from "./lsp-request";
 import { VbaDocumentSymbolProvider } from "./vba-documentsymbolprovider";
 import { Logger } from "./logger";
+import { FileEvents } from "./file-events";
 
 let client: LanguageClient;
 let wsFileEventDisps: vscode.Disposable[]  = [];
@@ -26,131 +27,6 @@ let outlineDisp: vscode.Disposable;
 let outputChannel: vscode.OutputChannel;
 let logger: Logger;
 
-function getWorkspacePath(): string | undefined{
-	const wf = vscode.workspace.workspaceFolders;
-	return (wf && (wf.length > 0)) ? wf[0].uri.fsPath : undefined;
-}
-
-async function renameFiles(files: any[]){
-	const method: Hoge.RequestMethod = "renameFiles";
-	let renameParams: Hoge.RequestRenameParam[] = [];
-	for(const file of files){
-		const oldUri = file.oldUri.toString();
-		const newUri = file.newUri.toString();
-		renameParams.push({
-			olduri: oldUri,
-			newuri: newUri
-		});
-	}
-	await client.sendRequest(method, {renameParams});
-}
-
-async function deleteFiles(files: any[]){
-	const method: Hoge.RequestMethod = "deleteFiles";
-	const uris = files.map(uri => {
-		return uri.toString();
-	});
-	await client.sendRequest(method, {uris});
-}
-
-function debounce(fn: any, interval: number){
-    let timerId: any;
-    return (e: any) => {
-		if(timerId){
-			clearTimeout(timerId);
-		}
-        timerId = setTimeout(() => {
-            fn(e);
-        }, interval);
-    };
-};
-
-function isInProjectSrc(srcDir: string, uri: vscode.Uri): boolean{
-	return path.dirname(uri.fsPath) === srcDir;
-}
-
-function setupWorkspaceFileEvent(context: vscode.ExtensionContext, srcDir: string) {
-	wsFileEventDisps.forEach(x => {
-		x.dispose();
-	});
-	wsFileEventDisps = [];
-
-	wsFileEventDisps.push(vscode.workspace.onDidCreateFiles(async (e: vscode.FileCreateEvent) => {
-		if(!client || client.state !== State.Running){
-			return;
-		}
-		const method: Hoge.RequestMethod = "createFiles";
-		const uris = e.files.filter(file => isInProjectSrc(srcDir, file)).map(uri => uri.toString());
-		if(!uris.length){
-			return;
-		}
-		await client.sendRequest(method, {uris});
-	}, null, context.subscriptions));
-
-	wsFileEventDisps.push(vscode.workspace.onDidDeleteFiles(async (e: vscode.FileDeleteEvent) => {
-		if(!client || client.state !== State.Running){
-			return;
-		}
-		const files = e.files.filter(file => isInProjectSrc(srcDir, file)).map(file => {
-			return file;
-		});
-		if(!files.length){
-			return;
-		}
-		await deleteFiles(files);
-	}, null, context.subscriptions));
-
-	wsFileEventDisps.push(vscode.workspace.onDidRenameFiles(async (e: vscode.FileRenameEvent) => {
-		if(!client || client.state !== State.Running){
-			return;
-		}
-		const files = e.files.filter(file => isInProjectSrc(srcDir, file.newUri)).map(file => {
-			return {
-				oldUri: file.oldUri,
-				newUri: file.newUri
-			};
-		});
-		if(!files.length){
-			return;
-		}
-		await renameFiles(files);
-	}, null, context.subscriptions));
-
-	wsFileEventDisps.push(vscode.workspace.onDidChangeTextDocument(
-		debounce(async (e: vscode.TextDocumentChangeEvent) => {
-			if(!client || client.state !== State.Running){
-				return;
-			}
-			if(e.document.isUntitled){
-				return;
-			}
-			if(!e.document.isDirty && !e.reason){
-				// 変更なしでsave
-				return;
-			}
-			// isDirty=false, e.reason!=undefined
-			// ->undo or redoで変更をもどした場合なので更新通知必要
-
-			if(!isInProjectSrc(srcDir, e.document.uri)){
-				return;
-			}
-			const method: Hoge.RequestMethod = "changeText";
-			const uri = e.document.uri.toString();
-			await client.sendRequest(method, {uri});
-	}, 500), null, context.subscriptions));
-
-	wsFileEventDisps.push(vscode.window.onDidChangeActiveTextEditor(
-		debounce(async (e: vscode.TextEditor) => {
-			if(!client || client.state !== State.Running){
-				return;
-			}
-			const fname = e.document.fileName;
-			if(fname.endsWith(".bas") || fname.endsWith(".cls")){
-				const method: Hoge.RequestMethod = "diagnostics";
-				await client.sendRequest(method, {uri:e.document.uri.toString()});
-			}
-	}, 1000), null, context.subscriptions));
-}
 
 function setupOutline(context: vscode.ExtensionContext) {
 	if(outlineDisp){
@@ -208,36 +84,6 @@ async function waitUntilClientIsRunning(){
 			break;
 		}
 	}
-}
-
-function getDefinitionFileUris(context: vscode.ExtensionContext): string[] {
-	const dirPath = context.asAbsolutePath("d.vb");
-	if(!fs.existsSync(dirPath)){
-		return [];
-	}
-	const fsPaths = fs.readdirSync(dirPath, { withFileTypes: true })
-	.filter(dirent => {
-		return dirent.isFile() && (dirent.name.endsWith(".d.vb"));
-	}).map(dirent => path.join(dirPath, dirent.name));
-	const uris = fsPaths.map(fp => vscode.Uri.file(fp).toString());
-	return uris;
-}
-
-function getWorkspaceFileUris() : string[] {
-	const dirPath = getWorkspacePath();
-	if(!dirPath){
-		return [];
-	}
-	if(!fs.existsSync(dirPath)){
-		return [];
-	}
-	const fsPaths = fs.readdirSync(dirPath, { withFileTypes: true })
-	.filter(dirent => {
-		return dirent.isFile() 
-			&& (dirent.name.endsWith('.bas') || dirent.name.endsWith('.cls'));
-	}).map(dirent => path.join(dirPath, dirent.name));
-	const uris = fsPaths.map(fp => vscode.Uri.file(fp).toString());
-	return uris;
 }
 
 async function shutdownServerApp(port: number): Promise<void>{
@@ -383,29 +229,17 @@ export async function activate(context: vscode.ExtensionContext) {
 		await vbaCommand.exceue(project, "compile");
 	}));
 
-	context.subscriptions.push(vscode.commands.registerCommand("sample-ext1.stopLanguageServer", async () => {
-		await stopLanguageServer();
-	}));
 	context.subscriptions.push(vscode.commands.registerCommand("sample-ext1.startLanguageServer", async () => {
-		await stopLanguageServer();
-		await startLanguageServer(context);	
-
-		await waitUntilClientIsRunning();
-		const uris1 = getWorkspaceFileUris();
-		const uris2 = loadDefinitionFiles?getDefinitionFileUris(context):[];
-		const uris = uris1.concat(uris2);
-		if(uris.length > 0){
-			const method: Hoge.RequestMethod = "createFiles";
-			await client.sendRequest(method, {uris});
-		}
+		await startLanguageServer(context);
+		await waitUntilClientIsRunning();	
 	}));
 
 	context.subscriptions.push(vscode.commands.registerCommand("testView.myCommand", async (args) => {
-		const wsPath = getWorkspacePath();
-		if(!wsPath){
-			return;
-		}
 		try {
+			if(project.hasProject()){
+				throw new Error(
+					`Not find ${project.projectFileName}. create project`);
+			}
 			const targetFilePath = args.fsPath;		
 			await project.setupConfig();
 			await project.createProject(targetFilePath);
@@ -448,26 +282,27 @@ export async function activate(context: vscode.ExtensionContext) {
 		}
 	}));
 
+	const loadProject = async (report: (msg: string)=>void) => {
+		report("Load Project");
+		await project.readProject();
+
+		report("Setup Outline");
+		setupOutline(context);
+
+		report("Loaded project successfully");
+	};
+
 	const startServer = async (report: (msg: string)=>void) => {
 		report("Start server");
-		if(!project.hasProject(getWorkspacePath())){
-			const msg = `Not find ${project.projectFileName}`;
-			report(msg);
-			return;
-		}
-		
-		setupOutline(context);
 
 		report("stop ServerAppr");
 		await stopLanguageServer();	
 
-		if(autoLaunchServerApp){
-			report("shutdownServerApp");
-			await shutdownServerApp(serverAppPort);
-			if(!await isReadyServerApp(serverAppPort)){
-				report("launchServerApp");
-				await launchServerApp(serverAppPort, serverExeFilePath);
-			}
+		report("shutdownServerApp");
+		await shutdownServerApp(serverAppPort);
+		if(!await isReadyServerApp(serverAppPort)){
+			report("launchServerApp");
+			await launchServerApp(serverAppPort, serverExeFilePath);
 		}
 
 		report("Initialize ServerAppr");
@@ -476,14 +311,14 @@ export async function activate(context: vscode.ExtensionContext) {
 		
 		report("resetServerApp");
 		await resetServerApp();
-		
 
-		await project.readProject(getWorkspacePath()!);
-
-		setupWorkspaceFileEvent(context, project.srcDir);
+		wsFileEventDisps.forEach(x => x.dispose());
+		wsFileEventDisps = [];
+		const fe = new FileEvents(client, project.srcDir);
+		wsFileEventDisps = fe.registerFileEvent(context);
 
 		const uris1 = await project.getSrcFileUris();
-		const uris2 = loadDefinitionFiles?getDefinitionFileUris(context):[];
+		const uris2 = loadDefinitionFiles?project.getDefinitionFileUris(context):[];
 		const uris = uris1.concat(uris2);
 		if(uris.length > 0){
 			report("Send source uris to ServerAppr");
@@ -500,7 +335,7 @@ export async function activate(context: vscode.ExtensionContext) {
 			}
 		}
 
-		report("ServerAppr started successfully");
+		report("Server started successfully");
 	};
 
 	context.subscriptions.push(vscode.commands.registerCommand("sample-ext1.start", async () => {
@@ -511,11 +346,17 @@ export async function activate(context: vscode.ExtensionContext) {
 		vscode.window.withProgress(options, async progress => {
 			setServerStartEnable(false);
 			try {	
-				await startServer((msg) => {
+				loadProject((msg) => {
 					logger.info(msg);
 					progress.report({ message: msg });
 				});
-				vscode.window.showInformationMessage("Server started successfully");
+				if(autoLaunchServerApp){
+					await startServer((msg) => {
+						logger.info(msg);
+						progress.report({ message: msg });
+					});
+				}
+				vscode.window.showInformationMessage("Success");
 			} catch (error) {
 				let errorMsg = "Fail start";
 				if(error instanceof Error){
@@ -535,16 +376,6 @@ export async function activate(context: vscode.ExtensionContext) {
 		}
 		await stopLanguageServer();
 		await shutdownServerApp(serverAppPort);
-	}));
-
-	context.subscriptions.push(vscode.commands.registerCommand("sample-ext1.renameFiles", async (oldUri, newUri) => {
-		await renameFiles([{
-			oldUri,
-			newUri
-		}]);
-	}));
-	context.subscriptions.push(vscode.commands.registerCommand("sample-ext1.deleteFiles", async (uris: vscode.Uri[]) => {
-		await deleteFiles(uris);
 	}));
 }
 

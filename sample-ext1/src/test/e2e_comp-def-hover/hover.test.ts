@@ -9,10 +9,15 @@ suite("Extension E2E Roslyn Test Suite", () => {
 		const port = await helper.getServerPort();
 		await helper.resetServer(port);
 
+		const filenames = ["c1.cls", "m1.bas", "m2.bas"];
 		fixtureFile = new helper.FixtureFile(
-			["c1.cls", "m1.bas", "m2.bas"]
+			filenames
 		);
 
+		const uris = filenames.map(x => {
+			return helper.getDocUri(x);
+		});
+		await helper.addDocuments(port, uris);
         await vscode.commands.executeCommand("sample-ext1.startLanguageServer");
 		await helper.sleep(500);
     });

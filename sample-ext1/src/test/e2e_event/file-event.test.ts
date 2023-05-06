@@ -3,6 +3,7 @@ import * as vscode from "vscode";
 import * as helper from "../helper";
 import { LPSRequest } from "../../lsp-request";
 import * as fs from "fs";
+import { URI } from 'vscode-uri';
 
 let lpsRequest!: LPSRequest;
 
@@ -20,6 +21,30 @@ async function getServerFileMap(): Promise<Map<string, string>>{
 		fileMap.set(k, json[k]);
 	}
 	return fileMap;
+}
+
+async function renameFile(oldUri: vscode.Uri, newUri: vscode.Uri){
+	const oldFsPath = oldUri.fsPath;
+	const newFsPath = newUri.fsPath;
+	const data = {
+		id: "RenameDocument",
+		filepaths: [oldFsPath, newFsPath],
+		line: 0,
+		chara: 0,
+		text: ""
+	} as Hoge.Command;  
+	await lpsRequest.send(data);
+}
+
+async function deleteFile(uri: vscode.Uri){
+	const data = {
+		id: "DeleteDocuments",
+		filepaths: [uri.fsPath],
+		line: 0,
+		chara: 0,
+		text: ""
+	} as Hoge.Command;  
+	await lpsRequest.send(data);
 }
 
 const vbClassCode = [
@@ -62,7 +87,6 @@ suite("Extension E2E Roslyn Test Suite", () => {
 		});
 		disps.push(disp);
 
-        await vscode.commands.executeCommand("sample-ext1.startLanguageServer");
 		await helper.sleep(500);
     });
     suiteTeardown(async () => {
@@ -99,8 +123,7 @@ suite("Extension E2E Roslyn Test Suite", () => {
 		const oldUri = helper.getDocUri("m1.bas");
 		const newUri = helper.getDocUri("re_m1.bas");
 		await vscode.workspace.fs.rename(oldUri, newUri);
-		await vscode.commands.executeCommand(
-			"sample-ext1.renameFiles", oldUri, newUri);
+		await renameFile(oldUri, newUri);
 
 		const actFileMap = await getServerFileMap();
 		assert.deepEqual(actFileMap, new Map<string, string>([
@@ -114,8 +137,7 @@ suite("Extension E2E Roslyn Test Suite", () => {
 		]));
 
 		await vscode.workspace.fs.rename(newUri, oldUri);
-		await vscode.commands.executeCommand(
-			"sample-ext1.renameFiles", newUri, oldUri);
+		await renameFile(newUri, oldUri);
 	});
 
 	test("change content", async () => {
@@ -267,8 +289,9 @@ suite("Extension E2E Roslyn Test Suite", () => {
 		await helper.activateExtension();
 
 		const uri = helper.getDocUri("c1.cls");
-		await vscode.commands.executeCommand(
-			"sample-ext1.deleteFiles", [uri]);
+		// await vscode.commands.executeCommand(
+		// 	"sample-ext1.deleteFiles", [uri]);
+		await deleteFile(uri);
 
 		const actFileMap = await getServerFileMap();
 		assert.deepEqual(actFileMap, new Map<string, string>([

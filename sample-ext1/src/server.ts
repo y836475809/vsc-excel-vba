@@ -62,6 +62,14 @@ export class Server {
         });
     }
 
+    async initLSPRequest() {
+        if(!this.lpsRequest){
+            const setting = await getSetting();
+            const port = setting.serverPort as number;
+            this.lpsRequest = new LPSRequest(port);
+        } 
+    }
+
     onInitialize(params: InitializeParams){
         let capabilities = params.capabilities;
         this.hasWorkspaceFolderCapability = !!(
@@ -107,14 +115,13 @@ export class Server {
                 connection.console.log('Workspace folder change event received.');
             });
         }
+
+        await this.initLSPRequest();
     }
 
     async onRequest(method: string, params: any) {
-        if(!this.lpsRequest){
-            const setting = await getSetting();
-            const port = setting.serverPort as number;
-            this.lpsRequest = new LPSRequest(port);
-        }
+        await this.initLSPRequest();
+
         const requestMethod = method as Hoge.RequestMethod;
         logger.info(`onRequest: ${requestMethod}`);
         if(requestMethod === "createFiles"){

@@ -160,6 +160,8 @@
       "editor/context": [
         {
           "command": "sample-ext1.gotoVBA",
+          "when": "resourceExtname == .bas || resourceExtname == .cls",
+          "group": "myGroup"
         },
         {
           "command": "sample-ext1.runVBASubProc",

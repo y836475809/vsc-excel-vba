@@ -31,10 +31,15 @@ import path = require('path');
 import { EphemeralKeyInfo } from 'tls';
 import { diagnosticsRequest } from './diagnostics-request';
 import { Logger } from "./logger";
+import { 
+    VbaAttributeValidation, 
+    VbaAttributeError, 
+    makeAttributeDiagnostics } from "./vba-attribute-validation";
 
 const connection = createConnection(ProposedFeatures.all);
 const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
 let logger: Logger;
+const vbaAttributeValidation = new VbaAttributeValidation();
 
 async function getSetting(){
     const settings = await connection.workspace.getConfiguration(
@@ -191,6 +196,15 @@ export class Server {
             await this.lpsRequest.send(data);
 
             const items = await diagnosticsRequest(doc, fsPath, this.lpsRequest);
+            
+            try {
+                vbaAttributeValidation.validate(URI.parse(uri), doc.getText());
+            } catch (error) {
+                if(error instanceof Array<VbaAttributeError>){
+                    const attrDiagnostics = makeAttributeDiagnostics(error);
+                    items.push(...attrDiagnostics);
+                }
+            }
             connection.sendDiagnostics({uri: doc.uri, diagnostics: items});
         }
         if(requestMethod === "diagnostics"){
@@ -204,6 +218,16 @@ export class Server {
             }
             const fsPath = URI.parse(uri).fsPath;
             const items = await diagnosticsRequest(doc, fsPath, this.lpsRequest);
+            
+            try {
+                vbaAttributeValidation.validate(URI.parse(uri), doc.getText());
+            } catch (error) {
+                if(error instanceof Array<VbaAttributeError>){
+                    const attrDiagnostics = makeAttributeDiagnostics(error);
+                    items.push(...attrDiagnostics);
+                }
+            } 
+
             connection.sendDiagnostics({uri: doc.uri, diagnostics: items});
         }
         if(requestMethod === "reset"){

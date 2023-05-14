@@ -1,5 +1,6 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.FindSymbols;
+using Microsoft.CodeAnalysis.Text;
 using Microsoft.CodeAnalysis.VisualBasic;
 using Microsoft.CodeAnalysis.VisualBasic.Syntax;
 using System;
@@ -27,6 +28,8 @@ namespace ConsoleApp1 {
                 "BC35000",  // ランタイム ライブラリ関数 が定義されていないため、
                                    // 要求された操作を実行できません。
                 "BC30627", // 'Option' ステートメントは、宣言または 'Imports' ステートメントの前に記述しなければなりません
+                //"BC30431", //  'End Property' の前には、対応する 'Property' を指定しなければなりません
+                //"BC36759", // 自動実装プロパティはパラメーターを持つことができません
             };
             var AddItems = new List<DiagnosticItem>();
             var node = doc.GetSyntaxRootAsync().Result;
@@ -47,7 +50,11 @@ namespace ConsoleApp1 {
                     return false;
                 }
 
-                if (x.Id == "BC30800") {
+				if (IsProperty(sourceText, x, node, ref AddItems)) {
+					return false;
+				}
+
+				if (x.Id == "BC30800") {
                     var sym = SymbolFinder.FindSymbolAtPositionAsync(
                         doc, x.Location.SourceSpan.Start - 1).Result;
                     if (sym is IMethodSymbol mth) {
@@ -108,6 +115,71 @@ namespace ConsoleApp1 {
                 return true;
             }
             return false;
+        }
+
+		private SyntaxToken? GetPP(SyntaxToken startToken) {
+			var token = startToken;
+			var count = 0;
+			while (count < 20) {
+				token = token.GetPreviousToken();
+				if (token.IsKind(SyntaxKind.OpenParenToken)) {
+					var nameToken = token.GetPreviousToken();
+					var propToken = nameToken.GetPreviousToken();
+					if (propToken.IsKind(SyntaxKind.PropertyKeyword)) {
+						return propToken;
+					}
+					break;
+				}
+				count++;
+			}
+			return null;
+		}
+		private bool IsProperty(SourceText sourceText, Diagnostic x, SyntaxNode node, ref List<DiagnosticItem> dls) {
+            // BC30808	
+            // Property Get/Let/Set はサポートされなくなりました。新しい Property 宣言の構文を使用してください。
+            if (x.Id == "BC30808") {
+                var line = x.Location.GetLineSpan().StartLinePosition.Line;
+                var preLine = line - 1;
+                if (preLine < 0) {
+                    return true;
+				}
+                var pre = sourceText.Lines[line - 1];
+				if (pre.Span.Length > 0) {
+                    dls.Add(new DiagnosticItem(
+                        DiagnosticSeverity.Error.ToString(),
+                        "Empty line required before Property statement",
+                        preLine, 0,
+                        preLine, 0));
+                    return true;
+                }
+            }
+			// ステートメントをメソッド本体の外側に置くことはできません
+			//if (x.Id == "BC30689") {
+   //             var mm = "Empty line required before Property statement";
+   //             if (dls.Where(x => x.Message.Contains(mm)).Count() > 0) {
+
+			//	}
+			//	var token = node.FindToken(x.Location.SourceSpan.Start);
+			//	var targetToken = GetPP(token);
+			//	if (targetToken?.IsKind(SyntaxKind.PropertyKeyword) ?? false) {
+			//		return true;
+			//	}
+			//}
+
+			//// 宣言が必要です
+			//if (x.Id == "BC30188") {
+			//	var token = node.FindToken(x.Location.SourceSpan.Start);
+			//	var valToken = token.TrailingTrivia.Where(x => !x.IsKind(SyntaxKind.WhitespaceTrivia));
+			//	if (valToken.Count() == 0) {
+			//		return false;
+			//	}
+			//	var val = valToken.First().ToString();
+			//	var targetToken = GetPP(token);
+			//	if (targetToken?.GetNextToken().ValueText == val) {
+			//		return true;
+			//	}
+			//}
+			return false;
         }
 
         private bool IsOpen(Diagnostic x, SyntaxNode node, ref  List<DiagnosticItem> dls) {

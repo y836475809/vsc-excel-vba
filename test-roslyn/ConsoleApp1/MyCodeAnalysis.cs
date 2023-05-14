@@ -72,8 +72,7 @@ namespace ConsoleApp1 {
             var docId = doc_id_dict[name];
             var doc = workspace.CurrentSolution.GetDocument(docId);
             doc = doc.WithText(SourceText.From(text));
-            var allChanges = rewrite.RewriteStatement(doc);
-            var reSourceText = doc.GetSyntaxRootAsync().Result.GetText().WithChanges(allChanges);
+            var reSourceText = rewrite.RewriteStatement(doc);
             workspace.TryApplyChanges(
                 workspace.CurrentSolution.WithDocumentText(docId, reSourceText));
         }

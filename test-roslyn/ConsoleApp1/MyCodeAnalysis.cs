@@ -1,4 +1,4 @@
-﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.FindSymbols;
 using Microsoft.CodeAnalysis.Host.Mef;
 using Microsoft.CodeAnalysis.Recommendations;
@@ -321,21 +321,6 @@ namespace ConsoleApp1 {
                 }
             }
             return items;
-        }
-
-        public DescriptionItem ParseDescriptionXML(string xml) {
-            var doc = XElement.Parse(xml);
-            var summary_text = doc.Element("summary")?.Value??"";
-            var ps = new List<DescriptionParam> ();
-            var param_elms = doc.Elements("param");
-            if (param_elms != null) {
-                foreach (var param_elm in param_elms) {
-                    var name = param_elm.Attribute("name").Value;
-                    ps.Add(new DescriptionParam(name, param_elm.Value));
-                }
-            }
-            var returns_text = doc.Element("returns")?.Value ?? "";
-            return new DescriptionItem(summary_text, ps, returns_text);
         }
     }
 }

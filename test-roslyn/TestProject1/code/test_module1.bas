@@ -1,4 +1,4 @@
-﻿''' <summary>
+''' <summary>
 '''  テストメッセージ
 ''' </summary>
 ''' <returns></returns>

@@ -1,4 +1,4 @@
-﻿Option Explicit On
+Option Explicit On
 
 Public Class Person
     ' メンバ変数

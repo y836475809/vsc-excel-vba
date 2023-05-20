@@ -2,7 +2,7 @@
 using Xunit;
 
 namespace TestProject1 {
-    public class UnitVBACode {
+    public class TestVBACode {
 
         [Fact]
         public void TestModuleCodeAdapter() {

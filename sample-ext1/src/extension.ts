@@ -195,6 +195,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	const config = vscode.workspace.getConfiguration();
 	let serverAppPort = await config.get("sample-ext1.serverPort") as number;
 	let loadDefinitionFiles = await config.get("sample-ext1.loadDefinitionFiles");
+	let useLSPServer = await config.get("sample-ext1.useLSPServer") as boolean;
 	let autoLaunchServerApp = await config.get("sample-ext1.autoLaunchServerApp") as boolean;
 	let serverExeFilePath = await config.get("sample-ext1.serverExeFilePath") as string;
 
@@ -205,6 +206,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		const config = vscode.workspace.getConfiguration();
 		serverAppPort = await config.get("sample-ext1.serverPort") as number;
 		loadDefinitionFiles = await config.get("sample-ext1.loadDefinitionFiles");
+		useLSPServer = await config.get("sample-ext1.useLSPServer") as boolean;
 		autoLaunchServerApp = await config.get("sample-ext1.autoLaunchServerApp") as boolean;
 		serverExeFilePath = await config.get("sample-ext1.serverExeFilePath") as string;
 	});
@@ -298,11 +300,13 @@ export async function activate(context: vscode.ExtensionContext) {
 		report("stop ServerAppr");
 		await stopLanguageServer();	
 
-		report("shutdownServerApp");
-		await shutdownServerApp(serverAppPort);
-		if(!await isReadyServerApp(serverAppPort)){
-			report("launchServerApp");
-			await launchServerApp(serverAppPort, serverExeFilePath);
+		if(autoLaunchServerApp){
+			report("shutdownServerApp");
+			await shutdownServerApp(serverAppPort);
+			if(!await isReadyServerApp(serverAppPort)){
+				report("launchServerApp");
+				await launchServerApp(serverAppPort, serverExeFilePath);
+			}
 		}
 
 		report("Initialize ServerAppr");
@@ -350,7 +354,7 @@ export async function activate(context: vscode.ExtensionContext) {
 					logger.info(msg);
 					progress.report({ message: msg });
 				});
-				if(autoLaunchServerApp){
+				if(useLSPServer){
 					await startServer((msg) => {
 						logger.info(msg);
 						progress.report({ message: msg });

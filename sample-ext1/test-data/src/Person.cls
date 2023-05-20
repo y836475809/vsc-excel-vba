@@ -21,6 +21,23 @@ Public Name As String
 Private Age As Long
 Public Mother As Person
 
+Public Property Get Name2() As String
+  Name2 = LCase(Name)
+End Property
+
+Public Property Let Name2(argName As String)
+  Me.Name = argName
+End Property
+
+
+Property Get Name3() As String
+  Name3 = LCase(Name)
+End Property
+
+Property Let Name3(argName As String)
+  Me.Name = argName
+End Property
+
 ''' <summary>
 '''  テストメッセージ
 ''' </summary>

@@ -22,6 +22,10 @@ End Sub
 
 Sub Sample2()
     Dim testList As New Collection
+    Dim k As Variant
+    For Each k In testList
+        ' Console.WriteLine(Str)
+    Next
     ' Set testList = New Collection
     testList.Item
 End Sub
@@ -34,30 +38,30 @@ End Sub
 Sub Sample4()
     Dim x As MSXML2.DOMDocument60
     x.getElementsByTagName()
-    Dim numL as Long
+    Dim numL As Long
     numL = 10
 
-    Dim numI as Integer
+    Dim numI As Integer
     numI = 10
 
-    Dim numB as Byte
+    Dim numB As Byte
     numB = 10
 
-    Dim numD as Double
+    Dim numD As Double
     numD = 10
 
-    Dim numDate as Date
+    Dim numDate As Date
     numDate = "2000/12/31"
     numDate.
 
-    Dim numBool as Boolean
+    Dim numBool As Boolean
     numBool = True
-    Dim numObj as Object
+    Dim numObj As Object
     numObj = "Object"
 
-    Dim numVa as Variant
+    Dim numVa As Variant
     numVa = "Variant"
-    Dim numVa2 as Variant
+    Dim numVa2 As Variant
     numVa2 = "Variant"
 End Sub
 
@@ -71,7 +75,7 @@ Function callFunc() As Long
 
 End Function
 
-Sub call1()
+Public Sub call1()
     Dim p2 As New Person
     Set p2 = New Person
     buf = "ss"
@@ -80,7 +84,8 @@ Sub call1()
     'buf.
     'thisModule.Range("").
     'Range("A3:E5").
-    Call Sample2()
+    Call Sample2
+    p2.Name2 = "pp"
     p2.SayHello(1,1)
     p2.QSayHell
     ' completion position

@@ -11,7 +11,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace ConsoleApp1 {
-	class MyDiagnostic {
+	public class MyDiagnostic {
         private RewriteSetting rewriteSetting;
 
         public MyDiagnostic(RewriteSetting setting) {
@@ -54,7 +54,7 @@ namespace ConsoleApp1 {
                     var sym = SymbolFinder.FindSymbolAtPositionAsync(
                         doc, x.Location.SourceSpan.Start - 1).Result;
                     if (sym is IMethodSymbol mth) {
-                        if (mth.ReturnsVoid) {
+                        if (mth.Parameters.Any()) {
                             var token = node.FindNode(x.Location.SourceSpan).GetFirstToken();
                             var preToken = token.GetPreviousToken();
                             if (!preToken.IsKind(SyntaxKind.CallKeyword)) {
@@ -85,8 +85,6 @@ namespace ConsoleApp1 {
             }).ToList();
 
             items.AddRange(AddItems);
-            var diagnosticCall = await getCallStatementAsync(doc);
-            items.AddRange(diagnosticCall);
             return items;
         }
 
@@ -274,54 +272,6 @@ namespace ConsoleApp1 {
                 }
             }
             return false;
-        }
-
-
-        private async Task<List<DiagnosticItem>> getCallStatementAsync(Document document) {
-            var d = new DiagnosticCallStatement();
-            var locations = await d.mmAsync(document);
-            return locations.Select(x => {
-                var severity = DiagnosticSeverity.Error.ToString();
-                var msg = "Call is required";
-                var positon = x.Positon;
-                return new DiagnosticItem(severity, msg,
-                    x.Line, x.Character,
-                    x.Line, x.Character);
-            }).ToList();
-        }
-
-        public async Task<List<Location>> mmAsync(Document document) {
-            var locations = new List<Location>();
-            var workspace = document.Project.Solution.Workspace;
-            var model = await document.GetSemanticModelAsync();
-
-            var syntaxRoot = await document.GetSyntaxRootAsync();
-            var forStmt = syntaxRoot.DescendantNodes().OfType<InvocationExpressionSyntax>();
-            foreach (var stmt in forStmt) {
-                var node = stmt.ChildNodes().First();
-                var position = (int)(node.Span.Start + node.Span.End) / 2;
-                var symbol = await SymbolFinder.FindSymbolAtPositionAsync(
-                    model, position, workspace);
-                if (symbol == null) {
-                    continue;
-                }
-                if (symbol is IMethodSymbol mth) {
-                    if (mth.ReturnsVoid) {
-                        continue;
-                    }
-                    if (node.Parent.IsKind(SyntaxKind.CallStatement)) {
-                        continue;
-                    }
-                    var loc = node.GetLocation();
-                    var span = loc?.SourceSpan;
-                    var tree = loc?.SourceTree;
-                    if (span != null && tree != null) {
-                        var start = tree.GetLineSpan(span.Value).StartLinePosition;
-                        locations.Add(new Location(span.Value.Start, start.Line, start.Character));
-                    }
-                }
-            }
-            return locations;
         }
     }
 }

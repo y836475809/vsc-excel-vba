@@ -5,8 +5,6 @@ VisualStudioVersion = 16.0.33027.164
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConsoleApp1", "ConsoleApp1\ConsoleApp1.csproj", "{712FBB75-F982-4C36-BB0D-D6CE9C30960F}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConsoleApp2", "ConsoleApp2\ConsoleApp2.csproj", "{7A43DCF3-874A-418E-B025-BCC7CD50D3A2}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConsoleAppServer", "ConsoleAppHttp\ConsoleAppServer.csproj", "{31DF0D61-1B37-413D-9A6A-F94F2F438D1B}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestProject1", "TestProject1\TestProject1.csproj", "{36F8D124-D53B-4D8B-B58F-B4BB4B8E95FB}"
@@ -21,10 +19,6 @@ Global
 		{712FBB75-F982-4C36-BB0D-D6CE9C30960F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{712FBB75-F982-4C36-BB0D-D6CE9C30960F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{712FBB75-F982-4C36-BB0D-D6CE9C30960F}.Release|Any CPU.Build.0 = Release|Any CPU
-		{7A43DCF3-874A-418E-B025-BCC7CD50D3A2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{7A43DCF3-874A-418E-B025-BCC7CD50D3A2}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{7A43DCF3-874A-418E-B025-BCC7CD50D3A2}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{7A43DCF3-874A-418E-B025-BCC7CD50D3A2}.Release|Any CPU.Build.0 = Release|Any CPU
 		{31DF0D61-1B37-413D-9A6A-F94F2F438D1B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{31DF0D61-1B37-413D-9A6A-F94F2F438D1B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{31DF0D61-1B37-413D-9A6A-F94F2F438D1B}.Release|Any CPU.ActiveCfg = Release|Any CPU

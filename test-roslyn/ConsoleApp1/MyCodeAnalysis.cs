@@ -12,6 +12,8 @@ using System.Linq;
 using Microsoft.CodeAnalysis.VisualBasic.Syntax;
 
 namespace ConsoleApp1 {
+    using lineCharaOffDict = Dictionary<int, (int, int)>;
+
     public class MyCodeAnalysis {
         private AdhocWorkspace workspace;
         private Project project;
@@ -19,6 +21,9 @@ namespace ConsoleApp1 {
         private RewriteSetting rewriteSetting;
         private Rewrite rewrite;
         private MyDiagnostic myDiagnostic;
+
+        public Dictionary<string, lineCharaOffDict> charaOffsetDict;
+        public Dictionary<string, Dictionary<int, int>> lineMappingDict;
 
         public MyCodeAnalysis() {
             var host = MefHostServices.Create(MefHostServices.DefaultAssemblies);
@@ -31,6 +36,8 @@ namespace ConsoleApp1 {
             project = workspace.AddProject(projectInfo);
 
             doc_id_dict = new Dictionary<string, DocumentId>();
+            charaOffsetDict = new Dictionary<string, lineCharaOffDict>();
+            lineMappingDict = new Dictionary<string, Dictionary<int, int>>();
         }
 
         public void setSetting(RewriteSetting rewriteSetting) {
@@ -73,6 +80,8 @@ namespace ConsoleApp1 {
             var doc = workspace.CurrentSolution.GetDocument(docId);
             doc = doc.WithText(SourceText.From(text));
             var reSourceText = rewrite.RewriteStatement(doc);
+            charaOffsetDict[name] = rewrite.charaOffsetDict;
+            lineMappingDict[name] = rewrite.lineMappingDict;
             workspace.TryApplyChanges(
                 workspace.CurrentSolution.WithDocumentText(docId, reSourceText));
         }
@@ -101,15 +110,30 @@ namespace ConsoleApp1 {
             return true;
         }
 
+        private int getoffset(string name, int line, int chara) {
+            if (!charaOffsetDict.ContainsKey(name)) {
+                return 0;
+            }
+            var offdict = charaOffsetDict[name];
+            if (offdict.ContainsKey(line)) {
+                var (s, offset) = offdict[line];
+                if(chara >= s) {
+                    return offset;
+                }
+            }
+            return 0;
+        }
+
         public async Task<List<CompletionItem>> GetCompletions(string name, string text, int line, int chara) {
             //ChangeDocument(name, text);
             var completions = new List<CompletionItem>();
             if (!doc_id_dict.ContainsKey(name)) {
                 return completions;
             }
+            var adjChara = getoffset(name, line, chara) + chara;
             var docId = doc_id_dict[name];
             var doc = workspace.CurrentSolution.GetDocument(docId);
-            var position = doc.GetTextAsync().Result.Lines.GetPosition(new LinePosition(line, chara));
+            var position = doc.GetTextAsync().Result.Lines.GetPosition(new LinePosition(line, adjChara));
             var symbols = await Recommender.GetRecommendedSymbolsAtPositionAsync(doc, position);
             foreach (var symbol in symbols) {
                 var completionItem = new CompletionItem();
@@ -142,9 +166,10 @@ namespace ConsoleApp1 {
             }
             var docId = doc_id_dict[name];
             if (workspace.CurrentSolution.ContainsDocument(docId)) {
+                var adjChara = getoffset(name, line, chara) + chara;
                 var doc = workspace.CurrentSolution.GetDocument(docId);
                 var model = await doc.GetSemanticModelAsync();
-                var position = doc.GetTextAsync().Result.Lines.GetPosition(new LinePosition(line, chara));
+                var position = doc.GetTextAsync().Result.Lines.GetPosition(new LinePosition(line, adjChara));
                 var symbol = await SymbolFinder.FindSymbolAtPositionAsync(model, position, workspace);
 
                 if (symbol == null) {
@@ -167,11 +192,23 @@ namespace ConsoleApp1 {
                     if (span != null && tree != null) {
                         var start = tree.GetLineSpan(span.Value).StartLinePosition;
                         var end = tree.GetLineSpan(span.Value).EndLinePosition;
-                        items.Add(new DefinitionItem(
-                            tree.FilePath,
-                            new Location(span.Value.Start,  start.Line, start.Character), 
-                            new Location(span.Value.End, end.Line, end.Character),
-                            isClass));
+                        var linemap = lineMappingDict[tree.FilePath];
+                        if (linemap.ContainsKey(start.Line)) {
+                            var mapedline = linemap[start.Line];
+                            items.Add(new DefinitionItem(
+                                tree.FilePath,
+                                new Location(span.Value.Start, mapedline, 0),
+                                new Location(span.Value.End, mapedline, 0),
+                                isClass));
+						} else {
+                            //var start = tree.GetLineSpan(span.Value).StartLinePosition;
+                            //var end = tree.GetLineSpan(span.Value).EndLinePosition;
+                            items.Add(new DefinitionItem(
+                                tree.FilePath,
+                                new Location(span.Value.Start, start.Line, start.Character),
+                                new Location(span.Value.End, end.Line, end.Character),
+                                isClass));
+                        }
                     }
                 }
             }
@@ -253,10 +290,10 @@ namespace ConsoleApp1 {
             if (!workspace.CurrentSolution.ContainsDocument(docId)) {
                 return items;
             }
-
+            var adjChara = getoffset(name, line, chara) + chara;
             var doc = workspace.CurrentSolution.GetDocument(docId);
             var model = await doc.GetSemanticModelAsync();
-            var position = doc.GetTextAsync().Result.Lines.GetPosition(new LinePosition(line, chara));
+            var position = doc.GetTextAsync().Result.Lines.GetPosition(new LinePosition(line, adjChara));
             var symbol = await SymbolFinder.FindSymbolAtPositionAsync(model, position, workspace);
             if (symbol == null) {
                 return items;

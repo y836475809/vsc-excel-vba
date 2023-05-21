@@ -1,4 +1,6 @@
-Public Class Collection
+Imports System.Collections 
+
+Public Class Collection : Implements IEnumerable
   Public Count As Long
 
   Public Sub Add(item As Object)

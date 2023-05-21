@@ -1,4 +1,6 @@
-Public Class Dictionary
+Imports System.Collections
+
+Public Class Dictionary : Implements IEnumerable
   Public Count As Long
 
   Public Sub Add(key As String, item As Object)

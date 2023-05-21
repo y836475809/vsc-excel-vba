@@ -9,11 +9,14 @@ using System.Text;
 
 namespace ConsoleApp1 {
     public class RewriteProperty {
+        // 書き換えした場合、元コードと書き換え後でずれが生じるので下の対応で定義やホバー、補完位置の調整が必要
         // line - (chara start, offset)
+        // どのラインのどの位置から追加しないといけないオフセット値の対応
         public Dictionary<int, (int, int)> charaOffsetDict;
 
-		// line - line num
-		public Dictionary<int, int> lineMappingDict;
+        // line - line
+        // 追加したVB.net形式のprop文のライン位置と元の(VBA形式の) prop文のライン位置との対応
+        public Dictionary<int, int> lineMappingDict;
 
 		private void Init() {
             charaOffsetDict = new Dictionary<int, (int, int)>();
@@ -23,81 +26,106 @@ namespace ConsoleApp1 {
         public SyntaxNode Rewrite(SyntaxNode docRoot) {
             Init();
 
+            var (changes, lineGetLetDict) = GetPropStmtChanges(docRoot);
+            if (!changes.Any()) {
+                return docRoot;
+            }
+
+            docRoot = docRoot.SyntaxTree
+                .WithChangedText(docRoot.GetText()
+                .WithChanges(changes))
+                .GetRootAsync().Result;
+
+            var (PropNamePropStmtLineDict, lineRepStmtDict) = GetReplaceDict(docRoot, lineGetLetDict);
+            if (!PropNamePropStmtLineDict.Any() || !lineRepStmtDict.Any()) {
+                return docRoot;
+            }
+           
+            docRoot = ApplyReplace(docRoot, PropNamePropStmtLineDict, lineRepStmtDict);
+            return docRoot;
+        }
+
+        private (List<TextChange>, Dictionary<int, string>) GetPropStmtChanges(SyntaxNode docRoot) {
+            var changes = new List<TextChange>();
+            // prop文のライン番号 - get or set or let
+            // 書き換えたprop文の名前変更や内部の変数名の書き換え位置の取得に使用
+            var lineGetLetDict = new Dictionary<int, string>();
+
+            var keywordsGetLet = new List<string>() {
+                 "get",  "let", "set"
+            };
+            var propPairs = new List<(PropertyStatementSyntax, EndBlockStatementSyntax)>();
             var props = docRoot.DescendantTokens()
                 .Where(x => x.IsKind(SyntaxKind.PropertyKeyword))
                 .Select(x => x.Parent);
-
-           var prppreChanges = new List<TextChange>();
-            var pairs = new List<(PropertyStatementSyntax, EndBlockStatementSyntax)>();
-			for (int i = 0; i < props.Count()/2; i++) {
-                pairs.Add((
-                    props.ElementAt(i*2) as PropertyStatementSyntax, 
-                    props.ElementAt(i*2 + 1) as EndBlockStatementSyntax));
+            for (int i = 0; i < props.Count() / 2; i++) {
+                propPairs.Add((
+                    props.ElementAt(i * 2) as PropertyStatementSyntax,
+                    props.ElementAt(i * 2 + 1) as EndBlockStatementSyntax));
             }
-            var map = new Dictionary<SyntaxToken, SyntaxToken>();
-            
-            var replinemap = new Dictionary<int, string>();
-            foreach (var pair in pairs) {
-                if(pair.Item1 == null || pair.Item2 == null) {
+            foreach (var pair in propPairs) {
+                if (pair.Item1 == null || pair.Item2 == null) {
                     continue;
-				}
-                var propsetletkeys = pair.Item1.ChildTokens()
-                .Where(x =>
-                    x.ToString().ToLower() == "get"
-                    || x.ToString().ToLower() == "let"
-                    || x.ToString().ToLower() == "set");
-                if (propsetletkeys.Any()) {
-                    var getToken = propsetletkeys.First();
-                    var attname = getToken.ToString().ToLower();
-                    replinemap.Add(
-                        getToken.GetLocation().GetLineSpan().StartLinePosition.Line,
-                        attname.ToLower());
-                    prppreChanges.Add(
-                        new TextChange(getToken.Span, new string(' ', getToken.Span.Length))); ;
+                }
+                var tokensGetLet = pair.Item1.ChildTokens().Where(x => keywordsGetLet.Contains(x.ToString().ToLower()));
+                if (!tokensGetLet.Any()) {
+                    continue;
+                }
+                var tokenGetLet = tokensGetLet.First();
+                lineGetLetDict.Add(
+                    tokenGetLet.GetLocation().GetLineSpan().StartLinePosition.Line,
+                    tokenGetLet.ToString().ToLower());
+                changes.Add(
+                    new TextChange(tokenGetLet.Span, new string(' ', tokenGetLet.Span.Length))); ;
 
-                    var propkeys = pair.Item1.ChildTokens()
+                var propTokens = pair.Item1.ChildTokens()
+                    .Where(x => x.IsKind(SyntaxKind.PropertyKeyword));
+                if (!propTokens.Any()) {
+                    continue;
+                }
+                var prop = propTokens.First();
+                if (tokenGetLet.ToString().ToLower() == "get") {
+                    changes.Add(new TextChange(prop.Span, "Function"));
+                    var propEndToknes = pair.Item2.ChildTokens()
                         .Where(x => x.IsKind(SyntaxKind.PropertyKeyword));
-                    if (propkeys.Any()) {
-                        var pToken = propkeys.First();
-                        if (getToken.ToString().ToLower() == "get") {
-                            prppreChanges.Add(new TextChange(pToken.Span, "Function"));
-                            var endpropkeys = pair.Item2.ChildTokens()
-                                .Where(x => x.IsKind(SyntaxKind.PropertyKeyword));
-                            if (endpropkeys.Any()) {
-                                prppreChanges.Add(new TextChange(endpropkeys.First().Span, "Function"));
-                            }
-                        } else {
-                            prppreChanges.Add(new TextChange(pToken.Span, "Sub     "));
-                            var endpropkeys = pair.Item2.ChildTokens()
-                                .Where(x => x.IsKind(SyntaxKind.PropertyKeyword));
-                            if (endpropkeys.Any()) {
-                                prppreChanges.Add(new TextChange(endpropkeys.First().Span, "Sub     "));
-                            }
-                        }
+                    if (propEndToknes.Any()) {
+                        changes.Add(new TextChange(propEndToknes.First().Span, "Function"));
+                    }
+                } else {
+                    var adj = new string(' ', "Property".Length - "Sub".Length);
+                    changes.Add(new TextChange(prop.Span, $"Sub{adj}"));
+                    var propEndToknes = pair.Item2.ChildTokens()
+                        .Where(x => x.IsKind(SyntaxKind.PropertyKeyword));
+                    if (propEndToknes.Any()) {
+                        changes.Add(new TextChange(propEndToknes.First().Span, $"Sub{adj}"));
                     }
                 }
             }
+            return (changes, lineGetLetDict);
+        }
 
-            docRoot = docRoot.SyntaxTree.WithChangedText(
-                docRoot.GetText().WithChanges(prppreChanges))
-                .GetRootAsync().Result;
+        private (Dictionary<string, (string, int)>, Dictionary<int, string>) GetReplaceDict(
+            SyntaxNode docRoot, Dictionary<int, string> lineGetLetDict) {
+            // Prop文の名前 - VB.net式のProp文, Prop文のライン番号 
+            var PropNamePropStmtLineDict = new Dictionary<string, (string, int)>();
+            // ライン番号 - ライン番号で置き換える文
+            // prop文から書き換えたメソッド、メソッド内部の書き換え位置と文を記録
+            var lineRepStmtDict = new Dictionary<int, string>();
 
-            var newPropLineDict = new Dictionary<string, int>();
-            var newPropStateDict = new Dictionary<string, string>();
-            var repLineMap = new Dictionary<int, string>();
             var lines = docRoot.GetText().Lines;
-            foreach (var linenum in replinemap.Keys) {
-                var line = lines[linenum];
-                var propnode = docRoot.FindNode(line.Span);
-				if (!(propnode is MethodStatementSyntax mathodnode)) {
-					continue;
-				}
-				var text = line.ToString();
-                var pp = replinemap[linenum];
-                var funcname = mathodnode.Identifier.ToString();
-				if (mathodnode.IsKind(SyntaxKind.FunctionStatement)){
-                    newPropStateDict[funcname] =
-                        $"Public Property {funcname} As {mathodnode.AsClause.Type}";
+            foreach (var lineNum in lineGetLetDict.Keys) {
+                var line = lines[lineNum];
+                var propNode = docRoot.FindNode(line.Span);
+                if (!(propNode is MethodStatementSyntax mathodnode)) {
+                    continue;
+                }
+                var text = line.ToString();
+                var funcName = mathodnode.Identifier.ToString();
+                if (mathodnode.IsKind(SyntaxKind.FunctionStatement)) {
+					if (!PropNamePropStmtLineDict.ContainsKey(funcName)) {
+                        PropNamePropStmtLineDict[funcName] =
+                            ($"Public Property {funcName} As {mathodnode.AsClause.Type}", lineNum);
+                    }
                 }
                 if (mathodnode.IsKind(SyntaxKind.SubStatement)) {
                     var paramsAs = mathodnode.ParameterList.Parameters;
@@ -106,82 +134,86 @@ namespace ConsoleApp1 {
                             x => x.IsKind(SyntaxKind.SimpleAsClause)).FirstOrDefault();
                         if (!asClause.IsKind(SyntaxKind.None)) {
                             var asClauseType = (asClause as SimpleAsClauseSyntax).Type;
-                            newPropStateDict[funcname] =
-                                $"Public Property {funcname} As {asClauseType}";
+                            if (!PropNamePropStmtLineDict.ContainsKey(funcName)) {
+                                PropNamePropStmtLineDict[funcName] = 
+                                    ($"Public Property {funcName} As {asClauseType}", lineNum);
+                            }
                         }
                     }
-                } 
-
-                if (!newPropLineDict.ContainsKey(funcname)) {
-                    newPropLineDict[funcname] = linenum;
                 }
 
-                var spinde = text.IndexOf(funcname);
-                if (spinde > 0) {
-                    if((spinde - pp.Length) >= 0) {
-                        text = text.Remove(spinde - pp.Length, pp.Length);
+                var getlet = lineGetLetDict[lineNum];
+                var funcNameIndex = text.IndexOf(funcName);
+                if (funcNameIndex > 0) {    
+                    if ((funcNameIndex - getlet.Length) >= 0) {
+                        text = text.Remove(funcNameIndex - getlet.Length, getlet.Length);
                     }
                 }
-                text = text.Replace(funcname, $"{pp}{funcname}");
+                // prorp文をSub or Functionに書き換えた文の
+                // メソッド名をget or let+メソッド名する
+                // また、Privateにする
+                text = text.Replace(funcName, $"{getlet}{funcName}");
                 if (mathodnode.Modifiers.Any()) {
-                    var mod = mathodnode.Modifiers.First();
-					if (mod.IsKind(SyntaxKind.PublicKeyword)) {
+                    var modify = mathodnode.Modifiers.First();
+                    if (modify.IsKind(SyntaxKind.PublicKeyword)) {
                         text = text.Replace("Public", "Private");
                     }
-                    var m = mod.Text;
-                    var d = m.Length - "Private".Length;
-                    charaOffsetDict[linenum] = ("Private".Length, d);
+                    var len = modify.Text.Length - "Private".Length;
+                    charaOffsetDict[lineNum] = ("Private".Length, len);
                 } else {
                     text = $"Private {text}";
-                    var d = "Private".Length;
-                    charaOffsetDict[linenum] = (d, d);
+                    var len = "Private".Length;
+                    charaOffsetDict[lineNum] = (len, len);
                 }
-                repLineMap.Add(linenum, text);
+                lineRepStmtDict.Add(lineNum, text);
 
-                var propChNodes = propnode.Parent.ChildNodes();
-                var assigs = propChNodes
-                    .Where(x => x.IsKind(SyntaxKind.SimpleAssignmentStatement))
-                    .Cast<AssignmentStatementSyntax>();
-				if (assigs.Any()) {
-					foreach (var item in assigs) {
-                        if (item.Left.ToString() != funcname) {
-                            continue;
+                // prop文を書き換えたメソッド内でメソッド名=値としている箇所を
+                // get+メソッド名=値に書き換える
+                var propChNodes = propNode.Parent.ChildNodes();
+				if (propChNodes.Any()) {
+                    var assigs = propChNodes
+                        .Where(x => x.IsKind(SyntaxKind.SimpleAssignmentStatement))
+                        .Cast<AssignmentStatementSyntax>();
+                    if (assigs.Any()) {
+                        foreach (var assigStmt in assigs) {
+                            if (assigStmt.Left.ToString() != funcName) {
+                                continue;
+                            }
+                            var assigLineNum = assigStmt.GetLocation().GetLineSpan().StartLinePosition.Line;
+                            var assigText = lines[assigLineNum].ToString();
+                            var repText = $"{getlet}{funcName}";
+                            lineRepStmtDict.Add(assigLineNum, assigText.Replace(funcName, repText));
+                            var assigTrivia = assigStmt.GetLeadingTrivia().FirstOrDefault().ToString();
+                            charaOffsetDict[assigLineNum] = (assigTrivia.Length + repText.Length, funcName.Length - repText.Length);
                         }
-                        var asLine = item.GetLocation().GetLineSpan().StartLinePosition.Line;
-                        var asline = lines[asLine].ToString();
-                        var repval = $"{pp}{funcname}";
-                        repLineMap.Add(asLine, asline.Replace(funcname, repval));
-
-                        var assigTrivia = item.GetLeadingTrivia().FirstOrDefault().ToString();
-                        charaOffsetDict[asLine] = (assigTrivia.Length + repval.Length, funcname.Length - repval.Length);
                     }
-				}
+                }
             }
 
-            docRoot = ApplyReplace3(docRoot, newPropLineDict, newPropStateDict, repLineMap);
-            return docRoot;
+            return (PropNamePropStmtLineDict, lineRepStmtDict);
         }
 
-        private SyntaxNode ApplyReplace3(SyntaxNode docRoot,
-            Dictionary<string, int> newPropLineDict,
-            Dictionary<string, string> newPropStateDict,
-            Dictionary<int, string> repdict) {
-           var sb = new StringBuilder();
+        private SyntaxNode ApplyReplace(SyntaxNode docRoot,
+            Dictionary<string, (string, int)> PropNamePropStmtLineDict,
+            Dictionary<int, string> lineRepStmtDict) {
+
+            var sb = new StringBuilder();
             var lines = docRoot.GetText().Lines;
+            // 書き換え
             for (int i = 0; i < lines.Count() - 1; i++) { 
-                if (repdict.ContainsKey(i)) {
-                    sb.AppendLine(repdict[i]);
+                if (lineRepStmtDict.ContainsKey(i)) {
+                    sb.AppendLine(lineRepStmtDict[i]);
                 } else {
                     sb.AppendLine(lines[i].ToString());
                 }
             }
-
+            // VB.net形式のprop文をコードの最後辺りに追加する
+            // (元のコードと書き換え後でラインがずれないようにするため)
             var count = lines.Count() - 1;
-            foreach (var item in newPropStateDict) {
-                sb.AppendLine(item.Value);
-                if (newPropLineDict.ContainsKey(item.Key)) {
-                    lineMappingDict[count] = newPropLineDict[item.Key];
-                }
+            foreach (var item in PropNamePropStmtLineDict) {
+                var propStmt = item.Value.Item1;
+                sb.AppendLine(propStmt);
+                lineMappingDict[count] = item.Value.Item2;
                 count++;
             }
             sb.AppendLine(lines.Last().ToString());

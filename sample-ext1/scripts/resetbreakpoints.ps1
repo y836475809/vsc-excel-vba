@@ -19,6 +19,7 @@ try {
         exit
     }
 
+    $togglebp = $debugItems.Controls(9)
     foreach($bploc in $bplocs){
         $bp = $bploc -split ":"
         $moudlename = $bp[0]
@@ -29,7 +30,7 @@ try {
 
         foreach($line in $lines){
             $cmp.CodeModule.CodePane.SetSelection([int]$line, 1, [int]$line, 1)
-            $togglebp = $debugItems.Controls(9)
+            # $togglebp = $debugItems.Controls(9)
             $togglebp.Execute()
         }
     } 

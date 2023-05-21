@@ -33,7 +33,7 @@
         "sample-ext1.serverExeFilePath": {
           "type": ["string", "null"],
           "default": null,
-          "description": "LSP server file path"
+          "description": "LSP server exe file path"
         },
         "sample-ext1.useLSPServer": {
           "type": "boolean",

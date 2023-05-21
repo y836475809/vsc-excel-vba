@@ -14,6 +14,10 @@ function getWorkBooks($bookname) {
         $ex = [System.Runtime.InteropServices.Marshal]::GetActiveObject("Excel.Application")
         foreach ($bk in $ex.WorkBooks){
             if ($bk.Name -eq $bookname){
+                if($bk.Application.VBE.MainWindow.Visible -eq $false){
+                    $bk.Application.VBE.MainWindow.Visible = $true
+                    # Start-Sleep -m 500
+                }
                 return $bk
             }
         }

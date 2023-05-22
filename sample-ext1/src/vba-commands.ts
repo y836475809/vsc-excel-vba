@@ -92,7 +92,7 @@ export class VBACommands {
                 return;
             }
             const vsStartline = startline + lineoffset;
-            const vsEndline = endline + endline;
+            const vsEndline = endline + lineoffset;
             editor.selection = new vscode.Selection(
                 vsStartline, startcol,
                 vsEndline, endcol);

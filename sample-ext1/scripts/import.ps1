@@ -15,7 +15,9 @@ try {
     exit
 }
 
-if(($proj.Mode -eq $vbext_vm_Run) -Or ($proj.Mode -eq $vbext_vm_Break)){
+$project = getVBProject $bk $bookname
+$mode = $project.Mode
+if(($mode -eq $vbext_vm_Run) -Or ($mode -eq $vbext_vm_Break)){
     $msg = "Cannot import. because it is running. please stop running"
     $jsonStr = getResJson "error" $msg ""
     Write-Output $jsonStr

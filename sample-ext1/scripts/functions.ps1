@@ -37,4 +37,14 @@ function getVBComponent($proj, $name){
     return $null
 }
 
+function getVBProject($book, $bookname) {
+    foreach ($project in $book.Application.VBE.VBProjects){
+        $filename = Split-Path $project.FileName -Leaf
+        if($filename -eq $bookname){
+            return $project
+        }
+    }
+    $msg = "Not found VBProject, target=$bookname" 
+    throw $msg
+}
 

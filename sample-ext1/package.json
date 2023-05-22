@@ -165,14 +165,24 @@
       ],
       "editor/context": [
         {
+          "command": "sample-ext1.import",
+          "when": "resourceExtname == .bas || resourceExtname == .cls",
+          "group": "myGroup@1"
+        },
+        {
           "command": "sample-ext1.gotoVBA",
           "when": "resourceExtname == .bas || resourceExtname == .cls",
-          "group": "myGroup"
+          "group": "myGroup@2"
+        },
+        {
+          "command": "sample-ext1.gotoVSCode",
+          "when": "resourceExtname == .bas || resourceExtname == .cls",
+          "group": "myGroup@3"
         },
         {
           "command": "sample-ext1.runVBASubProc",
           "when": "resourceExtname == .bas",
-          "group": "myGroup"
+          "group": "myGroup@4"
         }
       ]
     }

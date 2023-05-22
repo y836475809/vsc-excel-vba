@@ -27,7 +27,7 @@ export class FileEvents {
     }
 
     private isInSrcDir(uri: vscode.Uri): boolean{
-        return path.dirname(uri.fsPath) === this.srcDir;
+        return path.dirname(uri.fsPath).startsWith(this.srcDir);
     }
 
     private async renameFiles(files: any[]){

@@ -224,8 +224,6 @@ export async function activate(context: vscode.ExtensionContext) {
 	}));
 	context.subscriptions.push(vscode.commands.registerCommand("sample-ext1.import", async () => {
 		await vbaCommand.exceue(project, "import");
-		await vbaCommand.exceue(project, "resetBreakpoints");
-		await vbaCommand.exceue(project, "gotoVBA");
 	}));
 	context.subscriptions.push(vscode.commands.registerCommand("sample-ext1.export", async () => {
 		await vbaCommand.exceue(project, "export");

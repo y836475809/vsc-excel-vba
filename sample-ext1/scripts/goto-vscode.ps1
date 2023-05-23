@@ -29,6 +29,9 @@ $endline = -1
 $endcol = -1
 $cmp.CodeModule.CodePane.GetSelection(
     [ref]$startline, [ref]$startcol, [ref]$endline, [ref]$endcol)
+
+Add-Type -AssemblyName System.Web
+$module_name = [System.Web.HttpUtility]::UrlEncode($cm.Name)
 $json = @{
     "module_name" = $module_name;
     "module_type" = $module_type;

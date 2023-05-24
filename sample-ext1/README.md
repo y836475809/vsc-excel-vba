@@ -1,6 +1,6 @@
 # sample-ext1 README
 
-This is the README for your extension "sample-ext1". After writing up a brief description, we recommend including the following sections.
+Support development in VBA.
 
 ## Features
 

@@ -1,3 +1,4 @@
+[Console]::OutputEncoding = [System.Text.Encoding]::GetEncoding('utf-8')
 
 function getResJson($code, $message, $data){
     $json = @{

@@ -79,8 +79,8 @@ export class VBACommands {
         }
 
         const files = uris.filter(x => {
-            return x.toLowerCase()
-                .endsWith(`${moduleName}.${moduleType}`.toLowerCase());
+            const encFname = encodeURIComponent(`${moduleName}.${moduleType}`)
+            return x.endsWith(encFname);
         });
         if(files.length > 0){
             const u = vscode.Uri.parse(files[0]);

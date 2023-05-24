@@ -26,6 +26,18 @@ export class VbaDocumentSymbolProvider implements vscode.DocumentSymbolProvider 
         return symbol;
     }
 
+    private getVarName(text: string): string{
+        let name = text.replace(/^\s*(private|public)\s+/i, "");
+        return name.trim();
+    }
+
+    private getFuncName(text: string): string{
+        let name = text.replace(/^\s*(private|public)\s+/i, "");
+        name = name.replace(/^\s*(sub|function)\s+/i, "");
+        name = name.replace(/\s+(sub|function)\s+/i, "");
+        return name.trim();
+    }
+
     public provideDocumentSymbols(document: vscode.TextDocument,
             token: vscode.CancellationToken): Thenable<vscode.DocumentSymbol[]> {
         return new Promise((resolve, reject) => {
@@ -49,9 +61,10 @@ export class VbaDocumentSymbolProvider implements vscode.DocumentSymbolProvider 
             for (let i = 0; i < document.lineCount; i++) {
                 const line = document.lineAt(i);
                 if (regVar.test(line.text)) {
+                    const varName = this.getVarName(line.text);
                     symbols.push(new vscode.DocumentSymbol(
+                        varName,
                         line.text,
-                        "",
                         varSymKind,
                         line.range,
                         line.range));
@@ -66,12 +79,13 @@ export class VbaDocumentSymbolProvider implements vscode.DocumentSymbolProvider 
                     if(i >= document.lineCount){
                         break;
                     }
+                    const funcName = this.getFuncName(line.text);
                     const range1 = line.range;
                     const range2 = document.lineAt(i).range;
                     const range = new vscode.Range(range1.start, range2.start);
                     symbols.push(new vscode.DocumentSymbol(
+                        funcName,
                         line.text,
-                        "",
                         funcSymKind,
                         range,
                         range));

@@ -276,12 +276,13 @@ export async function activate(context: vscode.ExtensionContext) {
 		if(!targetSymbols.length){
 			return;
 		}
-		const symName = targetSymbols[0].name;
+		const moduleName = path.parse(uri.fsPath).name;;
+		const symName = targetSymbols[0].detail;
 		const mt = symName.match(/Sub\s+(.+)\(\s*\)/);
 		if(mt && mt.length > 1){
 			const procName = mt[1];
 			const xlsmFileName = project.projectData.targetfilename;
-			await vbaCommand.runVBASubProc(xlsmFileName, procName);
+			await vbaCommand.runVBASubProc(xlsmFileName, `${moduleName}.${procName}`);
 		}
 	}));
 

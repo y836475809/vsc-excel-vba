@@ -79,7 +79,7 @@ export class VBACommands {
         }
 
         const files = uris.filter(x => {
-            const encFname = encodeURIComponent(`${moduleName}.${moduleType}`)
+            const encFname = encodeURIComponent(`${moduleName}.${moduleType}`);
             return x.endsWith(encFname);
         });
         if(files.length > 0){

@@ -67,7 +67,9 @@ namespace Hoge {
         | "renameFiles"
         | "changeText"
         | "reset"
-        | "diagnostics";
+        | "diagnostics"
+        | "IsReady"
+        | "Shutdown";
     export type RequestRenameParam = {
         olduri: string,
         newuri: string

@@ -1,6 +1,7 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as path from 'path';
+import * as fs from "fs";
 import * as vscode from 'vscode';
 import { MyTreeItem, TreeDataProvider } from './treeDataProvider';
 import { VBACommands } from './vba-commands';
@@ -155,18 +156,18 @@ export async function activate(context: vscode.ExtensionContext) {
 		report("stop ServerAppr");
 		await lspClient.stop();	
 
-		if(autoLaunchServerApp){
-			report("shutdownServerApp");
-			await lspClient.shutdownServerApp(serverAppPort);
-			report("launchServerApp");
-			await lspClient.launchServerApp(serverAppPort, serverExeFilePath);
-		}
-
 		report("Initialize ServerAppr");
 		await lspClient.start(context, outputChannel);
-		
-		report("resetServerApp");
-		await lspClient.resetServerApp();
+
+		if(autoLaunchServerApp){
+			report("shutdownServerApp");
+			await lspClient.shutdownServerApp();
+			report("launchServerApp");
+			await lspClient.launchServerApp(serverAppPort, serverExeFilePath);
+		}else{
+			report("resetServerApp");
+			await lspClient.resetServerApp();
+		}
 
 		lspClient.registerFileEvents(project.srcDir);
 
@@ -211,6 +212,8 @@ export async function activate(context: vscode.ExtensionContext) {
 				}
 				vscode.window.showInformationMessage("Success");
 			} catch (error) {
+				await lspClient.stop();	
+
 				let errorMsg = "Fail start";
 				if(error instanceof Error){
 					errorMsg = `${error.message}`;
@@ -226,16 +229,14 @@ export async function activate(context: vscode.ExtensionContext) {
 		if(outlineDisp){
 			outlineDisp.dispose();
 		}
+		await lspClient.shutdownServerApp();
 		await lspClient.stop();
-		await lspClient.shutdownServerApp(serverAppPort);
+		
 	}));
 }
 
 // This method is called when your extension is deactivated
 export async function deactivate() {
-	// TODO
-	const config = vscode.workspace.getConfiguration();
-	let serverAppPort = await config.get("sample-ext1.serverPort") as number;
-	await lspClient.shutdownServerApp(serverAppPort);
+	await lspClient.shutdownServerApp();
 	await lspClient.stop();
 }

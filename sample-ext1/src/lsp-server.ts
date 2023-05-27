@@ -232,6 +232,26 @@ export class LSPServer {
             } as Hoge.Command;  
             await this.lpsRequest.send(data);
         }
+        if(requestMethod === "IsReady"){
+            const data = {
+                id: "IsReady",
+                filepaths: [],
+                line: 0,
+                chara: 0,
+                text: ""
+            } as Hoge.Command;
+            await this.lpsRequest.send(data);
+        }
+        if(requestMethod === "Shutdown"){
+            const data = {
+                id: "Shutdown",
+                filepaths: [],
+                line: 0,
+                chara: 0,
+                text: ""
+            } as Hoge.Command;
+            await this.lpsRequest.send(data);
+        }
     }
 
     async onCompletion(_textDocumentPosition: TextDocumentPositionParams): Promise<CompletionItem[]>{

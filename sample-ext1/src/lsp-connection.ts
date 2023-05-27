@@ -1,3 +1,3 @@
-import { startLspServer } from "./server";
+import { startLspServer } from "./lsp-server";
 
 startLspServer();

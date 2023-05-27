@@ -121,6 +121,10 @@
         "command": "sample-ext1.runViewItem",
         "title": "Run",
         "icon": "$(run)"
+      },
+      {
+        "command": "sample-ext1.openSheet",
+        "title": "openSheet"
       }
     ],
     "views": {
@@ -160,6 +164,11 @@
         {
           "when": "resourceExtname == .xlsm",
           "command": "testView.myCommand",
+          "group": "myGroup"
+        },
+        {
+          "when": "resourceExtname == .csv",
+          "command": "sample-ext1.openSheet",
           "group": "myGroup"
         }
       ],

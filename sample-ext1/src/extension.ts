@@ -255,6 +255,10 @@ export async function activate(context: vscode.ExtensionContext) {
 			}
 		}
 	}));
+	context.subscriptions.push(vscode.commands.registerCommand("sample-ext1.openSheet", async (args) => {	
+		const xlsmFileName = project.projectData.targetfilename;
+		await vbaCommand.openSheet(xlsmFileName, args.fsPath);
+	}));
 
 	context.subscriptions.push(vscode.commands.registerCommand("sample-ext1.runVBASubProc", async (args) => {
 		const editor = vscode.window.activeTextEditor;

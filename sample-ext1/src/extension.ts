@@ -356,7 +356,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		vscode.window.withProgress(options, async progress => {
 			setServerStartEnable(false);
 			try {	
-				loadProject((msg) => {
+				await loadProject((msg) => {
 					logger.info(msg);
 					progress.report({ message: msg });
 				});
@@ -373,7 +373,7 @@ export async function activate(context: vscode.ExtensionContext) {
 					errorMsg = `${error.message}`;
 				}
 				logger.info(`Fail start, ${errorMsg}`);
-				vscode.window.showErrorMessage(`Fail start\n${errorMsg}\nPlease restart again`, { modal: true });
+				vscode.window.showErrorMessage(`Fail start\n${errorMsg}\nPlease restart again`);
 			}
 			setServerStartEnable(true);
 		});

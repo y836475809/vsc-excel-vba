@@ -52,7 +52,7 @@ export class FileEvents {
         await this.client.sendRequest(method, {uris});
     }
 
-    public registerFileEvent(context: vscode.ExtensionContext): vscode.Disposable[] {
+    public registerFileEvent(context?: vscode.ExtensionContext): vscode.Disposable[] {
         const feDisps: vscode.Disposable[] = [];
 
         feDisps.push(vscode.workspace.onDidCreateFiles(async (e: vscode.FileCreateEvent) => {
@@ -65,7 +65,7 @@ export class FileEvents {
                 return;
             }
             await this.client.sendRequest(method, {uris});
-        }, null, context.subscriptions));
+        }));
 
         feDisps.push(vscode.workspace.onDidDeleteFiles(async (e: vscode.FileDeleteEvent) => {
             if(!this.client || this.client.state !== State.Running){
@@ -78,7 +78,7 @@ export class FileEvents {
                 return;
             }
             await this.deleteFiles(files);
-        }, null, context.subscriptions));
+        }));
 
         feDisps.push(vscode.workspace.onDidRenameFiles(async (e: vscode.FileRenameEvent) => {
             if(!this.client || this.client.state !== State.Running){
@@ -94,7 +94,7 @@ export class FileEvents {
                 return;
             }
             await this.renameFiles(files);
-        }, null, context.subscriptions));
+        }));
 
         feDisps.push(vscode.workspace.onDidChangeTextDocument(
             debounce(async (e: vscode.TextDocumentChangeEvent) => {
@@ -117,7 +117,7 @@ export class FileEvents {
                 const method: Hoge.RequestMethod = "changeText";
                 const uri = e.document.uri.toString();
                 await this.client.sendRequest(method, {uri});
-        }, 500), null, context.subscriptions));
+        }, 500)));
 
         feDisps.push(vscode.window.onDidChangeActiveTextEditor(
             debounce(async (e: vscode.TextEditor) => {
@@ -129,7 +129,7 @@ export class FileEvents {
                     const method: Hoge.RequestMethod = "diagnostics";
                     await this.client.sendRequest(method, {uri:e.document.uri.toString()});
                 }
-        }, 1000), null, context.subscriptions));
+        }, 1000)));
 
         return feDisps;
     }

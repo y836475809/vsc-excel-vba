@@ -2,31 +2,17 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { spawn } from "child_process";
-
-import {
-	ExecuteCommandRequest,
-	LanguageClient,
-	LanguageClientOptions,
-	ServerOptions,
-	State,
-	TransportKind
-} from 'vscode-languageclient/node';
 import { MyTreeItem, TreeDataProvider } from './treeDataProvider';
 import { VBACommands } from './vba-commands';
 import { Project } from './project';
-import * as fs from "fs";
-import { LPSRequest } from "./lsp-request";
 import { VbaDocumentSymbolProvider } from "./vba-documentsymbolprovider";
 import { Logger } from "./logger";
-import { FileEvents } from "./file-events";
+import { LSPClient } from "./lsp-client";
 
-let client: LanguageClient;
-let wsFileEventDisps: vscode.Disposable[]  = [];
 let outlineDisp: vscode.Disposable;
 let outputChannel: vscode.OutputChannel;
 let logger: Logger;
-
+let lspClient: LSPClient;
 
 function setupOutline(context: vscode.ExtensionContext) {
 	if(outlineDisp){
@@ -35,143 +21,6 @@ function setupOutline(context: vscode.ExtensionContext) {
 	outlineDisp = vscode.languages.registerDocumentSymbolProvider(
 		{ language: "vb" }, new VbaDocumentSymbolProvider());
 	context.subscriptions.push(outlineDisp);
-}
-
-async function startLanguageServer(context: vscode.ExtensionContext){
-	let serverModule = context.asAbsolutePath(path.join('out', 'lsp-connection.js'));
-	let debugOptions = { execArgv: ['--nolazy', '--inspect=6009'] };
-	let serverOptions: ServerOptions = {
-		run: { module: serverModule, transport: TransportKind.ipc },
-		debug: {
-			module: serverModule,
-			transport: TransportKind.ipc,
-			options: debugOptions
-		}
-	};
-	let clientOptions: LanguageClientOptions = {
-		documentSelector: [{ scheme: 'file', language: 'vb' },],
-		outputChannel: outputChannel
-	};
-	// Create the language client and start the client.
-	client = new LanguageClient(
-		'languageServerExample',
-		'Language Server Example',
-		serverOptions,
-		clientOptions
-	);
-
-	// Start the client. This will also launch the server
-	client.start();
-}
-
-async function stopLanguageServer(){
-	if (client && client.state === State.Running) {
-		await client.stop();
-	}
-}
-
-async function waitUntilClientIsRunning(){
-	let waitCount = 0;
-	while(true){
-		if(waitCount > 100){
-			throw new Error("Timed out waiting for client ready");
-		}
-		waitCount++;
-		await new Promise(resolve => {
-			setTimeout(resolve, 100);
-		});
-		if(client.state === State.Running){
-			break;
-		}
-	}
-}
-
-async function shutdownServerApp(port: number): Promise<void>{
-	const req = new LPSRequest(port);
-	const data = {
-		id: "Shutdown",
-		filepaths: [],
-		line: 0,
-		chara: 0,
-		text: ""
-	} as Hoge.Command;
-	try {
-		await req.send(data);
-		await waitUntilServerApp(port, "shutdown");
-	} catch (error) {
-		// 
-	}
-}
-
-async function resetServerApp(){
-	if (client && client.state === State.Running) {
-		const method: Hoge.RequestMethod = "reset";
-		await client.sendRequest(method);
-	}
-}
-
-async function waitUntilServerApp(port: number, state: "ready"|"shutdown"){
-	const req = new LPSRequest(port);
-	let waitCount = 0;
-	while(true){
-		if(waitCount > 30){
-			throw new Error(`Timed out waiting for server ${state}`);
-		}
-		waitCount++;
-		await new Promise(resolve => {
-			setTimeout(resolve, 200);
-		});
-		const data = {
-			id: "IsReady",
-			filepaths: [],
-			line: 0,
-			chara: 0,
-			text: ""
-		} as Hoge.Command;
-		try {
-			await req.send(data);
-			if(state === "ready"){
-				break;
-			}
-		} catch (error) {
-			if(state === "shutdown"){
-				break;
-			}
-		}
-	}
-}
-
-async function isReadyServerApp(port: number): Promise<boolean>{
-	const req = new LPSRequest(port);
-	const data = {
-		id: "IsReady",
-		filepaths: [],
-		line: 0,
-		chara: 0,
-		text: ""
-	} as Hoge.Command;
-	try {
-		await req.send(data);
-		return true;
-	} catch (error) {
-		return false;
-	}
-}
-
-async function launchServerApp(port: number, serverExeFilePath: string){
-	const prop = "sample-ext1.serverExeFilePath";
-	if(!serverExeFilePath){
-		throw new Error(`${prop} is not set`);
-	}
-	if(!fs.existsSync(serverExeFilePath)){
-		throw new Error(`${prop}, Not find: ${serverExeFilePath}`);
-	}
-	const p = spawn("cmd.exe", ["/c", `${serverExeFilePath} ${port}`], { detached: true });
-	p.on("error", (error)=> {
-		throw error;
-	});
-
-	await waitUntilServerApp(port, "ready");
 }
 
 function setServerStartEnable(enable: boolean){
@@ -190,6 +39,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		outputChannel.appendLine(msg);
 	});
 
+	lspClient = new LSPClient();
 	const project = new Project("project.json");
 	const vbaCommand = new VBACommands(context.asAbsolutePath("scripts"));
 
@@ -233,8 +83,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	}));
 
 	context.subscriptions.push(vscode.commands.registerCommand("sample-ext1.startLanguageServer", async () => {
-		await startLanguageServer(context);
-		await waitUntilClientIsRunning();	
+		await lspClient.start(context, outputChannel);	
 	}));
 
 	context.subscriptions.push(vscode.commands.registerCommand("testView.myCommand", async (args) => {
@@ -304,28 +153,22 @@ export async function activate(context: vscode.ExtensionContext) {
 		report("Start server");
 
 		report("stop ServerAppr");
-		await stopLanguageServer();	
+		await lspClient.stop();	
 
 		if(autoLaunchServerApp){
 			report("shutdownServerApp");
-			await shutdownServerApp(serverAppPort);
-			if(!await isReadyServerApp(serverAppPort)){
-				report("launchServerApp");
-				await launchServerApp(serverAppPort, serverExeFilePath);
-			}
+			await lspClient.shutdownServerApp(serverAppPort);
+			report("launchServerApp");
+			await lspClient.launchServerApp(serverAppPort, serverExeFilePath);
 		}
 
 		report("Initialize ServerAppr");
-		await startLanguageServer(context);	
-		await waitUntilClientIsRunning();
+		await lspClient.start(context, outputChannel);
 		
 		report("resetServerApp");
-		await resetServerApp();
+		await lspClient.resetServerApp();
 
-		wsFileEventDisps.forEach(x => x.dispose());
-		wsFileEventDisps = [];
-		const fe = new FileEvents(client, project.srcDir);
-		wsFileEventDisps = fe.registerFileEvent(context);
+		lspClient.registerFileEvents(project.srcDir);
 
 		const uris1 = await project.getSrcFileUris();
 		const uris2 = loadDefinitionFiles?project.getDefinitionFileUris(context):[];
@@ -333,7 +176,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		if(uris.length > 0){
 			report("Send source uris to ServerAppr");
 			const method: Hoge.RequestMethod = "createFiles";
-			await client.sendRequest(method, {uris});
+			lspClient.sendRequest(method, {uris});
 		}
 
 		const activeUri = vscode.window.activeTextEditor?.document.uri;
@@ -341,7 +184,7 @@ export async function activate(context: vscode.ExtensionContext) {
 			if(activeUri.fsPath.endsWith(".bas") || activeUri.fsPath.endsWith(".cls")){
 				report("Diagnose active document");
 				const method: Hoge.RequestMethod = "diagnostics";
-				await client.sendRequest(method, {uri:activeUri.toString()});
+				lspClient.sendRequest(method, {uri:activeUri.toString()});
 			}
 		}
 
@@ -380,25 +223,19 @@ export async function activate(context: vscode.ExtensionContext) {
 	}));
 
 	context.subscriptions.push(vscode.commands.registerCommand("sample-ext1.stop", async () => {
-		wsFileEventDisps.forEach(x => x.dispose());
 		if(outlineDisp){
 			outlineDisp.dispose();
 		}
-		await stopLanguageServer();
-		await shutdownServerApp(serverAppPort);
+		await lspClient.stop();
+		await lspClient.shutdownServerApp(serverAppPort);
 	}));
 }
 
 // This method is called when your extension is deactivated
 export async function deactivate() {
-	if (!client) {
-		return undefined;
-	}
-	
 	// TODO
 	const config = vscode.workspace.getConfiguration();
 	let serverAppPort = await config.get("sample-ext1.serverPort") as number;
-	await shutdownServerApp(serverAppPort);
-
-	return client.stop();
+	await lspClient.shutdownServerApp(serverAppPort);
+	await lspClient.stop();
 }

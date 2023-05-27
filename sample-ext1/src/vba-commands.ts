@@ -22,8 +22,20 @@ export class VBACommands {
         this.xlsmFileName = "";
     }
 
-    async exceue(project: Project, cmd: string){
+    async tryCatch(cmd: string, func: ()=>Promise<void>){
         try {
+            await func();
+        } catch (error: unknown) {
+            let msg = `Failed to ${cmd}`;
+            if(error instanceof Error){
+                msg = `${msg}, ${error.message}`;
+            }
+            vscode.window.showErrorMessage(msg);
+        } 
+    }
+
+    async exceue(project: Project, cmd: string){
+        await this.tryCatch(cmd, async () => {
             this.xlsmFileName = project.projectData.targetfilename;
             if(!this.xlsmFileName){
                 throw new Error(
@@ -50,14 +62,7 @@ export class VBACommands {
             if(cmd === "resetBreakpoints"){
                 await this.resetBreakpoints();
             }
-            vscode.window.showInformationMessage(`Successfully ${cmd}`);
-        } catch (error: unknown) {
-            let msg = `Failed to ${cmd}`;
-            if(error instanceof Error){
-                msg = `${msg}, ${error.message}`;
-            }
-            vscode.window.showErrorMessage(msg);
-        }
+        });
     }
 
     async gotoVSCode(uris: string[]){
@@ -158,14 +163,18 @@ export class VBACommands {
     }
 
     async runVBASubProc(xlsmFileName: string, procName: string){
-        this.xlsmFileName = xlsmFileName;
-        await this.run("run-vba-proc.ps1", [procName]);
+        await this.tryCatch("runVBASubProc", async () => {
+            this.xlsmFileName = xlsmFileName;
+            await this.run("run-vba-proc.ps1", [procName]);
+        });
     }
 
     async openSheet(xlsmFileName: string, fsPath: string){
-        this.xlsmFileName = xlsmFileName;
-        const sheetName = path.parse(fsPath).name;
-        await this.run("open-sheet.ps1", [sheetName]);
+        await this.tryCatch("openSheet", async () => {
+            this.xlsmFileName = xlsmFileName;
+            const sheetName = path.parse(fsPath).name;
+            await this.run("open-sheet.ps1", [sheetName]);
+        });
     }
 
     private async run(scriptFileName: string, args: string[]): Promise<VBAResponse> {

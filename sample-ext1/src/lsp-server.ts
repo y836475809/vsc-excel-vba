@@ -1,11 +1,8 @@
 import {
     createConnection,
     TextDocuments,
-    Diagnostic,
-    DiagnosticSeverity,
     ProposedFeatures,
     InitializeParams,
-    DidChangeConfigurationNotification,
     CompletionItem,
     CompletionItemKind,
     DefinitionParams,
@@ -17,10 +14,6 @@ import {
     Hover,
     ReferenceParams,
     MarkupContent,
-    ExecuteCommandParams,
-    TextDocumentChangeEvent,
-    WorkspaceEdit,
-    RenameParams,
   } from 'vscode-languageserver/node';
   
 import { TextDocument } from 'vscode-languageserver-textdocument';
@@ -28,7 +21,6 @@ import { URI } from 'vscode-uri';
 import * as fs from "fs";
 import { LPSRequest } from "./lsp-request";
 import path = require('path');
-import { EphemeralKeyInfo } from 'tls';
 import { diagnosticsRequest } from './diagnostics-request';
 import { Logger } from "./logger";
 import { 
@@ -47,7 +39,7 @@ async function getSetting(){
     return settings[0];
 }
 
-export class Server {
+export class LSPServer {
     hasWorkspaceFolderCapability: boolean;
     symbolKindMap:Map<string, CompletionItemKind>;
     lpsRequest!: LPSRequest;
@@ -366,8 +358,8 @@ export class Server {
     }
 }
 
-export function startLspServer() {
-    const server = new Server();
+export function startLSPServer() {
+    const server = new LSPServer();
     connection.onInitialize(server.onInitialize.bind(server));
     connection.onInitialized(server.onInitialized.bind(server));
     connection.onRequest(server.onRequest.bind(server));

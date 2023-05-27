@@ -10,12 +10,13 @@ function getResJson($code, $message, $data){
     return $jsonStr
 }
 
-function getWorkBooks($bookname) {
+function getWorkBooks {
+    param ([string]$bookname, [bool]$showVBE=$true)
     try {
         $ex = [System.Runtime.InteropServices.Marshal]::GetActiveObject("Excel.Application")
         foreach ($bk in $ex.WorkBooks){
             if ($bk.Name -eq $bookname){
-                if($bk.Application.VBE.MainWindow.Visible -eq $false){
+                if($showVBE -And ($bk.Application.VBE.MainWindow.Visible -eq $false)){
                     $bk.Application.VBE.MainWindow.Visible = $true
                     # Start-Sleep -m 500
                 }

@@ -33,16 +33,13 @@ const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
 let logger: Logger;
 const vbaAttributeValidation = new VbaAttributeValidation();
 
-async function getSetting(){
-    const settings = await connection.workspace.getConfiguration(
-        [{ section: "sample-ext1" }]) as any[];
-    return settings[0];
-}
+const defaultPort = 9088;
 
 export class LSPServer {
     hasWorkspaceFolderCapability: boolean;
     symbolKindMap:Map<string, CompletionItemKind>;
     lpsRequest!: LPSRequest;
+    port: number;
 
     constructor(){
         this.hasWorkspaceFolderCapability = false;
@@ -53,6 +50,7 @@ export class LSPServer {
             ["Local", CompletionItemKind.Variable],
             ["Class", CompletionItemKind.Class],
         ]);
+        this.port = defaultPort;
         
         logger = new Logger((msg: string) => {
             connection.console.log(msg);
@@ -61,10 +59,22 @@ export class LSPServer {
 
     async initLSPRequest() {
         if(!this.lpsRequest){
-            const setting = await getSetting();
-            const port = setting.VBALanguageServerPort as number;
-            this.lpsRequest = new LPSRequest(port);
+            this.lpsRequest = new LPSRequest(this.port);
         } 
+    }
+
+    private getPort(params: InitializeParams): number{
+        const args = params.initializationOptions?.arguments as string[];
+        if(!args){
+            logger.error(`initializationOptions.arguments is non, use default port: ${defaultPort}`);
+            return defaultPort;
+        }
+        const port = Number(args[0]);
+        if(isNaN(port)){
+            logger.error(`initializationOptions.arguments[0] is NaN, use default port: ${defaultPort}`);
+            return defaultPort;
+        }
+        return port;
     }
 
     onInitialize(params: InitializeParams){
@@ -90,6 +100,7 @@ export class LSPServer {
                 }
             };
         }
+        this.port = this.getPort(params);
         return result;
     }
 

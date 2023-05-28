@@ -26,7 +26,7 @@ export class LSPClient {
 		this.wsFileEventDisps = fe.registerFileEvent();
 	}
 
-	async start(context: vscode.ExtensionContext, outputChannel: vscode.OutputChannel){
+	async start(context: vscode.ExtensionContext, port: number, outputChannel: vscode.OutputChannel){
 		const serverModule = context.asAbsolutePath(path.join('out', 'lsp-connection.js'));
 		const debugOptions = { execArgv: ['--nolazy', '--inspect=6009'] };
 		const serverOptions: ServerOptions = {
@@ -39,7 +39,10 @@ export class LSPClient {
 		};
 		const clientOptions: LanguageClientOptions = {
 			documentSelector: [{ scheme: 'file', language: 'vb' },],
-			outputChannel: outputChannel
+			outputChannel: outputChannel,
+			initializationOptions: {
+				arguments: [port.toString()] 
+			}
 		};
 		// Create the language client and start the client.
 		this.client = new LanguageClient(

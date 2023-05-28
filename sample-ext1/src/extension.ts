@@ -84,7 +84,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	}));
 
 	context.subscriptions.push(vscode.commands.registerCommand("sample-ext1.startLanguageServer", async () => {
-		await lspClient.start(context, outputChannel);	
+		await lspClient.start(context, vbaLanguageServerPort, outputChannel);	
 	}));
 
 	context.subscriptions.push(vscode.commands.registerCommand("testView.myCommand", async (args) => {
@@ -157,7 +157,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		await lspClient.stop();	
 
 		report("Initialize VBALanguageServer");
-		await lspClient.start(context, outputChannel);
+		await lspClient.start(context, vbaLanguageServerPort, outputChannel);
 
 		if(enableAutoLaunchVBALanguageServer){
 			report("shutdownVBALanguageServer");

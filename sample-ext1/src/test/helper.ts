@@ -65,7 +65,7 @@ export const getWorkspaceFolder = () => {
 
 export async function getServerPort(): Promise<number> {
     const config = vscode.workspace.getConfiguration("sample-ext1");
-    const port: number = await config.get("serverPort")!;
+    const port: number = await config.get("VBALanguageServerPort")!;
     return port;
 } 
 

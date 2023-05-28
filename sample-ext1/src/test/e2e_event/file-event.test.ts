@@ -160,7 +160,7 @@ suite("Extension E2E Roslyn Test Suite", () => {
 		await editor.edit((editBuilder: vscode.TextEditorEdit) => {
 			editBuilder.insert(new vscode.Position(1, 0), "a");
 		});
-		await helper.sleep(1000);
+		await helper.sleep(1500);
 
 		const actFileMapChanged = await getServerFileMap();
 		assert.deepEqual(actFileMapChanged, new Map<string, string>([
@@ -181,7 +181,7 @@ suite("Extension E2E Roslyn Test Suite", () => {
 			editBuilder.delete(new vscode.Range(
 				new vscode.Position(1, 0), new vscode.Position(1, 1)));
 		});
-		await helper.sleep(1000);
+		await helper.sleep(1500);
 		await doc.save();
 	});
 
@@ -209,7 +209,7 @@ suite("Extension E2E Roslyn Test Suite", () => {
 				new vscode.Position(0, 0), new vscode.Position(0, attVBname.length)), 
 				reAttVBname);
 		});
-		await helper.sleep(1000);
+		await helper.sleep(1500);
 
 		const actFileMapChanged = await getServerFileMap();
 		assert.deepEqual(actFileMapChanged, new Map<string, string>([
@@ -231,7 +231,7 @@ suite("Extension E2E Roslyn Test Suite", () => {
 				new vscode.Position(0, 0), new vscode.Position(0, reAttVBname.length)), 
 				attVBname);
 		});
-		await helper.sleep(1000);
+		await helper.sleep(1500);
 		await doc.save();
 	});
 
@@ -259,7 +259,7 @@ suite("Extension E2E Roslyn Test Suite", () => {
 				new vscode.Position(4, 0), new vscode.Position(4, attVBname.length)), 
 				reAttVBname);
 		});
-		await helper.sleep(1000);
+		await helper.sleep(1500);
 
 		const actFileMapChanged = await getServerFileMap();
 		assert.deepEqual(actFileMapChanged, new Map<string, string>([
@@ -281,7 +281,7 @@ suite("Extension E2E Roslyn Test Suite", () => {
 				new vscode.Position(4, 0), new vscode.Position(4, reAttVBname.length)), 
 				attVBname);
 		});
-		await helper.sleep(1000);
+		await helper.sleep(1500);
 		await doc.save();
 	});
 
@@ -289,8 +289,6 @@ suite("Extension E2E Roslyn Test Suite", () => {
 		await helper.activateExtension();
 
 		const uri = helper.getDocUri("c1.cls");
-		// await vscode.commands.executeCommand(
-		// 	"sample-ext1.deleteFiles", [uri]);
 		await deleteFile(uri);
 
 		const actFileMap = await getServerFileMap();

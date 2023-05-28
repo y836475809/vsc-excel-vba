@@ -1,4 +1,9 @@
 {
-    "files.autoGuessEncoding": true,
-    "sample-ext1.loadDefinitionFiles": false
+    "[vb]": {
+        "files.encoding": "shiftjis",
+        "files.autoGuessEncoding": true
+    },
+    "sample-ext1.loadDefinitionFiles": false,
+    "sample-ext1.enableLSP": true,
+    "sample-ext1.enableAutoLaunchVBALanguageServer": false
 }

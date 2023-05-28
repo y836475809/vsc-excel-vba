@@ -115,6 +115,13 @@
         "title": "openSheet"
       }
     ],
+    "keybindings": [
+      {
+        "command": "sample-ext1.import",
+        "key": "ctrl+shift+i",
+        "when": "resourceExtname == .bas || resourceExtname == .cls"
+      }
+    ],
     "views": {
       "explorer": [
         {

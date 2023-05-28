@@ -45,22 +45,22 @@ export async function activate(context: vscode.ExtensionContext) {
 	const vbaCommand = new VBACommands(context.asAbsolutePath("scripts"));
 
 	const config = vscode.workspace.getConfiguration();
-	let serverAppPort = await config.get("sample-ext1.serverPort") as number;
 	let loadDefinitionFiles = await config.get("sample-ext1.loadDefinitionFiles");
-	let useLSPServer = await config.get("sample-ext1.useLSPServer") as boolean;
-	let autoLaunchServerApp = await config.get("sample-ext1.autoLaunchServerApp") as boolean;
-	let serverExeFilePath = await config.get("sample-ext1.serverExeFilePath") as string;
+	let enableLSP = await config.get("sample-ext1.enableLSP") as boolean;
+	let vbaLanguageServerPort = await config.get("sample-ext1.VBALanguageServerPort") as number;
+	let enableAutoLaunchVBALanguageServer = await config.get("sample-ext1.enableAutoLaunchVBALanguageServer") as boolean;
+	let vbaLanguageServerPath = await config.get("sample-ext1.VBALanguageServerPath") as string;
 
 	vscode.workspace.onDidChangeConfiguration(async event => {
 		if(!event.affectsConfiguration("sample-ext1")){
 			return;
 		}
 		const config = vscode.workspace.getConfiguration();
-		serverAppPort = await config.get("sample-ext1.serverPort") as number;
 		loadDefinitionFiles = await config.get("sample-ext1.loadDefinitionFiles");
-		useLSPServer = await config.get("sample-ext1.useLSPServer") as boolean;
-		autoLaunchServerApp = await config.get("sample-ext1.autoLaunchServerApp") as boolean;
-		serverExeFilePath = await config.get("sample-ext1.serverExeFilePath") as string;
+		enableLSP = await config.get("sample-ext1.enableLSP") as boolean;
+		vbaLanguageServerPort = await config.get("sample-ext1.VBALanguageServerPort") as number;
+		enableAutoLaunchVBALanguageServer = await config.get("sample-ext1.enableAutoLaunchVBALanguageServer") as boolean;
+		vbaLanguageServerPath = await config.get("sample-ext1.VBALanguageServerPath") as string;
 	});
 
 	vscode.window.registerTreeDataProvider("testView", new TreeDataProvider());
@@ -153,20 +153,20 @@ export async function activate(context: vscode.ExtensionContext) {
 	const startServer = async (report: (msg: string)=>void) => {
 		report("Start server");
 
-		report("stop ServerAppr");
+		report("stop VBALanguageServer");
 		await lspClient.stop();	
 
-		report("Initialize ServerAppr");
+		report("Initialize VBALanguageServer");
 		await lspClient.start(context, outputChannel);
 
-		if(autoLaunchServerApp){
-			report("shutdownServerApp");
-			await lspClient.shutdownServerApp();
-			report("launchServerApp");
-			await lspClient.launchServerApp(serverAppPort, serverExeFilePath);
+		if(enableAutoLaunchVBALanguageServer){
+			report("shutdownVBALanguageServer");
+			await lspClient.shutdownVBALanguageServer();
+			report("launchVBALanguageServer");
+			await lspClient.launchVBALanguageServer(vbaLanguageServerPort, vbaLanguageServerPath);
 		}else{
-			report("resetServerApp");
-			await lspClient.resetServerApp();
+			report("resetVBALanguageServer");
+			await lspClient.resetVBALanguageServer();
 		}
 
 		lspClient.registerFileEvents(project.srcDir);
@@ -175,7 +175,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		const uris2 = loadDefinitionFiles?project.getDefinitionFileUris(context):[];
 		const uris = uris1.concat(uris2);
 		if(uris.length > 0){
-			report("Send source uris to ServerAppr");
+			report("Send source uris to VBALanguageServer");
 			const method: Hoge.RequestMethod = "createFiles";
 			lspClient.sendRequest(method, {uris});
 		}
@@ -204,7 +204,7 @@ export async function activate(context: vscode.ExtensionContext) {
 					logger.info(msg);
 					progress.report({ message: msg });
 				});
-				if(useLSPServer){
+				if(enableLSP){
 					await startServer((msg) => {
 						logger.info(msg);
 						progress.report({ message: msg });
@@ -229,7 +229,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		if(outlineDisp){
 			outlineDisp.dispose();
 		}
-		await lspClient.shutdownServerApp();
+		await lspClient.shutdownVBALanguageServer();
 		await lspClient.stop();
 		
 	}));
@@ -237,6 +237,6 @@ export async function activate(context: vscode.ExtensionContext) {
 
 // This method is called when your extension is deactivated
 export async function deactivate() {
-	await lspClient.shutdownServerApp();
+	await lspClient.shutdownVBALanguageServer();
 	await lspClient.stop();
 }

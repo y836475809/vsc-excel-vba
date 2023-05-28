@@ -82,41 +82,41 @@ export class LSPClient {
 		await this.client.sendRequest(method, params);
 	}
 
-	async shutdownServerApp(): Promise<void>{
+	async shutdownVBALanguageServer(): Promise<void>{
 		try {
 			await this.sendRequest("Shutdown", {});
-			await this.waitUntilServerApp("shutdown");
+			await this.waitUntilVBALanguageServer("shutdown");
 		} catch (error) {
 			// 
 		}
 	}
 
-	async launchServerApp(port: number, serverExeFilePath: string){
-		if(await this.isReadyServerApp()){
+	async launchVBALanguageServer(port: number, exeFilePath: string){
+		if(await this.isReadyVBALanguageServer()){
 			return;
 		}
-		
-		if(!serverExeFilePath){
+
+		if(!exeFilePath){
 			throw new Error(`No setting value for server filepath`);
 		}
-		if(!fs.existsSync(serverExeFilePath)){
-			throw new Error(`Not find ${serverExeFilePath}`);
+		if(!fs.existsSync(exeFilePath)){
+			throw new Error(`Not find ${exeFilePath}`);
 		}
-		const p = spawn("cmd.exe", ["/c", `${serverExeFilePath} ${port}`], { detached: true });
+		const p = spawn("cmd.exe", ["/c", `${exeFilePath} ${port}`], { detached: true });
 		p.on("error", (error)=> {
 			throw error;
 		});
 	
-		await this.waitUntilServerApp("ready");
+		await this.waitUntilVBALanguageServer("ready");
 	}
 
-	async resetServerApp(){
+	async resetVBALanguageServer(){
 		if (this.client && this.client.state === State.Running) {
 			await this.client.sendRequest("reset");
 		}
 	}
 	
-	private async waitUntilServerApp(state: "ready"|"shutdown"){
+	private async waitUntilVBALanguageServer(state: "ready"|"shutdown"){
 		let waitCount = 0;
 		while(true){
 			if(waitCount > 30){
@@ -139,7 +139,7 @@ export class LSPClient {
 		}
 	}
 	
-	private async isReadyServerApp(): Promise<boolean>{
+	private async isReadyVBALanguageServer(): Promise<boolean>{
 		try {
 			await this.sendRequest("IsReady", {});
 			return true;

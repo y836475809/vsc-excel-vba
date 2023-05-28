@@ -62,7 +62,7 @@ export class LSPServer {
     async initLSPRequest() {
         if(!this.lpsRequest){
             const setting = await getSetting();
-            const port = setting.serverPort as number;
+            const port = setting.VBALanguageServerPort as number;
             this.lpsRequest = new LPSRequest(port);
         } 
     }

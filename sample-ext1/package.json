@@ -20,30 +20,30 @@
     "configuration": {
       "title": "Sample-ext1",
       "properties": {
-        "sample-ext1.serverPort": {
-          "type": "number",
-          "default": 9088,
-          "description": "server port"
-        },
         "sample-ext1.loadDefinitionFiles": {
           "type": "boolean",
           "default": true,
           "description": "load d.vb files"
         },
-        "sample-ext1.serverExeFilePath": {
+        "sample-ext1.enableLSP": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable/disable VBA LSP"
+        },
+        "sample-ext1.VBALanguageServerPort": {
+          "type": "number",
+          "default": 9088,
+          "description": "server port"
+        },
+        "sample-ext1.VBALanguageServerPath": {
           "type": ["string", "null"],
           "default": null,
-          "description": "LSP server exe file path"
+          "description": "VBA language server executable file path"
         },
-        "sample-ext1.useLSPServer": {
+        "sample-ext1.enableAutoLaunchVBALanguageServer": {
           "type": "boolean",
           "default": true,
-          "description": "use LSP server"
-        },
-        "sample-ext1.autoLaunchServerApp": {
-          "type": "boolean",
-          "default": true,
-          "description": "auto launch server app"
+          "description": "Enable/disable auto launch VBA language server"
         }
       }
     },

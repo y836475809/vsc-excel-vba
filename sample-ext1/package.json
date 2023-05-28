@@ -125,6 +125,11 @@
         "command": "sample-ext1.import",
         "key": "ctrl+shift+i",
         "when": "resourceExtname == .bas || resourceExtname == .cls"
+      },
+      {
+        "command": "sample-ext1.runVBASubProc",
+        "key": "ctrl+shift+r",
+        "when": "editorTextFocus && resourceExtname == .bas"
       }
     ],
     "views": {

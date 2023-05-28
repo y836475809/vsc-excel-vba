@@ -66,14 +66,16 @@ export class LSPClient {
 	}
 
 	private async waitUntilClientIsRunning(){
+		const watiTimeMs = 500;
+		const countMax = 10 * 1000 / watiTimeMs;
 		let waitCount = 0;
 		while(true){
-			if(waitCount > 100){
+			if(waitCount > countMax){
 				throw new Error("Timed out waiting for client ready");
 			}
 			waitCount++;
 			await new Promise(resolve => {
-				setTimeout(resolve, 100);
+				setTimeout(resolve, watiTimeMs);
 			});
 			if(this.client.state === State.Running){
 				break;
@@ -120,14 +122,16 @@ export class LSPClient {
 	}
 	
 	private async waitUntilVBALanguageServer(state: "ready"|"shutdown"){
+		const watiTimeMs = 500;
+		const countMax = 10 * 1000 / watiTimeMs;
 		let waitCount = 0;
 		while(true){
-			if(waitCount > 30){
+			if(waitCount > countMax){
 				throw new Error(`Timed out waiting for server ${state}`);
 			}
 			waitCount++;
 			await new Promise(resolve => {
-				setTimeout(resolve, 200);
+				setTimeout(resolve, watiTimeMs);
 			});
 			try {
 				await this.sendRequest("IsReady", {});

@@ -78,18 +78,6 @@
         "title": "startLanguageServer"
       },
       {
-        "command": "sample-ext1.stopLanguageServer",
-        "title": "stopLanguageServer"
-      },
-      {
-        "command": "sample-ext1.renameFiles",
-        "title": "renameFiles"
-      },
-      {
-        "command": "sample-ext1.deleteFiles",
-        "title": "deleteFiles"
-      },
-      {
         "command": "testView.myCommand",
         "title": "testView reg"
       },

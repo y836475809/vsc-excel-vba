@@ -53,6 +53,12 @@ export class VBACommands {
                 await this.resetBreakpoints();
                 await this.gotoVBA();     
             }
+            if(cmd === "importAndCompile"){
+                await this.import(project.srcDir);
+                await this.resetBreakpoints();
+                await this.gotoVBA();
+                await this.compile();
+            }
             if(cmd === "export"){
                 await this.export(project.srcDir);
             }

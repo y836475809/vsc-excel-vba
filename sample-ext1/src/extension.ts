@@ -50,6 +50,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	let vbaLanguageServerPort = await config.get("sample-ext1.VBALanguageServerPort") as number;
 	let enableAutoLaunchVBALanguageServer = await config.get("sample-ext1.enableAutoLaunchVBALanguageServer") as boolean;
 	let vbaLanguageServerPath = await config.get("sample-ext1.VBALanguageServerPath") as string;
+	let enableVBACompileAfterImport = await config.get("sample-ext1.enableVBACompileAfterImport") as boolean;
 
 	vscode.workspace.onDidChangeConfiguration(async event => {
 		if(!event.affectsConfiguration("sample-ext1")){
@@ -61,6 +62,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		vbaLanguageServerPort = await config.get("sample-ext1.VBALanguageServerPort") as number;
 		enableAutoLaunchVBALanguageServer = await config.get("sample-ext1.enableAutoLaunchVBALanguageServer") as boolean;
 		vbaLanguageServerPath = await config.get("sample-ext1.VBALanguageServerPath") as string;
+		enableVBACompileAfterImport = await config.get("sample-ext1.enableVBACompileAfterImport") as boolean;
 	});
 
 	vscode.window.registerTreeDataProvider("testView", new TreeDataProvider());
@@ -74,7 +76,11 @@ export async function activate(context: vscode.ExtensionContext) {
 		await vbaCommand.exceue(project, "gotoVSCode");
 	}));
 	context.subscriptions.push(vscode.commands.registerCommand("sample-ext1.import", async () => {
-		await vbaCommand.exceue(project, "import");
+		if(enableVBACompileAfterImport){
+			await vbaCommand.exceue(project, "importAndCompile");
+		}else{
+			await vbaCommand.exceue(project, "import");
+		}
 	}));
 	context.subscriptions.push(vscode.commands.registerCommand("sample-ext1.export", async () => {
 		await vbaCommand.exceue(project, "export");

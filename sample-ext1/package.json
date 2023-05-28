@@ -44,6 +44,11 @@
           "type": "boolean",
           "default": true,
           "description": "Enable/disable auto launch VBA language server"
+        },
+        "sample-ext1.enableVBACompileAfterImport": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable/disable run VBA compile after import"
         }
       }
     },

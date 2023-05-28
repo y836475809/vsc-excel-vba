@@ -96,6 +96,7 @@ export class FileEvents {
             await this.renameFiles(files);
         }));
 
+        const delayTimeMs = 1000;
         feDisps.push(vscode.workspace.onDidChangeTextDocument(
             debounce(async (e: vscode.TextDocumentChangeEvent) => {
                 if(!this.client || this.client.state !== State.Running){
@@ -117,7 +118,7 @@ export class FileEvents {
                 const method: Hoge.RequestMethod = "changeText";
                 const uri = e.document.uri.toString();
                 await this.client.sendRequest(method, {uri});
-        }, 500)));
+        }, delayTimeMs)));
 
         feDisps.push(vscode.window.onDidChangeActiveTextEditor(
             debounce(async (e: vscode.TextEditor) => {
@@ -129,7 +130,7 @@ export class FileEvents {
                     const method: Hoge.RequestMethod = "diagnostics";
                     await this.client.sendRequest(method, {uri:e.document.uri.toString()});
                 }
-        }, 1000)));
+        }, delayTimeMs)));
 
         return feDisps;
     }

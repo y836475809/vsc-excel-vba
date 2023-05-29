@@ -68,6 +68,10 @@
     ],
     "commands": [
       {
+        "command": "sample-ext1.toggle",
+        "title": "toggle"
+      },
+      {
         "command": "sample-ext1.start",
         "title": "sample-ext1 start",
         "icon": "$(run)",

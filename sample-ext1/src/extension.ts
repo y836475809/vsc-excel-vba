@@ -55,7 +55,8 @@ export async function activate(context: vscode.ExtensionContext) {
 
     statusBarItem = vscode.window.createStatusBarItem(
 		vscode.StatusBarAlignment.Left, 1);
-	statusBarItem.text = `${extName}: stop`;
+	statusBarItem.text = `Run ${extName}`;
+	statusBarItem.command = `${extName}.toggle`;
 	statusBarItem.show();
 
 	vscode.workspace.onDidChangeConfiguration(async event => {
@@ -70,6 +71,14 @@ export async function activate(context: vscode.ExtensionContext) {
 		vbaLanguageServerPath = await config.get("sample-ext1.VBALanguageServerPath") as string;
 		enableVBACompileAfterImport = await config.get("sample-ext1.enableVBACompileAfterImport") as boolean;
 	});
+
+	context.subscriptions.push(vscode.commands.registerCommand("sample-ext1.toggle", async () => {
+		if(statusBarItem.text === `Run ${extName}`){
+			await vscode.commands.executeCommand("sample-ext1.start");
+		}else{
+			await vscode.commands.executeCommand("sample-ext1.stop");
+		}
+	}));
 
 	vscode.window.registerTreeDataProvider("testView", new TreeDataProvider());
 	context.subscriptions.push(vscode.commands.registerCommand("sample-ext1.runViewItem", async (args: MyTreeItem) => {
@@ -195,7 +204,7 @@ export async function activate(context: vscode.ExtensionContext) {
 					});
 				}
 				vscode.window.showInformationMessage("Success");
-				statusBarItem.text = `${extName}: running`;
+				statusBarItem.text = `Stop ${extName}`;
 			} catch (error) {
 				await lspClient.stop();	
 
@@ -205,7 +214,7 @@ export async function activate(context: vscode.ExtensionContext) {
 				}
 				logger.info(`Fail start, ${errorMsg}`);
 				vscode.window.showErrorMessage(`Fail start\n${errorMsg}\nPlease restart again`);
-				statusBarItem.text = `${extName}: stop`;
+				statusBarItem.text = `Run ${extName}`;
 			}
 			setServerStartEnable(true);
 		});
@@ -217,7 +226,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		}
 		await lspClient.shutdownVBALanguageServer();
 		await lspClient.stop();
-		statusBarItem.text = `${extName}: stop`;
+		statusBarItem.text = `Run ${extName}`;
 	}));
 }
 

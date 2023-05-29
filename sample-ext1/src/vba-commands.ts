@@ -181,7 +181,7 @@ export class VBACommands {
             const uri = editor.document.uri;
             const symbols = await vscode.commands.executeCommand<vscode.DocumentSymbol[]>(
                 "vscode.executeDocumentSymbolProvider", uri);
-            if(!symbols.length){
+            if(!symbols?.length){
                 return;
             }
             const targetSymbols = symbols[0].children.filter(x => {

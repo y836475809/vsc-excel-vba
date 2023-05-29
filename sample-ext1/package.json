@@ -128,7 +128,7 @@
       },
       {
         "command": "sample-ext1.runVBASubProc",
-        "key": "ctrl+shift+r",
+        "key": "f5",
         "when": "editorTextFocus && resourceExtname == .bas"
       }
     ],

@@ -73,14 +73,11 @@
       },
       {
         "command": "sample-ext1.start",
-        "title": "sample-ext1 start",
-        "icon": "$(run)",
-        "enablement": "sample-ext1.start.enable"
+        "title": "sample-ext1 start"
       },
       {
         "command": "sample-ext1.stop",
-        "title": "sample-ext1 stop",
-        "icon": "$(stop)"
+        "title": "sample-ext1 stop"
       },
       {
         "command": "sample-ext1.startLanguageServer",
@@ -150,18 +147,6 @@
       }
     ],
     "menus": {
-      "view/title": [
-        {
-          "command": "sample-ext1.start",
-          "when": "view == testView",
-          "group": "navigation"
-        },
-        {
-          "command": "sample-ext1.stop",
-          "when": "view == testView",
-          "group": "navigation"
-        }
-      ],
       "view/item/context": [
         {
           "command": "sample-ext1.runViewItem",

@@ -25,14 +25,9 @@ function setupOutline(context: vscode.ExtensionContext) {
 	context.subscriptions.push(outlineDisp);
 }
 
-function setServerStartEnable(enable: boolean){
-	vscode.commands.executeCommand("setContext", "sample-ext1.start.enable", enable);
-}
-
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export async function activate(context: vscode.ExtensionContext) {
-	setServerStartEnable(true);
 	vscode.debug.breakpoints;
 
 	const extName = context.extension.packageJSON.name;
@@ -191,7 +186,6 @@ export async function activate(context: vscode.ExtensionContext) {
 			title: "Server status"
 		};
 		vscode.window.withProgress(options, async progress => {
-			setServerStartEnable(false);
 			try {	
 				await loadProject((msg) => {
 					logger.info(msg);
@@ -216,7 +210,6 @@ export async function activate(context: vscode.ExtensionContext) {
 				vscode.window.showErrorMessage(`Fail start\n${errorMsg}\nPlease restart again`);
 				statusBarItem.text = `Run ${extName}`;
 			}
-			setServerStartEnable(true);
 		});
 	}));
 

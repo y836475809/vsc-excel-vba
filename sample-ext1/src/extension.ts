@@ -14,6 +14,7 @@ let outlineDisp: vscode.Disposable;
 let outputChannel: vscode.OutputChannel;
 let logger: Logger;
 let lspClient: LSPClient;
+let statusBarItem: vscode.StatusBarItem;
 
 function setupOutline(context: vscode.ExtensionContext) {
 	if(outlineDisp){
@@ -51,6 +52,11 @@ export async function activate(context: vscode.ExtensionContext) {
 	let enableAutoLaunchVBALanguageServer = await config.get("sample-ext1.enableAutoLaunchVBALanguageServer") as boolean;
 	let vbaLanguageServerPath = await config.get("sample-ext1.VBALanguageServerPath") as string;
 	let enableVBACompileAfterImport = await config.get("sample-ext1.enableVBACompileAfterImport") as boolean;
+
+    statusBarItem = vscode.window.createStatusBarItem(
+		vscode.StatusBarAlignment.Left, 1);
+	statusBarItem.text = `${extName}: stop`;
+	statusBarItem.show();
 
 	vscode.workspace.onDidChangeConfiguration(async event => {
 		if(!event.affectsConfiguration("sample-ext1")){
@@ -217,6 +223,7 @@ export async function activate(context: vscode.ExtensionContext) {
 					});
 				}
 				vscode.window.showInformationMessage("Success");
+				statusBarItem.text = `${extName}: running`;
 			} catch (error) {
 				await lspClient.stop();	
 
@@ -226,6 +233,7 @@ export async function activate(context: vscode.ExtensionContext) {
 				}
 				logger.info(`Fail start, ${errorMsg}`);
 				vscode.window.showErrorMessage(`Fail start\n${errorMsg}\nPlease restart again`);
+				statusBarItem.text = `${extName}: stop`;
 			}
 			setServerStartEnable(true);
 		});
@@ -237,7 +245,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		}
 		await lspClient.shutdownVBALanguageServer();
 		await lspClient.stop();
-		
+		statusBarItem.text = `${extName}: stop`;
 	}));
 }
 

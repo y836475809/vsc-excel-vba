@@ -68,6 +68,9 @@ export class VBACommands {
             if(cmd === "resetBreakpoints"){
                 await this.resetBreakpoints();
             }
+            if(cmd === "runVBASubProc"){
+                await this.runVBASubProc();
+            }
         });
     }
 
@@ -168,10 +171,34 @@ export class VBACommands {
         await this.run("resetbreakpoints.ps1", args);
     }
 
-    async runVBASubProc(xlsmFileName: string, procName: string){
+    async runVBASubProc(){
         await this.tryCatch("runVBASubProc", async () => {
-            this.xlsmFileName = xlsmFileName;
-            await this.run("run-vba-proc.ps1", [procName]);
+            const editor = vscode.window.activeTextEditor;
+            if(!editor){
+                return;
+            }
+            const sel = editor.selection;
+            const uri = editor.document.uri;
+            const symbols = await vscode.commands.executeCommand<vscode.DocumentSymbol[]>(
+                "vscode.executeDocumentSymbolProvider", uri);
+            if(!symbols.length){
+                return;
+            }
+            const targetSymbols = symbols[0].children.filter(x => {
+                return x.kind === vscode.SymbolKind.Function 
+                    && x.range.start.line <= sel.start.line 
+                    && sel.end.line <= x.range.end.line;
+            });
+            if(!targetSymbols.length){
+                return;
+            }
+            const moduleName = path.parse(uri.fsPath).name;;
+            const symName = targetSymbols[0].detail;
+            const mt = symName.match(/Sub\s+(.+)\(\s*\)/);
+            if(mt && mt.length > 1){
+                const procName = mt[1];
+                await this.run("run-vba-proc.ps1", [`${moduleName}.${procName}`]);
+            }
         });
     }
 

@@ -94,7 +94,9 @@ export async function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(vscode.commands.registerCommand("sample-ext1.compile", async () => {
 		await vbaCommand.exceue(project, "compile");
 	}));
-
+	context.subscriptions.push(vscode.commands.registerCommand("sample-ext1.runVBASubProc", async () => {
+		await vbaCommand.exceue(project, "runVBASubProc");
+	}));
 	context.subscriptions.push(vscode.commands.registerCommand("sample-ext1.startLanguageServer", async () => {
 		await lspClient.start(context, vbaLanguageServerPort, outputChannel);	
 	}));
@@ -120,36 +122,6 @@ export async function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(vscode.commands.registerCommand("sample-ext1.openSheet", async (args) => {	
 		const xlsmFileName = project.projectData.targetfilename;
 		await vbaCommand.openSheet(xlsmFileName, args.fsPath);
-	}));
-
-	context.subscriptions.push(vscode.commands.registerCommand("sample-ext1.runVBASubProc", async (args) => {
-		const editor = vscode.window.activeTextEditor;
-		if(!editor){
-			return;
-		}
-		const sel = editor.selection;
-		const uri = editor.document.uri;
-		const symbols = await vscode.commands.executeCommand<vscode.DocumentSymbol[]>(
-			"vscode.executeDocumentSymbolProvider", uri);
-		if(!symbols.length){
-			return;
-		}
-		const targetSymbols = symbols[0].children.filter(x => {
-			return x.kind === vscode.SymbolKind.Function 
-				&& x.range.start.line <= sel.start.line 
-				&& sel.end.line <= x.range.end.line;
-		});
-		if(!targetSymbols.length){
-			return;
-		}
-		const moduleName = path.parse(uri.fsPath).name;;
-		const symName = targetSymbols[0].detail;
-		const mt = symName.match(/Sub\s+(.+)\(\s*\)/);
-		if(mt && mt.length > 1){
-			const procName = mt[1];
-			const xlsmFileName = project.projectData.targetfilename;
-			await vbaCommand.runVBASubProc(xlsmFileName, `${moduleName}.${procName}`);
-		}
 	}));
 
 	const loadProject = async (report: (msg: string)=>void) => {

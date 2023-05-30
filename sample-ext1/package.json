@@ -12,8 +12,7 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:sample-ext1.start",
-    "onCommand:sample-ext1.startLanguageServer"
+    "workspaceContains:vbaproject.json"
   ],
   "main": "./out/extension.js",
   "contributes": {

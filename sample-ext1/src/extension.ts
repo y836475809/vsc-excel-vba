@@ -37,7 +37,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	});
 
 	lspClient = new LSPClient();
-	const project = new Project("project.json");
+	const project = new Project("vbaproject.json");
 	const vbaCommand = new VBACommands(context.asAbsolutePath("scripts"));
 
 	const config = vscode.workspace.getConfiguration();

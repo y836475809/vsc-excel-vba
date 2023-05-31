@@ -142,20 +142,20 @@ export async function activate(context: vscode.ExtensionContext) {
 	const startServer = async (report: (msg: string)=>void) => {
 		report("Start server");
 
-		report("stop VBALanguageServer");
+		report("Stop LSP client");
 		await lspClient.stop();	
 
 		if(enableAutoLaunchVBALanguageServer){
-			report("shutdownVBALanguageServer");
+			report("Shutdown VBALanguageServer");
 			await vbaLangServerUtil.shutdown();
-			report("launchVBALanguageServer");
+			report("Launch VBALanguageServer");
 			await vbaLangServerUtil.launch(vbaLanguageServerPort, vbaLanguageServerPath);
 		}else{
-			report("resetVBALanguageServer");
+			report("Reset VBALanguageServer");
 			await vbaLangServerUtil.reset();
 		}
 
-		report("Initialize VBALanguageServer");
+		report("Start LSP client");
 		await lspClient.start(context, vbaLanguageServerPort, outputChannel);
 		lspClient.registerFileEvents(project.srcDir);
 
@@ -163,7 +163,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		const uris2 = loadDefinitionFiles?project.getDefinitionFileUris(context):[];
 		const uris = uris1.concat(uris2);
 		if(uris.length > 0){
-			report("Send source uris to VBALanguageServer");
+			report("Add source");
 			await lspClient.addDocuments(uris);
 		}
 

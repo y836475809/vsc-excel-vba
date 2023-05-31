@@ -19,7 +19,7 @@ import {
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { URI } from 'vscode-uri';
 import * as fs from "fs";
-import { LPSRequest } from "./lsp-request";
+import { LPSRequest, MakeReqData } from "./lsp-request";
 import path = require('path');
 import { diagnosticsRequest } from './diagnostics-request';
 import { Logger } from "./logger";
@@ -134,28 +134,30 @@ export class LSPServer {
         logger.info(`onRequest: ${requestMethod}`);
         if(requestMethod === "createFiles"){
             const uris = params.uris as string[];
-            const filePaths = uris.map(uri => URI.parse(uri).fsPath);
-            const data = {
-                id: "AddDocuments",
-                filepaths: filePaths,
-                line: 0,
-                chara: 0,
-                text: ""
-            } as Hoge.Command;
+            // const filePaths = uris.map(uri => URI.parse(uri).fsPath);
+            // const data = {
+            //     id: "AddDocuments",
+            //     filepaths: filePaths,
+            //     line: 0,
+            //     chara: 0,
+            //     text: ""
+            // } as Hoge.Command;
+            const data = MakeReqData.addDocuments(uris);
             await this.lpsRequest.send(data);
         }
         if(requestMethod === "deleteFiles"){
             const uris = params.uris as string[];
-            const fsPaths = uris.map(uri => {
-                return URI.parse(uri).fsPath;
-            });
-            const data = {
-                id: "DeleteDocuments",
-                filepaths: fsPaths,
-                line: 0,
-                chara: 0,
-                text: ""
-            } as Hoge.Command;  
+            // const fsPaths = uris.map(uri => {
+            //     return URI.parse(uri).fsPath;
+            // });
+            // const data = {
+            //     id: "DeleteDocuments",
+            //     filepaths: fsPaths,
+            //     line: 0,
+            //     chara: 0,
+            //     text: ""
+            // } as Hoge.Command;  
+            const data = MakeReqData.deleteDocuments(uris);
             await this.lpsRequest.send(data);
         }
         if(requestMethod === "renameFiles"){
@@ -163,18 +165,22 @@ export class LSPServer {
             if(!renameArgs){
                 return;
             }
-            for(const renameArg of renameArgs){
-                const oldUri = renameArg.olduri;
-                const newUri = renameArg.newuri;
-                const oldFsPath = URI.parse(oldUri).fsPath;
-                const newFsPath = URI.parse(newUri).fsPath;
-                const data = {
-                    id: "RenameDocument",
-                    filepaths: [oldFsPath, newFsPath],
-                    line: 0,
-                    chara: 0,
-                    text: ""
-                } as Hoge.Command;  
+            // for(const renameArg of renameArgs){
+            //     const oldUri = renameArg.olduri;
+            //     const newUri = renameArg.newuri;
+            //     const oldFsPath = URI.parse(oldUri).fsPath;
+            //     const newFsPath = URI.parse(newUri).fsPath;
+            //     const data = {
+            //         id: "RenameDocument",
+            //         filepaths: [oldFsPath, newFsPath],
+            //         line: 0,
+            //         chara: 0,
+            //         text: ""
+            //     } as Hoge.Command;  
+            //     await this.lpsRequest.send(data);
+            // }
+            const dataList = MakeReqData.renameDocuments(renameArgs);
+            for(const data of dataList){ 
                 await this.lpsRequest.send(data);
             }
         }
@@ -188,14 +194,15 @@ export class LSPServer {
                 return;
             }
             const fsPath = URI.parse(uri).fsPath;
-            const data = {
-                id: "ChangeDocument",
-                filepaths: [fsPath],
-                position: 0,
-                line: 0,
-                chara: 0,
-                text: doc.getText()
-            } as Hoge.Command;
+            // const data = {
+            //     id: "ChangeDocument",
+            //     filepaths: [fsPath],
+            //     position: 0,
+            //     line: 0,
+            //     chara: 0,
+            //     text: doc.getText()
+            // } as Hoge.Command;
+            const data = MakeReqData.changeDocument(uri, doc.getText());
             await this.lpsRequest.send(data);
 
             const items = await diagnosticsRequest(doc, fsPath, this.lpsRequest);
@@ -234,33 +241,36 @@ export class LSPServer {
             connection.sendDiagnostics({uri: doc.uri, diagnostics: items});
         }
         if(requestMethod === "reset"){
-            const data = {
-                id: "Reset",
-                filepaths: [],
-                line: 0,
-                chara: 0,
-                text: ""
-            } as Hoge.Command;  
+            // const data = {
+            //     id: "Reset",
+            //     filepaths: [],
+            //     line: 0,
+            //     chara: 0,
+            //     text: ""
+            // } as Hoge.Command;  
+            const data = MakeReqData.reset();
             await this.lpsRequest.send(data);
         }
         if(requestMethod === "IsReady"){
-            const data = {
-                id: "IsReady",
-                filepaths: [],
-                line: 0,
-                chara: 0,
-                text: ""
-            } as Hoge.Command;
+            // const data = {
+            //     id: "IsReady",
+            //     filepaths: [],
+            //     line: 0,
+            //     chara: 0,
+            //     text: ""
+            // } as Hoge.Command;
+            const data = MakeReqData.isReady();
             await this.lpsRequest.send(data);
         }
         if(requestMethod === "Shutdown"){
-            const data = {
-                id: "Shutdown",
-                filepaths: [],
-                line: 0,
-                chara: 0,
-                text: ""
-            } as Hoge.Command;
+            // const data = {
+            //     id: "Shutdown",
+            //     filepaths: [],
+            //     line: 0,
+            //     chara: 0,
+            //     text: ""
+            // } as Hoge.Command;
+            const data = MakeReqData.shutdown();
             await this.lpsRequest.send(data);
         }
     }

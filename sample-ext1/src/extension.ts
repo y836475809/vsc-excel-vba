@@ -1,7 +1,5 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
-import * as path from 'path';
-import * as fs from "fs";
 import * as vscode from 'vscode';
 import { MyTreeItem, TreeDataProvider } from './treeDataProvider';
 import { VBACommands } from './vba-commands';
@@ -9,11 +7,13 @@ import { Project } from './project';
 import { VbaDocumentSymbolProvider } from "./vba-documentsymbolprovider";
 import { Logger } from "./logger";
 import { LSPClient } from "./lsp-client";
+import { VBALanguageServerUtil } from "./vba-language-server-util";
 
 let outlineDisp: vscode.Disposable;
 let outputChannel: vscode.OutputChannel;
 let logger: Logger;
 let lspClient: LSPClient;
+let vbaLangServerUtil: VBALanguageServerUtil;
 let statusBarItem: vscode.StatusBarItem;
 
 function setupOutline(context: vscode.ExtensionContext) {
@@ -36,10 +36,6 @@ export async function activate(context: vscode.ExtensionContext) {
 		outputChannel.appendLine(msg);
 	});
 
-	lspClient = new LSPClient();
-	const project = new Project("vbaproject.json");
-	const vbaCommand = new VBACommands(context.asAbsolutePath("scripts"));
-
 	const config = vscode.workspace.getConfiguration();
 	let loadDefinitionFiles = await config.get("sample-ext1.loadDefinitionFiles");
 	let enableLSP = await config.get("sample-ext1.enableLSP") as boolean;
@@ -47,6 +43,11 @@ export async function activate(context: vscode.ExtensionContext) {
 	let enableAutoLaunchVBALanguageServer = await config.get("sample-ext1.enableAutoLaunchVBALanguageServer") as boolean;
 	let vbaLanguageServerPath = await config.get("sample-ext1.VBALanguageServerPath") as string;
 	let enableVBACompileAfterImport = await config.get("sample-ext1.enableVBACompileAfterImport") as boolean;
+
+	lspClient = new LSPClient();
+	vbaLangServerUtil = new VBALanguageServerUtil(vbaLanguageServerPort);
+	const project = new Project("vbaproject.json");
+	const vbaCommand = new VBACommands(context.asAbsolutePath("scripts"));
 
     statusBarItem = vscode.window.createStatusBarItem(
 		vscode.StatusBarAlignment.Left, 1);
@@ -144,19 +145,18 @@ export async function activate(context: vscode.ExtensionContext) {
 		report("stop VBALanguageServer");
 		await lspClient.stop();	
 
-		report("Initialize VBALanguageServer");
-		await lspClient.start(context, vbaLanguageServerPort, outputChannel);
-
 		if(enableAutoLaunchVBALanguageServer){
 			report("shutdownVBALanguageServer");
-			await lspClient.shutdownVBALanguageServer();
+			await vbaLangServerUtil.shutdown();
 			report("launchVBALanguageServer");
-			await lspClient.launchVBALanguageServer(vbaLanguageServerPort, vbaLanguageServerPath);
+			await vbaLangServerUtil.launch(vbaLanguageServerPort, vbaLanguageServerPath);
 		}else{
 			report("resetVBALanguageServer");
-			await lspClient.resetVBALanguageServer();
+			await vbaLangServerUtil.reset();
 		}
 
+		report("Initialize VBALanguageServer");
+		await lspClient.start(context, vbaLanguageServerPort, outputChannel);
 		lspClient.registerFileEvents(project.srcDir);
 
 		const uris1 = await project.getSrcFileUris();
@@ -164,16 +164,14 @@ export async function activate(context: vscode.ExtensionContext) {
 		const uris = uris1.concat(uris2);
 		if(uris.length > 0){
 			report("Send source uris to VBALanguageServer");
-			const method: Hoge.RequestMethod = "createFiles";
-			lspClient.sendRequest(method, {uris});
+			await lspClient.addDocuments(uris);
 		}
 
 		const activeUri = vscode.window.activeTextEditor?.document.uri;
 		if(activeUri){
 			if(activeUri.fsPath.endsWith(".bas") || activeUri.fsPath.endsWith(".cls")){
 				report("Diagnose active document");
-				const method: Hoge.RequestMethod = "diagnostics";
-				lspClient.sendRequest(method, {uri:activeUri.toString()});
+				await lspClient.diagnostics(activeUri.toString());
 			}
 		}
 
@@ -217,7 +215,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		if(outlineDisp){
 			outlineDisp.dispose();
 		}
-		await lspClient.shutdownVBALanguageServer();
+		await vbaLangServerUtil.shutdown();
 		await lspClient.stop();
 		statusBarItem.text = `Run ${extName}`;
 	}));
@@ -225,6 +223,6 @@ export async function activate(context: vscode.ExtensionContext) {
 
 // This method is called when your extension is deactivated
 export async function deactivate() {
-	await lspClient.shutdownVBALanguageServer();
+	await vbaLangServerUtil.shutdown();
 	await lspClient.stop();
 }

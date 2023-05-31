@@ -1,7 +1,5 @@
 import * as path from 'path';
-import * as fs from "fs";
 import * as vscode from 'vscode';
-import { spawn } from "child_process";
 import {
 	LanguageClient,
 	LanguageClientOptions,
@@ -83,75 +81,13 @@ export class LSPClient {
 		}
 	}
 
-	async sendRequest(method: Hoge.RequestMethod, params: any){
-		await this.client.sendRequest(method, params);
-	}
-
-	async shutdownVBALanguageServer(): Promise<void>{
-		try {
-			await this.sendRequest("Shutdown", {});
-			await this.waitUntilVBALanguageServer("shutdown");
-		} catch (error) {
-			// 
-		}
-	}
-
-	async launchVBALanguageServer(port: number, exeFilePath: string){
-		if(await this.isReadyVBALanguageServer()){
-			return;
-		}
-
-		if(!exeFilePath){
-			throw new Error(`No setting value for server filepath`);
-		}
-		if(!fs.existsSync(exeFilePath)){
-			throw new Error(`Not find ${exeFilePath}`);
-		}
-		const p = spawn("cmd.exe", ["/c", `${exeFilePath} ${port}`], { detached: true });
-		p.on("error", (error)=> {
-			throw error;
-		});
-	
-		await this.waitUntilVBALanguageServer("ready");
-	}
-
-	async resetVBALanguageServer(){
-		if (this.client && this.client.state === State.Running) {
-			await this.client.sendRequest("reset");
-		}
+	async addDocuments(uris: string[]){
+		const method: Hoge.RequestMethod = "createFiles";
+		await this.client.sendRequest(method, {uris});
 	}
 	
-	private async waitUntilVBALanguageServer(state: "ready"|"shutdown"){
-		const watiTimeMs = 500;
-		const countMax = 10 * 1000 / watiTimeMs;
-		let waitCount = 0;
-		while(true){
-			if(waitCount > countMax){
-				throw new Error(`Timed out waiting for server ${state}`);
-			}
-			waitCount++;
-			await new Promise(resolve => {
-				setTimeout(resolve, watiTimeMs);
-			});
-			try {
-				await this.sendRequest("IsReady", {});
-				if(state === "ready"){
-					break;
-				}
-			} catch (error) {
-				if(state === "shutdown"){
-					break;
-				}
-			}
-		}
-	}
-	
-	private async isReadyVBALanguageServer(): Promise<boolean>{
-		try {
-			await this.sendRequest("IsReady", {});
-			return true;
-		} catch (error) {
-			return false;
-		}
+	async diagnostics(uri: string){
+		const method: Hoge.RequestMethod = "diagnostics";
+		await this.client.sendRequest(method, {uri});
 	}
 }

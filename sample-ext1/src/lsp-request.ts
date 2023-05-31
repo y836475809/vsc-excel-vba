@@ -22,7 +22,7 @@ export class LPSRequest {
         };
     }
 
-    send(json: Hoge.Command): Promise<any> {
+    send(json: Hoge.RequestParam): Promise<any> {
         return new Promise((resolve, reject) => {
             const jsonStr = JSON.stringify(json);
             const options = this.getOptions(jsonStr);
@@ -54,7 +54,7 @@ export class LPSRequest {
 }
 
 export class MakeReqData {
-    static addDocuments(uris: string[]): Hoge.Command {
+    static addDocuments(uris: string[]): Hoge.RequestParam {
         const filePaths = uris.map(uri => URI.parse(uri).fsPath);
         const param = {
             id: "AddDocuments",
@@ -62,11 +62,11 @@ export class MakeReqData {
             line: 0,
             chara: 0,
             text: ""
-        } as Hoge.Command;
+        } as Hoge.RequestParam;
         return param;
     }
 
-    static deleteDocuments(uris: string[]): Hoge.Command {
+    static deleteDocuments(uris: string[]): Hoge.RequestParam {
         const fsPaths = uris.map(uri => {
             return URI.parse(uri).fsPath;
         });
@@ -76,15 +76,15 @@ export class MakeReqData {
             line: 0,
             chara: 0,
             text: ""
-        } as Hoge.Command;  
+        } as Hoge.RequestParam;  
         return param;
     }
 
-    static renameDocuments(renameArgs: Hoge.RequestRenameParam[]): Hoge.Command[] {
+    static renameDocuments(renameArgs: Hoge.RequestRenameParam[]): Hoge.RequestParam[] {
         if(!renameArgs){
             return [];
         }
-        const params: Hoge.Command[] = [];
+        const params: Hoge.RequestParam[] = [];
         for(const renameArg of renameArgs){
             const oldUri = renameArg.olduri;
             const newUri = renameArg.newuri;
@@ -96,13 +96,13 @@ export class MakeReqData {
                 line: 0,
                 chara: 0,
                 text: ""
-            } as Hoge.Command;  
+            } as Hoge.RequestParam;  
             params.push(data);
         }
         return params;
     }
 
-    static changeDocument(uri: string, text: string): Hoge.Command {
+    static changeDocument(uri: string, text: string): Hoge.RequestParam {
         const fsPath = URI.parse(uri).fsPath;
         const param = {
             id: "ChangeDocument",
@@ -111,51 +111,51 @@ export class MakeReqData {
             line: 0,
             chara: 0,
             text: text
-        } as Hoge.Command;
+        } as Hoge.RequestParam;
         return param;
     }
 
-    static diagnostics(fsPath: string): Hoge.Command {
+    static diagnostics(fsPath: string): Hoge.RequestParam {
         const param = {
             id: "Diagnostic",
             filepaths: [fsPath],
             line: 0,
             chara: 0,
             text: ""
-            } as Hoge.Command;
+            } as Hoge.RequestParam;
         return param;
     }
 
-    static reset(): Hoge.Command {
+    static reset(): Hoge.RequestParam {
         const param = {
             id: "Reset",
             filepaths: [],
             line: 0,
             chara: 0,
             text: ""
-        } as Hoge.Command;  
+        } as Hoge.RequestParam;  
         return param;
     }
 
-    static isReady(): Hoge.Command {
+    static isReady(): Hoge.RequestParam {
         const param = {
             id: "IsReady",
             filepaths: [],
             line: 0,
             chara: 0,
             text: ""
-        } as Hoge.Command;
+        } as Hoge.RequestParam;
         return param;
     }
 
-    static shutdown(): Hoge.Command {
+    static shutdown(): Hoge.RequestParam {
         const param = {
             id: "Shutdown",
             filepaths: [],
             line: 0,
             chara: 0,
             text: ""
-        } as Hoge.Command;
+        } as Hoge.RequestParam;
         return param;
     }
 }

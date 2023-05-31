@@ -32,7 +32,7 @@ async function renameFile(oldUri: vscode.Uri, newUri: vscode.Uri){
 		line: 0,
 		chara: 0,
 		text: ""
-	} as Hoge.Command;  
+	} as Hoge.RequestParam;  
 	await lpsRequest.send(data);
 }
 
@@ -43,7 +43,7 @@ async function deleteFile(uri: vscode.Uri){
 		line: 0,
 		chara: 0,
 		text: ""
-	} as Hoge.Command;  
+	} as Hoge.RequestParam;  
 	await lpsRequest.send(data);
 }
 
@@ -82,7 +82,7 @@ suite("Extension E2E Roslyn Test Suite", () => {
                 line: 0,
                 chara: 0,
                 text: e.document.getText()
-            } as Hoge.Command;
+            } as Hoge.RequestParam;
             await lpsRequest.send(data);
 		});
 		disps.push(disp);

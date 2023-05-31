@@ -82,12 +82,12 @@ export class LSPClient {
 	}
 
 	async addDocuments(uris: string[]){
-		const method: Hoge.RequestMethod = "createFiles";
+		const method: Hoge.RequestId = "AddDocuments";
 		await this.client.sendRequest(method, {uris});
 	}
 	
 	async diagnostics(uri: string){
-		const method: Hoge.RequestMethod = "diagnostics";
+		const method: Hoge.RequestId = "Diagnostic";
 		await this.client.sendRequest(method, {uri});
 	}
 }

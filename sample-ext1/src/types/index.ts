@@ -38,7 +38,7 @@ namespace Hoge {
         end: Location;
     };
 
-    type CommandId = 
+    export type RequestId = 
         "AddDocuments" 
         | "DeleteDocuments" 
         | "RenameDocument" 
@@ -53,23 +53,14 @@ namespace Hoge {
         | "IgnoreShutdown"
         | "References"
         | "Debug:GetDocuments";
-    export type Command = {
-        id: CommandId;
+    export type RequestParam = {
+        id: RequestId;
         filepaths: string[];
         line: number;
         chara: number;
         text: string;
     };
 
-    export type RequestMethod = 
-        "createFiles"
-        | "deleteFiles"
-        | "renameFiles"
-        | "changeText"
-        | "reset"
-        | "diagnostics"
-        | "IsReady"
-        | "Shutdown";
     export type RequestRenameParam = {
         olduri: string,
         newuri: string

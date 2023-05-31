@@ -31,7 +31,7 @@ export class FileEvents {
     }
 
     private async renameFiles(files: any[]){
-        const method: Hoge.RequestMethod = "renameFiles";
+        const method: Hoge.RequestId = "RenameDocument";
         let renameParams: Hoge.RequestRenameParam[] = [];
         for(const file of files){
             const oldUri = file.oldUri.toString();
@@ -45,7 +45,7 @@ export class FileEvents {
     }
 
     private async deleteFiles(files: any[]){
-        const method: Hoge.RequestMethod = "deleteFiles";
+        const method: Hoge.RequestId = "DeleteDocuments";
         const uris = files.map(uri => {
             return uri.toString();
         });
@@ -59,7 +59,7 @@ export class FileEvents {
             if(!this.client || this.client.state !== State.Running){
                 return;
             }
-            const method: Hoge.RequestMethod = "createFiles";
+            const method: Hoge.RequestId = "AddDocuments";
             const uris = e.files.filter(file => this.isInSrcDir(file)).map(uri => uri.toString());
             if(!uris.length){
                 return;
@@ -115,7 +115,7 @@ export class FileEvents {
                 if(!this.isInSrcDir(e.document.uri)){
                     return;
                 }
-                const method: Hoge.RequestMethod = "changeText";
+                const method: Hoge.RequestId = "ChangeDocument";
                 const uri = e.document.uri.toString();
                 await this.client.sendRequest(method, {uri});
         }, delayTimeMs)));
@@ -127,7 +127,7 @@ export class FileEvents {
                 }
                 const fname = e.document.fileName;
                 if(fname.endsWith(".bas") || fname.endsWith(".cls")){
-                    const method: Hoge.RequestMethod = "diagnostics";
+                    const method: Hoge.RequestId = "Diagnostic";
                     await this.client.sendRequest(method, {uri:e.document.uri.toString()});
                 }
         }, delayTimeMs)));

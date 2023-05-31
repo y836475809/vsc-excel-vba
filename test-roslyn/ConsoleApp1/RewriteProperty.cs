@@ -123,8 +123,14 @@ namespace ConsoleApp1 {
                 var funcName = mathodnode.Identifier.ToString();
                 if (mathodnode.IsKind(SyntaxKind.FunctionStatement)) {
 					if (!PropNamePropStmtLineDict.ContainsKey(funcName)) {
-                        PropNamePropStmtLineDict[funcName] =
-                            ($"Public Property {funcName} As {mathodnode.AsClause.Type}", lineNum);
+                        var asCaseType = mathodnode.AsClause?.Type;
+                        if(asCaseType == null) {
+                            PropNamePropStmtLineDict[funcName] =
+                                ($"Public Property {funcName}", lineNum);
+                        } else {
+                            PropNamePropStmtLineDict[funcName] =
+                                ($"Public Property {funcName} As {mathodnode.AsClause.Type}", lineNum);
+                        }
                     }
                 }
                 if (mathodnode.IsKind(SyntaxKind.SubStatement)) {

@@ -55,5 +55,30 @@ namespace TestProject1 {
                 Assert.Equal(item.Value, rewriteProp.lineMappingDict[item.Key]);
             }
         }
+
+        [Fact]
+        public void TestNotAs() {
+            var host = MefHostServices.Create(MefHostServices.DefaultAssemblies);
+            var workspace = new AdhocWorkspace(host);
+            var projectInfo = ProjectInfo.Create(ProjectId.CreateNewId(), VersionStamp.Create(), "MyProject", "MyProject", LanguageNames.VisualBasic).
+            WithMetadataReferences(new[] {
+                MetadataReference.CreateFromFile(typeof(object).Assembly.Location)
+            });
+            var project = workspace.AddProject(projectInfo);
+
+            var srcData = PropCode.GetSrcNotAs();
+            var doc = workspace.AddDocument(
+                project.Id, "c1", SourceText.From(srcData));
+
+            var rewriteProp = new RewriteProperty();
+            var docRoot = rewriteProp.Rewrite(doc.GetSyntaxRootAsync().Result);
+            var rewriteText = docRoot.GetText().ToString();
+            var preData = PropCode.GetPreNotAs();
+            var prelines = preData.Split("\r\n");
+            var actlines = rewriteText.Split("\r\n");
+            for (int i = 0; i < prelines.Length; i++) {
+                Assert.True(prelines[i] == actlines[i], $"{i}");
+            }
+        }
     }
 }

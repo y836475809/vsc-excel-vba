@@ -55,5 +55,25 @@ Public Property Name1 As String
 Public Property Name2 As String
 End Class";
         }
-	}
+
+        public static string GetSrcNotAs() {
+            return @$"Public Class C1
+Private Name As String
+Property Get Name1()
+End Property
+Public Property Let Name1(arg1 As String)
+End Property
+End Class";
+        }
+        public static string GetPreNotAs() {
+            return @$"Public Class C1
+Private Name As String
+Private Function  getName1()
+End Function
+Private Sub       letName1(arg1 As String)
+End Sub     
+Public Property Name1
+End Class";
+        }
+    }
 }

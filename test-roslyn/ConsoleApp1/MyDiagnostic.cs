@@ -23,7 +23,6 @@ namespace ConsoleApp1 {
         }
 
         public async Task<List<DiagnosticItem>> GetDiagnostics(Document doc) {
-            var sourceText = doc.GetTextAsync().Result;
             var codes = new string[] {
                 "BC35000",  // ランタイム ライブラリ関数 が定義されていないため、
                                    // 要求された操作を実行できません。
@@ -84,6 +83,8 @@ namespace ConsoleApp1 {
                     e.Line, e.Character);
             }).ToList();
 
+            AddMultiArgMethodDiag(node, ref AddItems);
+
             items.AddRange(AddItems);
             return items;
         }
@@ -111,22 +112,33 @@ namespace ConsoleApp1 {
             return false;
         }
 
-		private SyntaxToken? GetPP(SyntaxToken startToken) {
-			var token = startToken;
-			var count = 0;
-			while (count < 20) {
-				token = token.GetPreviousToken();
-				if (token.IsKind(SyntaxKind.OpenParenToken)) {
-					var nameToken = token.GetPreviousToken();
-					var propToken = nameToken.GetPreviousToken();
-					if (propToken.IsKind(SyntaxKind.PropertyKeyword)) {
-						return propToken;
-					}
-					break;
+		private void AddMultiArgMethodDiag(SyntaxNode node, ref List<DiagnosticItem> dls) {
+            // 引数が複数でCallがないsub, function呼び出しをエラーにする
+            var forStmt = node.DescendantNodes().OfType<InvocationExpressionSyntax>();
+            foreach (var stmt in forStmt) {
+                if(stmt.ArgumentList == null) {
+                    continue;
 				}
-				count++;
-			}
-			return null;
+                if (stmt.ArgumentList.Arguments.Count <= 1) {
+					continue;
+				}
+                var isCallStmt = stmt.Parent.IsKind(SyntaxKind.CallStatement);
+                var isAssignStmt = stmt.Parent.IsKind(SyntaxKind.SimpleAssignmentStatement);
+                if (!isCallStmt && !isAssignStmt) {
+                    var opToken = stmt.ArgumentList.OpenParenToken;
+                    if (opToken.Text.Length == 0) {
+                        continue;
+                    }
+                    var lineSpan = stmt.GetLocation().GetLineSpan();
+                    var startPos = lineSpan.StartLinePosition;
+                    var endPos = lineSpan.EndLinePosition;
+                    dls.Add(new DiagnosticItem(
+                        DiagnosticSeverity.Error.ToString(),
+                        "Call is required.",
+                        startPos.Line, startPos.Character,
+                        endPos.Line, endPos.Character));
+                }
+            }
 		}
 
         private bool IsOpen(Diagnostic x, SyntaxNode node, ref  List<DiagnosticItem> dls) {

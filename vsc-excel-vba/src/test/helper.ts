@@ -64,7 +64,7 @@ export const getWorkspaceFolder = () => {
 };
 
 export async function getServerPort(): Promise<number> {
-    const config = vscode.workspace.getConfiguration("sample-ext1");
+    const config = vscode.workspace.getConfiguration("vsc-excel-vba");
     const port: number = await config.get("VBALanguageServerPort")!;
     return port;
 } 
@@ -85,7 +85,7 @@ export function sleep(ms: number): Promise<void> {
 }
 
 export async function activateExtension() {
-    const ext = vscode.extensions.getExtension('y836475809.sample-ext1')!;
+    const ext = vscode.extensions.getExtension('y836475809.vsc-excel-vba')!;
     if(!ext.isActive){
         await ext.activate();
     }

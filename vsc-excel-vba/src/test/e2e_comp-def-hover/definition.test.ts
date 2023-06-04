@@ -28,7 +28,7 @@ suite("Extension E2E Definition Test Suite", () => {
 		});
 		await helper.addDocuments(port, uris);
 
-        await vscode.commands.executeCommand("sample-ext1.startLanguageServer");
+        await vscode.commands.executeCommand("vsc-excel-vba.startLanguageServer");
 		await helper.sleep(500);
     });
     suiteTeardown(async () => {

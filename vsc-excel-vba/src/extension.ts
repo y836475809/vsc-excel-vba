@@ -37,12 +37,12 @@ export async function activate(context: vscode.ExtensionContext) {
 	});
 
 	const config = vscode.workspace.getConfiguration();
-	let loadDefinitionFiles = await config.get("sample-ext1.loadDefinitionFiles");
-	let enableLSP = await config.get("sample-ext1.enableLSP") as boolean;
-	let vbaLanguageServerPort = await config.get("sample-ext1.VBALanguageServerPort") as number;
-	let enableAutoLaunchVBALanguageServer = await config.get("sample-ext1.enableAutoLaunchVBALanguageServer") as boolean;
-	let vbaLanguageServerPath = await config.get("sample-ext1.VBALanguageServerPath") as string;
-	let enableVBACompileAfterImport = await config.get("sample-ext1.enableVBACompileAfterImport") as boolean;
+	let loadDefinitionFiles = await config.get("vsc-excel-vba.loadDefinitionFiles");
+	let enableLSP = await config.get("vsc-excel-vba.enableLSP") as boolean;
+	let vbaLanguageServerPort = await config.get("vsc-excel-vba.VBALanguageServerPort") as number;
+	let enableAutoLaunchVBALanguageServer = await config.get("vsc-excel-vba.enableAutoLaunchVBALanguageServer") as boolean;
+	let vbaLanguageServerPath = await config.get("vsc-excel-vba.VBALanguageServerPath") as string;
+	let enableVBACompileAfterImport = await config.get("vsc-excel-vba.enableVBACompileAfterImport") as boolean;
 
 	lspClient = new LSPClient();
 	vbaLangServerUtil = new VBALanguageServerUtil(vbaLanguageServerPort);
@@ -56,53 +56,53 @@ export async function activate(context: vscode.ExtensionContext) {
 	statusBarItem.show();
 
 	vscode.workspace.onDidChangeConfiguration(async event => {
-		if(!event.affectsConfiguration("sample-ext1")){
+		if(!event.affectsConfiguration("vsc-excel-vba")){
 			return;
 		}
 		const config = vscode.workspace.getConfiguration();
-		loadDefinitionFiles = await config.get("sample-ext1.loadDefinitionFiles");
-		enableLSP = await config.get("sample-ext1.enableLSP") as boolean;
-		vbaLanguageServerPort = await config.get("sample-ext1.VBALanguageServerPort") as number;
-		enableAutoLaunchVBALanguageServer = await config.get("sample-ext1.enableAutoLaunchVBALanguageServer") as boolean;
-		vbaLanguageServerPath = await config.get("sample-ext1.VBALanguageServerPath") as string;
-		enableVBACompileAfterImport = await config.get("sample-ext1.enableVBACompileAfterImport") as boolean;
+		loadDefinitionFiles = await config.get("vsc-excel-vba.loadDefinitionFiles");
+		enableLSP = await config.get("vsc-excel-vba.enableLSP") as boolean;
+		vbaLanguageServerPort = await config.get("vsc-excel-vba.VBALanguageServerPort") as number;
+		enableAutoLaunchVBALanguageServer = await config.get("vsc-excel-vba.enableAutoLaunchVBALanguageServer") as boolean;
+		vbaLanguageServerPath = await config.get("vsc-excel-vba.VBALanguageServerPath") as string;
+		enableVBACompileAfterImport = await config.get("vsc-excel-vba.enableVBACompileAfterImport") as boolean;
 	});
 
-	context.subscriptions.push(vscode.commands.registerCommand("sample-ext1.toggle", async () => {
+	context.subscriptions.push(vscode.commands.registerCommand("vsc-excel-vba.toggle", async () => {
 		if(statusBarItem.text === `Run ${extName}`){
-			await vscode.commands.executeCommand("sample-ext1.start");
+			await vscode.commands.executeCommand("vsc-excel-vba.start");
 		}else{
-			await vscode.commands.executeCommand("sample-ext1.stop");
+			await vscode.commands.executeCommand("vsc-excel-vba.stop");
 		}
 	}));
 
 	vscode.window.registerTreeDataProvider("testView", new TreeDataProvider());
-	context.subscriptions.push(vscode.commands.registerCommand("sample-ext1.runViewItem", async (args: MyTreeItem) => {
+	context.subscriptions.push(vscode.commands.registerCommand("vsc-excel-vba.runViewItem", async (args: MyTreeItem) => {
 		await vbaCommand.exceue(project, args.vbaCommand);
 	}));
-	context.subscriptions.push(vscode.commands.registerCommand("sample-ext1.gotoVBA", async () => {
+	context.subscriptions.push(vscode.commands.registerCommand("vsc-excel-vba.gotoVBA", async () => {
 		await vbaCommand.exceue(project, "gotoVBA");
 	}));
-	context.subscriptions.push(vscode.commands.registerCommand("sample-ext1.gotoVSCode", async () => {
+	context.subscriptions.push(vscode.commands.registerCommand("vsc-excel-vba.gotoVSCode", async () => {
 		await vbaCommand.exceue(project, "gotoVSCode");
 	}));
-	context.subscriptions.push(vscode.commands.registerCommand("sample-ext1.import", async () => {
+	context.subscriptions.push(vscode.commands.registerCommand("vsc-excel-vba.import", async () => {
 		if(enableVBACompileAfterImport){
 			await vbaCommand.exceue(project, "importAndCompile");
 		}else{
 			await vbaCommand.exceue(project, "import");
 		}
 	}));
-	context.subscriptions.push(vscode.commands.registerCommand("sample-ext1.export", async () => {
+	context.subscriptions.push(vscode.commands.registerCommand("vsc-excel-vba.export", async () => {
 		await vbaCommand.exceue(project, "export");
 	}));
-	context.subscriptions.push(vscode.commands.registerCommand("sample-ext1.compile", async () => {
+	context.subscriptions.push(vscode.commands.registerCommand("vsc-excel-vba.compile", async () => {
 		await vbaCommand.exceue(project, "compile");
 	}));
-	context.subscriptions.push(vscode.commands.registerCommand("sample-ext1.runVBASubProc", async () => {
+	context.subscriptions.push(vscode.commands.registerCommand("vsc-excel-vba.runVBASubProc", async () => {
 		await vbaCommand.exceue(project, "runVBASubProc");
 	}));
-	context.subscriptions.push(vscode.commands.registerCommand("sample-ext1.startLanguageServer", async () => {
+	context.subscriptions.push(vscode.commands.registerCommand("vsc-excel-vba.startLanguageServer", async () => {
 		await lspClient.start(context, vbaLanguageServerPort, outputChannel);	
 	}));
 
@@ -124,7 +124,7 @@ export async function activate(context: vscode.ExtensionContext) {
 			}
 		}
 	}));
-	context.subscriptions.push(vscode.commands.registerCommand("sample-ext1.openSheet", async (args) => {	
+	context.subscriptions.push(vscode.commands.registerCommand("vsc-excel-vba.openSheet", async (args) => {	
 		const xlsmFileName = project.projectData.targetfilename;
 		await vbaCommand.openSheet(xlsmFileName, args.fsPath);
 	}));
@@ -178,7 +178,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		report("Server started successfully");
 	};
 
-	context.subscriptions.push(vscode.commands.registerCommand("sample-ext1.start", async () => {
+	context.subscriptions.push(vscode.commands.registerCommand("vsc-excel-vba.start", async () => {
 		const options: vscode.ProgressOptions = {
 			location: vscode.ProgressLocation.Notification,
 			title: "Server status"
@@ -211,7 +211,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		});
 	}));
 
-	context.subscriptions.push(vscode.commands.registerCommand("sample-ext1.stop", async () => {
+	context.subscriptions.push(vscode.commands.registerCommand("vsc-excel-vba.stop", async () => {
 		if(outlineDisp){
 			outlineDisp.dispose();
 		}

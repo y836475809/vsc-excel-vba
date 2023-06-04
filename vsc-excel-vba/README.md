@@ -1,4 +1,4 @@
-# sample-ext1 README
+# vsc-excel-vba README
 
 Support development in VBA.
 

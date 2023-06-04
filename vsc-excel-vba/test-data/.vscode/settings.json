@@ -5,5 +5,5 @@
         "strings": "off"
     },
     "files.autoGuessEncoding": true,
-    "sample-ext1.loadDefinitionFiles": true
+    "vsc-excel-vba.loadDefinitionFiles": true
 }

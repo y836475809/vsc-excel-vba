@@ -1,7 +1,7 @@
 {
   "publisher": "y836475809",
-  "name": "sample-ext1",
-  "displayName": "sample-ext1",
+  "name": "vsc-excel-vba",
+  "displayName": "vsc-excel-vba",
   "description": "",
   "version": "0.0.1",
   "license": "MIT",
@@ -17,34 +17,34 @@
   "main": "./out/extension.js",
   "contributes": {
     "configuration": {
-      "title": "Sample-ext1",
+      "title": "vsc-excel-vba",
       "properties": {
-        "sample-ext1.loadDefinitionFiles": {
+        "vsc-excel-vba.loadDefinitionFiles": {
           "type": "boolean",
           "default": true,
           "description": "load d.vb files"
         },
-        "sample-ext1.enableLSP": {
+        "vsc-excel-vba.enableLSP": {
           "type": "boolean",
           "default": true,
           "description": "Enable/disable VBA LSP"
         },
-        "sample-ext1.VBALanguageServerPort": {
+        "vsc-excel-vba.VBALanguageServerPort": {
           "type": "number",
           "default": 9088,
           "description": "server port"
         },
-        "sample-ext1.VBALanguageServerPath": {
+        "vsc-excel-vba.VBALanguageServerPath": {
           "type": ["string", "null"],
           "default": null,
           "description": "VBA language server executable file path"
         },
-        "sample-ext1.enableAutoLaunchVBALanguageServer": {
+        "vsc-excel-vba.enableAutoLaunchVBALanguageServer": {
           "type": "boolean",
           "default": true,
           "description": "Enable/disable auto launch VBA language server"
         },
-        "sample-ext1.enableVBACompileAfterImport": {
+        "vsc-excel-vba.enableVBACompileAfterImport": {
           "type": "boolean",
           "default": true,
           "description": "Enable/disable run VBA compile after import"
@@ -67,19 +67,19 @@
     ],
     "commands": [
       {
-        "command": "sample-ext1.toggle",
+        "command": "vsc-excel-vba.toggle",
         "title": "toggle"
       },
       {
-        "command": "sample-ext1.start",
-        "title": "sample-ext1 start"
+        "command": "vsc-excel-vba.start",
+        "title": "vsc-excel-vba start"
       },
       {
-        "command": "sample-ext1.stop",
-        "title": "sample-ext1 stop"
+        "command": "vsc-excel-vba.stop",
+        "title": "vsc-excel-vba stop"
       },
       {
-        "command": "sample-ext1.startLanguageServer",
+        "command": "vsc-excel-vba.startLanguageServer",
         "title": "startLanguageServer"
       },
       {
@@ -87,47 +87,47 @@
         "title": "testView reg"
       },
       {
-        "command": "sample-ext1.import",
+        "command": "vsc-excel-vba.import",
         "title": "import"
       },
       {
-        "command": "sample-ext1.export",
+        "command": "vsc-excel-vba.export",
         "title": "export"
       },
       {
-        "command": "sample-ext1.compile",
+        "command": "vsc-excel-vba.compile",
         "title": "compile"
       },
       {
-        "command": "sample-ext1.gotoVBA",
+        "command": "vsc-excel-vba.gotoVBA",
         "title": "gotoVBA"
       },
       {
-        "command": "sample-ext1.gotoVSCode",
+        "command": "vsc-excel-vba.gotoVSCode",
         "title": "gotoVSCode"
       },
       {
-        "command": "sample-ext1.runVBASubProc",
+        "command": "vsc-excel-vba.runVBASubProc",
         "title": "Run Sub proc"
       },
       {
-        "command": "sample-ext1.runViewItem",
+        "command": "vsc-excel-vba.runViewItem",
         "title": "Run",
         "icon": "$(run)"
       },
       {
-        "command": "sample-ext1.openSheet",
+        "command": "vsc-excel-vba.openSheet",
         "title": "openSheet"
       }
     ],
     "keybindings": [
       {
-        "command": "sample-ext1.import",
+        "command": "vsc-excel-vba.import",
         "key": "ctrl+shift+i",
         "when": "resourceExtname == .bas || resourceExtname == .cls"
       },
       {
-        "command": "sample-ext1.runVBASubProc",
+        "command": "vsc-excel-vba.runVBASubProc",
         "key": "f5",
         "when": "editorTextFocus && resourceExtname == .bas"
       }
@@ -148,7 +148,7 @@
     "menus": {
       "view/item/context": [
         {
-          "command": "sample-ext1.runViewItem",
+          "command": "vsc-excel-vba.runViewItem",
           "when": "view == testView",
           "group": "inline"
         }
@@ -161,28 +161,28 @@
         },
         {
           "when": "resourceExtname == .csv",
-          "command": "sample-ext1.openSheet",
+          "command": "vsc-excel-vba.openSheet",
           "group": "myGroup"
         }
       ],
       "editor/context": [
         {
-          "command": "sample-ext1.import",
+          "command": "vsc-excel-vba.import",
           "when": "resourceExtname == .bas || resourceExtname == .cls",
           "group": "myGroup@1"
         },
         {
-          "command": "sample-ext1.gotoVBA",
+          "command": "vsc-excel-vba.gotoVBA",
           "when": "resourceExtname == .bas || resourceExtname == .cls",
           "group": "myGroup@2"
         },
         {
-          "command": "sample-ext1.gotoVSCode",
+          "command": "vsc-excel-vba.gotoVSCode",
           "when": "resourceExtname == .bas || resourceExtname == .cls",
           "group": "myGroup@3"
         },
         {
-          "command": "sample-ext1.runVBASubProc",
+          "command": "vsc-excel-vba.runVBASubProc",
           "when": "resourceExtname == .bas",
           "group": "myGroup@4"
         }

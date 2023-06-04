@@ -3,7 +3,7 @@
         "files.encoding": "shiftjis",
         "files.autoGuessEncoding": true
     },
-    "sample-ext1.loadDefinitionFiles": false,
-    "sample-ext1.enableLSP": true,
-    "sample-ext1.enableAutoLaunchVBALanguageServer": false
+    "vsc-excel-vba.loadDefinitionFiles": false,
+    "vsc-excel-vba.enableLSP": true,
+    "vsc-excel-vba.enableAutoLaunchVBALanguageServer": false
 }

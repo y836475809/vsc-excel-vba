@@ -4,6 +4,13 @@
         "comments": "off",
         "strings": "off"
     },
-    "files.autoGuessEncoding": true,
-    "vsc-excel-vba.loadDefinitionFiles": true
+    "[vb]": {
+        "files.encoding": "shiftjis",
+        "files.autoGuessEncoding": true
+    },
+    "vsc-excel-vba.loadDefinitionFiles": true,
+    "vsc-excel-vba.enableAutoLaunchVBALanguageServer": true,
+    "vsc-excel-vba.enableLSP": true,
+    "vsc-excel-vba.VBALanguageServerPort": 9088,
+    "vsc-excel-vba.VBALanguageServerPath": "",
 }

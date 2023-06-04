@@ -58,7 +58,9 @@ namespace VBACodeAnalysis {
                     workspace.CurrentSolution.WithDocumentFilePath(doc.Id, name));
                 doc_id_dict.Add(name, doc.Id);
             }
-            ChangeDocument(name, text);
+			if (!name.EndsWith(".d.vb")) {
+                ChangeDocument(name, text);
+            }
         }
 
         public void DeleteDocument(string name)

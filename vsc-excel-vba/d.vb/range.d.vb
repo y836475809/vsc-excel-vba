@@ -6,5 +6,5 @@ Public Class Range
     End Function
 
     Public Shared Property Cells As Range
-    Public Shared Property Value As Variant
+    Public Shared Property Value As Object
 End Class

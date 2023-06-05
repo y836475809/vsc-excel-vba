@@ -15,7 +15,7 @@ Public Class Collection : Implements IEnumerable
     Public Sub Remove(key As String)
     End Sub
 
-    Public Function Item(index As Integer) As Object
+    Public Function Item(index As Long) As Object
     End Function
 
     Public Function Item(key As String) As Object

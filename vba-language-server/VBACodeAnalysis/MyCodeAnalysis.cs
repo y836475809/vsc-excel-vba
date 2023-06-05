@@ -58,9 +58,7 @@ namespace VBACodeAnalysis {
                     workspace.CurrentSolution.WithDocumentFilePath(doc.Id, name));
                 doc_id_dict.Add(name, doc.Id);
             }
-			if (!name.EndsWith(".d.vb")) {
-                ChangeDocument(name, text);
-            }
+             ChangeDocument(name, text);
         }
 
         public void DeleteDocument(string name)
@@ -76,6 +74,9 @@ namespace VBACodeAnalysis {
 
         public void ChangeDocument(string name, string text) {
             if (!doc_id_dict.ContainsKey(name)) {
+                return;
+            }
+            if (name.EndsWith(".d.vb")) {
                 return;
             }
             var docId = doc_id_dict[name];
@@ -194,8 +195,8 @@ namespace VBACodeAnalysis {
                     if (span != null && tree != null) {
                         var start = tree.GetLineSpan(span.Value).StartLinePosition;
                         var end = tree.GetLineSpan(span.Value).EndLinePosition;
-                        var linemap = lineMappingDict[tree.FilePath];
-                        if (linemap.ContainsKey(start.Line)) {
+                        if(HasLineMapping(tree.FilePath, start.Line)) {
+                            var linemap = lineMappingDict[tree.FilePath];
                             var mapedline = linemap[start.Line];
                             items.Add(new DefinitionItem(
                                 tree.FilePath,
@@ -203,8 +204,6 @@ namespace VBACodeAnalysis {
                                 new Location(span.Value.End, mapedline, 0),
                                 isClass));
 						} else {
-                            //var start = tree.GetLineSpan(span.Value).StartLinePosition;
-                            //var end = tree.GetLineSpan(span.Value).EndLinePosition;
                             items.Add(new DefinitionItem(
                                 tree.FilePath,
                                 new Location(span.Value.Start, start.Line, start.Character),
@@ -215,6 +214,17 @@ namespace VBACodeAnalysis {
                 }
             }
             return items;
+        }
+
+        private bool HasLineMapping(string filePath, int startLine) {
+            if (!lineMappingDict.ContainsKey(filePath)) {
+                return false;
+            }
+            var linemap = lineMappingDict[filePath];
+            if (!linemap.ContainsKey(startLine)) {
+                return false;
+            }
+            return true;
         }
 
         public async Task<CompletionItem> GetHover(string name, string text, int position) {

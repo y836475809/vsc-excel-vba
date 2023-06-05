@@ -123,8 +123,9 @@ namespace VBACodeAnalysis {
 					continue;
 				}
                 var isCallStmt = stmt.Parent.IsKind(SyntaxKind.CallStatement);
+                var isExpressStmt = stmt.Parent.IsKind(SyntaxKind.ExpressionStatement);
                 var isAssignStmt = stmt.Parent.IsKind(SyntaxKind.SimpleAssignmentStatement);
-                if (!isCallStmt && !isAssignStmt) {
+                if (!isCallStmt && !isAssignStmt && isExpressStmt) {
                     var opToken = stmt.ArgumentList.OpenParenToken;
                     if (opToken.Text.Length == 0) {
                         continue;

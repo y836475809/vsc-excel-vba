@@ -32,8 +32,9 @@ namespace VBACodeAnalysis {
 
             changes = changes.Concat(ReplaceStatement(nodes)).ToList();
             changes = changes.Concat(SetStatement(nodes)).ToList();
-            changes = changes.Concat(LocalDeclarationStatement(nodes)).ToList();
-            changes = changes.Concat(FieldDeclarationStatement(nodes)).ToList();
+            //changes = changes.Concat(LocalDeclarationStatement(nodes)).ToList();
+            //changes = changes.Concat(FieldDeclarationStatement(nodes)).ToList();
+            changes = changes.Concat(AsClauseStatement(nodes)).ToList();
 
             return docRoot.GetText().WithChanges(changes);
         }
@@ -100,6 +101,24 @@ namespace VBACodeAnalysis {
         private List<TextChange> FieldDeclarationStatement(IEnumerable<SyntaxNode> node) {
             var allChanges = new List<TextChange>();
             var forStmt = node.OfType<FieldDeclarationSyntax>();
+            const string code = "BC30804";
+            foreach (var stmt in forStmt) {
+                var ds = stmt.GetDiagnostics().Where(x => {
+                    return x.Id == code;
+                });
+                var changes = ds.Select(x => {
+                    return new TextChange(x.Location.SourceSpan, "Object ");
+                });
+                if (changes.Count() > 0) {
+                    allChanges = allChanges.Concat(changes).ToList();
+                }
+            }
+            return allChanges;
+        }
+
+        private List<TextChange> AsClauseStatement(IEnumerable<SyntaxNode> node) {
+            var allChanges = new List<TextChange>();
+            var forStmt = node.OfType<AsClauseSyntax>();
             const string code = "BC30804";
             foreach (var stmt in forStmt) {
                 var ds = stmt.GetDiagnostics().Where(x => {

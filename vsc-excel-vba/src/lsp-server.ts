@@ -175,7 +175,7 @@ export class LSPServer {
                     items.push(...attrDiagnostics);
                 }
             }
-            connection.sendDiagnostics({uri: doc.uri, diagnostics: items});
+            await connection.sendDiagnostics({uri: doc.uri, diagnostics: items});
         }
         if(cmdId === "Diagnostic"){
             const uri = params.uri as string;
@@ -198,7 +198,7 @@ export class LSPServer {
                 }
             } 
 
-            connection.sendDiagnostics({uri: doc.uri, diagnostics: items});
+            await connection.sendDiagnostics({uri: doc.uri, diagnostics: items});
         }
         if(cmdId === "Reset"){  
             const data = MakeReqData.reset();

@@ -105,12 +105,12 @@ export class FileEvents {
                 if(e.document.isUntitled){
                     return;
                 }
-                if(!e.document.isDirty && !e.reason){
-                    // 変更なしでsave
-                    return;
-                }
-                // isDirty=false, e.reason!=undefined
-                // ->undo or redoで変更をもどした場合なので更新通知必要
+                // if(!e.document.isDirty && !e.reason){
+                //     // 変更なしでsave
+                //     return;
+                // }
+                // // isDirty=false, e.reason!=undefined
+                // // ->undo or redoで変更をもどした場合なので更新通知必要
 
                 if(!this.isInSrcDir(e.document.uri)){
                     return;

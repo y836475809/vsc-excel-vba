@@ -92,9 +92,10 @@ export class VBACommands {
             lineoffset = clsLineOffset;
         }
 
+        const encFname = encodeURIComponent(`${moduleName}.${moduleType}`);
         const files = uris.filter(x => {
-            const encFname = encodeURIComponent(`${moduleName}.${moduleType}`);
-            return x.endsWith(encFname);
+            const fname = x.split("/").at(-1);
+            return fname === encFname;
         });
         if(files.length > 0){
             const u = vscode.Uri.parse(files[0]);

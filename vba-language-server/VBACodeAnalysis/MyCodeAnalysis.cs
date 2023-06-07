@@ -128,8 +128,8 @@ namespace VBACodeAnalysis {
         }
 
         public async Task<List<CompletionItem>> GetCompletions(string name, string text, int line, int chara) {
-            //ChangeDocument(name, text);
-            var completions = new List<CompletionItem>();
+			ChangeDocument(name, text);
+			var completions = new List<CompletionItem>();
             if (!doc_id_dict.ContainsKey(name)) {
                 return completions;
             }

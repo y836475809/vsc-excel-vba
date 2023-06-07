@@ -73,7 +73,8 @@ namespace VBALanguageServer {
                     logger.Info($"CompletionReq, non: {Path.GetFileName(e.FilePath)}");
                     return;
 				}
-                var vbCodeInfo = codeAdapter.GetVbCodeInfo(e.FilePath);
+               
+                codeAdapter.parse(e.FilePath, e.Text, out VbCodeInfo vbCodeInfo);
                 var vbCode = vbCodeInfo.VbCode;
                 var posOffset = vbCodeInfo.PositionOffset;
                 var line = e.Line - vbCodeInfo.LineOffset;

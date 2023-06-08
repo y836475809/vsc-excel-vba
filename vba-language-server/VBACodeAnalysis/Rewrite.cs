@@ -21,25 +21,35 @@ namespace VBACodeAnalysis {
         public SourceText RewriteStatement(Document doc) {
             var docRoot = doc.GetSyntaxRootAsync().Result;
             var nodes = docRoot.DescendantNodes();
-            var changes = new List<TextChange>();
+
+            var prepChanges = Prep(nodes);
+            docRoot = docRoot.SyntaxTree
+			    .WithChangedText(docRoot.GetText().WithChanges(prepChanges))
+			    .GetRootAsync().Result;
 
             var rewriteProp = new RewriteProperty();
             docRoot = rewriteProp.Rewrite(docRoot);
             charaOffsetDict = rewriteProp.charaOffsetDict;
             lineMappingDict = rewriteProp.lineMappingDict;
 
-            nodes = docRoot.DescendantNodes();
-
-            changes = changes.Concat(ReplaceStatement(nodes)).ToList();
-            changes = changes.Concat(SetStatement(nodes)).ToList();
-            //changes = changes.Concat(LocalDeclarationStatement(nodes)).ToList();
-            //changes = changes.Concat(FieldDeclarationStatement(nodes)).ToList();
-            changes = changes.Concat(AsClauseStatement(nodes)).ToList();
-
+            nodes = docRoot.DescendantNodes();  
+            var changes = ReplaceStatement(nodes);
             return docRoot.GetText().WithChanges(changes);
         }
 
-		public List<TextChange> ReplaceStatement(IEnumerable<SyntaxNode> node) {
+        private List<TextChange> Prep(IEnumerable<SyntaxNode> nodes) {
+            var changes = SetStatement(nodes);
+            changes = changes.Concat(AsClauseStatement(nodes)).ToList();
+
+            var changeDict = new Dictionary<string, TextChange>();
+            foreach (var item in changes) {
+                var key = item.Span.ToString();
+                changeDict[key] = item;
+            }
+            return changeDict.Values.ToList();
+        }
+
+        public List<TextChange> ReplaceStatement(IEnumerable<SyntaxNode> node) {
             var ns = setting.NameSpace;
             var rewriteDict = setting.getRewriteDict();
             var allChanges = new List<TextChange>();
@@ -62,23 +72,47 @@ namespace VBACodeAnalysis {
         }
 
         private List<TextChange> SetStatement(IEnumerable<SyntaxNode> node) {
-            var forStmt = node.OfType<EmptyStatementSyntax>();
             var allChanges = new List<TextChange>();
+
+            var emptyStmts = node.OfType<EmptyStatementSyntax>();
             // 'Let' および 'Set' 代入ステートメントはサポートされなくなりました。
             const string code = "BC30807";
-            foreach (var stmt in forStmt) {
-                var ds = stmt.Empty.TrailingTrivia.Where(x => {
-                    return x.GetDiagnostics().SingleOrDefault(x => x.Id == code) != null;
+			foreach (var stmt in emptyStmts) {
+				var ds = stmt.Empty.TrailingTrivia.Where(x => {
+					return x.GetDiagnostics().SingleOrDefault(x => x.Id == code) != null;
+				});
+				var changes = ds.Select(x => {
+					return new TextChange(x.Span, new string(' ', x.Span.Length));
+				});
+			    if (changes.Any()) {
+					allChanges = allChanges.Concat(changes).ToList();
+				}
+			}
+
+			var setAccBlockStmt = node.Where(x => x.IsKind(SyntaxKind.SetAccessorBlock));
+            foreach (var stmt in setAccBlockStmt) {
+                var changes = stmt.ChildNodes()
+                    .Where(x => x.IsKind(SyntaxKind.SetAccessorStatement))
+                    .Select(x => {
+                        return new TextChange(x.Span, new string(' ', x.Span.Length));
                 });
-                var changes = ds.Select(x => {
-                    return new TextChange(x.Span, new string(' ', x.Span.Length));
-                });
-                if (changes.Count() > 0) {
+				if (changes.Any()) {
+                    var mm = allChanges.Concat(changes);
+                    allChanges.Concat(mm);
+
+                    allChanges = allChanges.Concat(changes).ToList();
+				}
+            }
+
+            {
+                var setAccStmt = node.Where(x => x.IsKind(SyntaxKind.SetAccessorStatement));
+                var changes = setAccStmt.Select(x => new TextChange(x.Span, new string(' ', x.Span.Length)));
+                if (changes.Any()) {
                     allChanges = allChanges.Concat(changes).ToList();
                 }
             }
-            return allChanges;
-        }
+			return allChanges;
+		}
 
         private List<TextChange> LocalDeclarationStatement(IEnumerable<SyntaxNode> node) {
             var allChanges = new List<TextChange>();

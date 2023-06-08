@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace VBACodeAnalysis {
     public class RewriteProperty {
@@ -185,15 +186,23 @@ namespace VBACodeAnalysis {
                             if (assigStmt.Left.ToString() != funcName) {
                                 continue;
                             }
-                            var assigLineNum = assigStmt.GetLocation().GetLineSpan().StartLinePosition.Line;
-                            var assigText = lines[assigLineNum].ToString();
                             var repText = $"{getlet}{funcName}";
-                            lineRepStmtDict.Add(assigLineNum, assigText.Replace(funcName, repText));
+                            var assigLineNum = assigStmt.GetLocation().GetLineSpan().StartLinePosition.Line;
+                            //var assigText = lines[assigLineNum].ToString();
+                            var assigLeft = assigStmt.Left;
+                            var newen = SyntaxFactory.IdentifierName(repText)
+                                    .WithLeadingTrivia(assigLeft.GetLeadingTrivia())
+                                    .WithTrailingTrivia(assigLeft.GetTrailingTrivia());
+                            var newasg = assigStmt.ReplaceNode(assigLeft, newen)
+                                    .WithLeadingTrivia(assigStmt.GetLeadingTrivia())
+                                    .WithTrailingTrivia(assigStmt.GetTrailingTrivia());
+
+                            lineRepStmtDict.Add(assigLineNum, Regex.Replace(newasg.ToFullString(), Environment.NewLine, ""));
                             var assigTrivia = assigStmt.GetLeadingTrivia().FirstOrDefault().ToString();
                             charaOffsetDict[assigLineNum] = (assigTrivia.Length + repText.Length, funcName.Length - repText.Length);
                         }
-                    }
-                }
+					}
+				}
             }
 
             return (PropNamePropStmtLineDict, lineRepStmtDict);

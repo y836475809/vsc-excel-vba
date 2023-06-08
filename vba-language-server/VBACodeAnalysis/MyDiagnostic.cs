@@ -50,19 +50,32 @@ namespace VBACodeAnalysis {
                 }
 
 				if (x.Id == "BC30800") {
-                    var sym = SymbolFinder.FindSymbolAtPositionAsync(
-                        doc, x.Location.SourceSpan.Start - 1).Result;
-                    if (sym is IMethodSymbol mth) {
-                        if (mth.Parameters.Any()) {
-                            var token = node.FindNode(x.Location.SourceSpan).GetFirstToken();
+                    // メソッドの引数は、かっこで囲む必要があります
+                    var targetNode = node.FindNode(x.Location.SourceSpan);
+                    if (targetNode.Parent is ArgumentListSyntax arg) {
+                        var op = arg.OpenParenToken;
+                        var cp = arg.CloseParenToken;
+                        if (op.IsMissing && cp.IsMissing) {
+                            var token = targetNode.GetFirstToken();
                             var preToken = token.GetPreviousToken();
                             if (!preToken.IsKind(SyntaxKind.CallKeyword)) {
-                                var neToken = token.GetNextToken();
-                                if (!neToken.IsKind(SyntaxKind.OpenParenToken)) {
-                                    // method "test"の場合(Callなしカッコなしの呼び出し)のエラーはエラーにしない
-                                    return false;
-                                }
+                                // testArgs 123
+                                // Add testArgs(1,2)
+                                // Add testArgs(123)
+                                // Eq testArgs(1,2) = eqret
+                                // Eq testArgs(123) = 1
+                                // Eq testArgs(1,2) = 1
+                                return false;
                             }
+                        }
+					} else {
+                        var token = targetNode.GetFirstToken();
+                        var preToken = token.GetPreviousToken();
+                        if (!preToken.IsKind(SyntaxKind.CallKeyword)) {
+                            // testArgs 1, 2
+                            // Add testArgs 123
+                            // Add testArgs 1,2
+                            return false;
                         }
                     }
                 }

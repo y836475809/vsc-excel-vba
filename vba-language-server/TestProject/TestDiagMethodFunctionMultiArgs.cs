@@ -33,6 +33,10 @@ namespace TestProject {
     Function testArgs(a As Long, b As Long) As Long
         testArgs = 10
     End Function
+    Sub Add(a as Long)
+    End Sub
+    Sub Eq(a as Boolean)
+    End Sub
 End Module";
         }
 
@@ -76,6 +80,50 @@ End Module";
         public void TestDiagnosticCallFuncRet2() {
             var items = GetDiag("ret = Call testArgs(1,2)");
             Assert.Single(items);
+        }
+
+        [Fact]
+        public void TestDiagnosticCallFuncIf() {
+            var code = @"If testArgs(1,2) Then
+End If";
+            var items = GetDiag(code);
+            Assert.Empty(items);
+        }
+        [Fact]
+        public void TestDiagnosticCallFuncNEst() {
+            var code = @"Call testArgs(1,testArgs(1,2))";
+            var items = GetDiag(code);
+            Assert.Empty(items);
+        }
+
+        [Fact]
+        public void TestDiagnosticCallFuncAdd() {
+            var code = @"Add testArgs(1,2)";
+            var items = GetDiag(code);
+            Assert.Empty(items);
+        }
+
+        [Fact]
+        public void TestDiagnosticCallFuncAddError() {
+            var code = @"Add testArgs 1,2 ";
+            var items = GetDiag(code);
+            Assert.Equal(4, items.Count);
+        }
+
+        [Fact]
+        public void TestDiagnosticCallFuncEq() {
+            var code = @"Eq testArgs(1,2) = 1";
+            var items = GetDiag(code);
+            Assert.Empty(items);
+        }
+
+        [Fact]
+        public void TestDiagnosticCallFuncEqVar() {
+            var code = @"Dim eqret As Long
+eqret = 1
+Eq testArgs(1,2) = eqret";
+            var items = GetDiag(code);
+            Assert.Empty(items);
         }
     }
 }

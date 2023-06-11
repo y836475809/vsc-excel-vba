@@ -1,9 +1,6 @@
-import {
-	LanguageClient,
-	State
-} from 'vscode-languageclient/node';
 import * as vscode from "vscode";
 import * as path from "path";
+import { VBALSRequest } from "./vba-ls-request";
 
 function debounce(fn: any, interval: number){
     let timerId: any;
@@ -18,12 +15,19 @@ function debounce(fn: any, interval: number){
 };
 
 export class FileEvents {
-    client: LanguageClient;
+    request: VBALSRequest;
     srcDir: string;
+    disposables: vscode.Disposable[];
 
-    constructor(client: LanguageClient, srcDir: string){
-        this.client = client;
-        this.srcDir = srcDir;
+    constructor(request: VBALSRequest){
+        this.request = request;
+        this.srcDir = "";
+        this.disposables = [];
+    }
+
+    public dispose() {
+        this.disposables.forEach(x=>x.dispose());
+        this.disposables = [];
     }
 
     private isInSrcDir(uri: vscode.Uri): boolean{
@@ -41,7 +45,7 @@ export class FileEvents {
                 newuri: newUri
             });
         }
-        await this.client.sendRequest(method, {renameParams});
+        await this.request.renameDocument(renameParams);
     }
 
     private async deleteFiles(files: any[]){
@@ -49,28 +53,23 @@ export class FileEvents {
         const uris = files.map(uri => {
             return uri.toString();
         });
-        await this.client.sendRequest(method, {uris});
+        await this.request.deleteDocuments(uris);
     }
 
-    public registerFileEvent(context?: vscode.ExtensionContext): vscode.Disposable[] {
-        const feDisps: vscode.Disposable[] = [];
+    public registerFileEvent(srcDir: string): void {
+        this.dispose();
 
-        feDisps.push(vscode.workspace.onDidCreateFiles(async (e: vscode.FileCreateEvent) => {
-            if(!this.client || this.client.state !== State.Running){
-                return;
-            }
-            const method: Hoge.RequestId = "AddDocuments";
-            const uris = e.files.filter(file => this.isInSrcDir(file)).map(uri => uri.toString());
+        this.srcDir = srcDir;
+
+        this.disposables.push(vscode.workspace.onDidCreateFiles(async (e: vscode.FileCreateEvent) => {
+            const uris = e.files.filter(file => this.isInSrcDir(file));
             if(!uris.length){
                 return;
             }
-            await this.client.sendRequest(method, {uris});
+            await this.request.addDocuments(uris);
         }));
 
-        feDisps.push(vscode.workspace.onDidDeleteFiles(async (e: vscode.FileDeleteEvent) => {
-            if(!this.client || this.client.state !== State.Running){
-                return;
-            }
+        this.disposables.push(vscode.workspace.onDidDeleteFiles(async (e: vscode.FileDeleteEvent) => {
             const files = e.files.filter(file => this.isInSrcDir(file)).map(file => {
                 return file;
             });
@@ -80,10 +79,7 @@ export class FileEvents {
             await this.deleteFiles(files);
         }));
 
-        feDisps.push(vscode.workspace.onDidRenameFiles(async (e: vscode.FileRenameEvent) => {
-            if(!this.client || this.client.state !== State.Running){
-                return;
-            }
+        this.disposables.push(vscode.workspace.onDidRenameFiles(async (e: vscode.FileRenameEvent) => {
             const files = e.files.filter(file => this.isInSrcDir(file.newUri)).map(file => {
                 return {
                     oldUri: file.oldUri,
@@ -97,11 +93,8 @@ export class FileEvents {
         }));
 
         const delayTimeMs = 1000;
-        feDisps.push(vscode.workspace.onDidChangeTextDocument(
+        this.disposables.push(vscode.workspace.onDidChangeTextDocument(
             debounce(async (e: vscode.TextDocumentChangeEvent) => {
-                if(!this.client || this.client.state !== State.Running){
-                    return;
-                }
                 if(e.document.isUntitled){
                     return;
                 }
@@ -115,23 +108,16 @@ export class FileEvents {
                 if(!this.isInSrcDir(e.document.uri)){
                     return;
                 }
-                const method: Hoge.RequestId = "ChangeDocument";
                 const uri = e.document.uri.toString();
-                await this.client.sendRequest(method, {uri});
+                await this.request.changeDocument(e.document);
         }, delayTimeMs)));
 
-        feDisps.push(vscode.window.onDidChangeActiveTextEditor(
+        this.disposables.push(vscode.window.onDidChangeActiveTextEditor(
             debounce(async (e: vscode.TextEditor) => {
-                if(!this.client || this.client.state !== State.Running){
-                    return;
-                }
                 const fname = e.document.fileName;
                 if(fname.endsWith(".bas") || fname.endsWith(".cls")){
-                    const method: Hoge.RequestId = "Diagnostic";
-                    await this.client.sendRequest(method, {uri:e.document.uri.toString()});
+                    await this.request.diagnostic(e.document);
                 }
         }, delayTimeMs)));
-
-        return feDisps;
     }
 } 

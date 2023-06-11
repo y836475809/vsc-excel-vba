@@ -1,6 +1,5 @@
 import * as vscode from "vscode";
 import * as path from 'path';
-import { Diagnostic, DiagnosticSeverity } from 'vscode-languageserver/node';
 
 export class VbaAttributeError extends Error {
     line: number;
@@ -17,21 +16,14 @@ export function makeAttributeDiagnostics(errors: VbaAttributeError[]){
         const msg = x.message;
         const line = x.line;
         const endpos = x.endpos;
-        const diagnostic: Diagnostic = {
-            severity: DiagnosticSeverity.Error,
-            range: {
-                start: {
-                    line: line,
-                    character:0
-                },
-                end: {
-                    line: line,
-                    character:endpos
-                }
-            },
-            message: msg,
-            source: "server",
-        };
+        const diagnostic = new vscode.Diagnostic(     
+            new vscode.Range(
+                line, 0,
+                line, endpos
+            ),
+            msg,
+            vscode.DiagnosticSeverity.Error
+        );
         return diagnostic;
     });
 }

@@ -20,15 +20,15 @@ suite("Extension E2E Completion Test Suite", () => {
 		];
 		await helper.addDocuments(port, uris);
 
-        await vscode.commands.executeCommand("vsc-excel-vba.startLanguageServer");
+		await helper.activateExtension();
+		await vscode.commands.executeCommand("vsc-excel-vba.startLanguageServer");
+
 		await helper.sleep(500);
     });
     suiteTeardown(async () => {
     });
 
 	test("completion class", async () => {
-		await helper.activateExtension();
-
 		const docUri = helper.getDocUri("m1.bas");
 		const target = "c1.";
 		const targetPos = fixtureFile.getPosition("m1.bas", target, target.length);
@@ -64,8 +64,6 @@ suite("Extension E2E Completion Test Suite", () => {
 	});
 
 	test("completion module", async () => {
-		await helper.activateExtension();
-
 		const docUri = helper.getDocUri("m1.bas");
 		const target = "' completion position";
 		const pos = fixtureFile.getPosition("m1.bas", target, target.length);
@@ -122,8 +120,6 @@ suite("Extension E2E Completion Test Suite", () => {
 	});
 
 	test("completion top position", async () => {
-		await helper.activateExtension();
-
 		const docUri = helper.getDocUri("m1.bas");
 		const targetPos = new vscode.Position(0, 0);
 		await testCompletion(docUri, targetPos, {items: []});

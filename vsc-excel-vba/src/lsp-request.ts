@@ -1,4 +1,5 @@
 import * as http from "http";
+import * as vscode from "vscode";
 import { URI } from 'vscode-uri';
 
 const url = "http://localhost";
@@ -54,8 +55,8 @@ export class LPSRequest {
 }
 
 export class MakeReqData {
-    static addDocuments(uris: string[]): Hoge.RequestParam {
-        const filePaths = uris.map(uri => URI.parse(uri).fsPath);
+    static addDocuments(uris: vscode.Uri[]): Hoge.RequestParam {
+        const filePaths = uris.map(uri => uri.fsPath);
         const param = {
             id: "AddDocuments",
             filepaths: filePaths,
@@ -66,9 +67,9 @@ export class MakeReqData {
         return param;
     }
 
-    static deleteDocuments(uris: string[]): Hoge.RequestParam {
+    static deleteDocuments(uris: vscode.Uri[]): Hoge.RequestParam {
         const fsPaths = uris.map(uri => {
-            return URI.parse(uri).fsPath;
+            return uri.fsPath;
         });
         const param = {
             id: "DeleteDocuments",
@@ -102,8 +103,8 @@ export class MakeReqData {
         return params;
     }
 
-    static changeDocument(uri: string, text: string): Hoge.RequestParam {
-        const fsPath = URI.parse(uri).fsPath;
+    static changeDocument(uri: vscode.Uri, text: string): Hoge.RequestParam {
+        const fsPath = uri.fsPath;
         const param = {
             id: "ChangeDocument",
             filepaths: [fsPath],

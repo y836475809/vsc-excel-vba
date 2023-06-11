@@ -59,7 +59,7 @@ export class Project {
         this.srcDir = path.join(wsPath,this.projectData.srcdir);
     }
 
-    async getSrcFileUris(): Promise<string[]> {
+    async getSrcFileUris(): Promise<vscode.Uri[]> {
         const listFiles = (dir: string): string[] =>
         fs.readdirSync(dir, { withFileTypes: true }).flatMap(dirent =>
             dirent.isFile() ? [`${dir}/${dirent.name}`] : listFiles(`${dir}/${dirent.name}`));
@@ -67,11 +67,11 @@ export class Project {
         const srcFiles = files.filter(x => {
             return x.endsWith(".cls") || x.endsWith(".bas");
         });
-        const uris = srcFiles.map(fp => vscode.Uri.file(fp).toString());
+        const uris = srcFiles.map(fp => vscode.Uri.file(fp));
         return uris;
     }
 
-    getDefinitionFileUris(context: vscode.ExtensionContext): string[] {
+    getDefinitionFileUris(context: vscode.ExtensionContext): vscode.Uri[] {
         const dirPath = context.asAbsolutePath("d.vb");
         if(!fs.existsSync(dirPath)){
             return [];
@@ -80,7 +80,7 @@ export class Project {
         .filter(dirent => {
             return dirent.isFile() && (dirent.name.endsWith(".d.vb"));
         }).map(dirent => path.join(dirPath, dirent.name));
-        const uris = fsPaths.map(fp => vscode.Uri.file(fp).toString());
+        const uris = fsPaths.map(fp => vscode.Uri.file(fp));
         return uris;
     }
 

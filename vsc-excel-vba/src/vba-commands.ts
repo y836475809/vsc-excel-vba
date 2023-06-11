@@ -74,7 +74,7 @@ export class VBACommands {
         });
     }
 
-    async gotoVSCode(uris: string[]){
+    async gotoVSCode(uris: vscode.Uri[]){
         const ret = await this.run("goto-vscode.ps1", []);
         const selJson = JSON.parse(ret.data);
         const moduleName = selJson["module_name"];
@@ -94,11 +94,11 @@ export class VBACommands {
 
         const encFname = encodeURIComponent(`${moduleName}.${moduleType}`);
         const files = uris.filter(x => {
-            const fname = x.split("/").at(-1);
+            const fname = x.toString().split("/").at(-1);
             return fname === encFname;
         });
         if(files.length > 0){
-            const u = vscode.Uri.parse(files[0]);
+            const u = files[0];
             const doc = await vscode.workspace.openTextDocument(u);
             if(!doc){
                 return;

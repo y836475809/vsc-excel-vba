@@ -28,6 +28,7 @@ suite("Extension E2E Definition Test Suite", () => {
 		});
 		await helper.addDocuments(port, uris);
 
+		await helper.activateExtension();
         await vscode.commands.executeCommand("vsc-excel-vba.startLanguageServer");
 		await helper.sleep(500);
     });
@@ -35,8 +36,6 @@ suite("Extension E2E Definition Test Suite", () => {
     });
 
 	test("definition class", async () => {
-		await helper.activateExtension();
-
 		const docUri = helper.getDocUri("m1.bas");
 		const target = "Dim c As Class1";
 		const targetPos = getPosition("m1.bas", target, target.length-3);
@@ -54,8 +53,6 @@ suite("Extension E2E Definition Test Suite", () => {
 	});
 
 	test("definition class constructor", async () => {
-		await helper.activateExtension();
-
 		const docUri = helper.getDocUri("m1.bas");
 		const target = "Dim c1 As New Class1";
 		const targetPos = getPosition("m1.bas", target, target.length-3);
@@ -73,8 +70,6 @@ suite("Extension E2E Definition Test Suite", () => {
 	});
 
 	test("definition module field", async () => {
-		await helper.activateExtension();
-
 		const docUri = helper.getDocUri("m1.bas");
 		const target = "buf = \"ss\"";
 		const targetPos = getPosition("m1.bas", target, 1);
@@ -91,8 +86,6 @@ suite("Extension E2E Definition Test Suite", () => {
 	});
 
 	test("definition module method", async () => {
-		await helper.activateExtension();
-
 		const docUri = helper.getDocUri("m1.bas");
 		const target = "Sample1() ' call";
 		const targetPos = getPosition("m1.bas", target, 1);
@@ -109,8 +102,6 @@ suite("Extension E2E Definition Test Suite", () => {
 	});
 
 	test("definition external module method", async () => {
-		await helper.activateExtension();
-
 		const docUri = helper.getDocUri("m1.bas");
 		const target = "Module2Sample1() ' call";
 		const targetPos = getPosition("m1.bas", target, 1);
@@ -127,8 +118,6 @@ suite("Extension E2E Definition Test Suite", () => {
 	});
 
 	test("definition class method", async () => {
-		await helper.activateExtension();
-
 		const docUri = helper.getDocUri("m1.bas");
 		const target = "c1.Hello";
 		const targetPos = getPosition("m1.bas", target, target.length - 3);
@@ -145,8 +134,6 @@ suite("Extension E2E Definition Test Suite", () => {
 	});
 
 	test("definition class field", async () => {
-		await helper.activateExtension();
-
 		const docUri = helper.getDocUri("m1.bas");
 		const target = "c1.Name";
 		const targetPos = getPosition("m1.bas", target, target.length - 3);
@@ -163,8 +150,6 @@ suite("Extension E2E Definition Test Suite", () => {
 	});
 
 	test("definition top position", async () => {
-		await helper.activateExtension();
-
 		const docUri = helper.getDocUri("m1.bas");
 		const targetPos = new vscode.Position(0, 0);
 		const actualLocationList = (await vscode.commands.executeCommand(

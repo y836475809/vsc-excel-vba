@@ -18,6 +18,8 @@ suite("Extension E2E Roslyn Test Suite", () => {
 			return helper.getDocUri(x);
 		});
 		await helper.addDocuments(port, uris);
+
+		await helper.activateExtension();
         await vscode.commands.executeCommand("vsc-excel-vba.startLanguageServer");
 		await helper.sleep(500);
     });
@@ -25,8 +27,6 @@ suite("Extension E2E Roslyn Test Suite", () => {
     });
 
 	test("hover class", async () => {
-		await helper.activateExtension();
-
 		const docUri = helper.getDocUri("m1.bas");
 		const target = "Dim c As Class1";
 		const targetPos = fixtureFile.getPosition("m1.bas", target, target.length-3);
@@ -42,8 +42,6 @@ suite("Extension E2E Roslyn Test Suite", () => {
 	});
 
 	test("hover class method", async () => {
-		await helper.activateExtension();
-
 		const docUri = helper.getDocUri("m1.bas");
 		const target = "c1.Hello";
 		const targetPos = fixtureFile.getPosition("m1.bas", target, target.length-3);
@@ -65,8 +63,6 @@ suite("Extension E2E Roslyn Test Suite", () => {
 	});
 
 	test("hover class field", async () => {
-		await helper.activateExtension();
-
 		const docUri = helper.getDocUri("m1.bas");
 		const target = "c1.Name";
 		const targetPos = fixtureFile.getPosition("m1.bas", target, target.length-3);
@@ -86,8 +82,6 @@ suite("Extension E2E Roslyn Test Suite", () => {
 	});
 
 	test("hover module method", async () => {
-		await helper.activateExtension();
-
 		const docUri = helper.getDocUri("m1.bas");
 		const target = "Sample1() ' call";
 		const targetPos = fixtureFile.getPosition("m1.bas", target, 3);
@@ -107,8 +101,6 @@ suite("Extension E2E Roslyn Test Suite", () => {
 	});
 
 	test("hover module field", async () => {
-		await helper.activateExtension();
-
 		const docUri = helper.getDocUri("m1.bas");
 		const target = "buf = \"ss\"";
 		const targetPos = fixtureFile.getPosition("m1.bas", target, 1);
@@ -128,8 +120,6 @@ suite("Extension E2E Roslyn Test Suite", () => {
 	});
 
 	test("hover external module method", async () => {
-		await helper.activateExtension();
-
 		const docUri = helper.getDocUri("m1.bas");
 		const target = "Module2Sample1() ' call";
 		const targetPos = fixtureFile.getPosition("m1.bas", target, 3);
@@ -149,8 +139,6 @@ suite("Extension E2E Roslyn Test Suite", () => {
 	});
 
 	test("hover top position", async () => {
-		await helper.activateExtension();
-
 		const docUri = helper.getDocUri("m1.bas");
 		const targetPos = new vscode.Position(0, 0);
 		const hover = (await vscode.commands.executeCommand(

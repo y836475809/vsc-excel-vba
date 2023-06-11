@@ -92,7 +92,6 @@ export async function activateExtension() {
 }
 
 export async function activate(docUri: vscode.Uri) {
-    activateExtension();
     try {
         const doc = await vscode.workspace.openTextDocument(docUri);
         const editor = await vscode.window.showTextDocument(doc);

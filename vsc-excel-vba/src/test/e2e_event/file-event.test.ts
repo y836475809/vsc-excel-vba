@@ -87,6 +87,8 @@ suite("Extension E2E Roslyn Test Suite", () => {
 		});
 		disps.push(disp);
 
+		await helper.activateExtension();
+
 		await helper.sleep(500);
     });
     suiteTeardown(async () => {
@@ -103,8 +105,6 @@ suite("Extension E2E Roslyn Test Suite", () => {
     });
 
 	test("init", async () => {
-		await helper.activateExtension();
-
 		const actFileMap = await getServerFileMap();
 		assert.deepEqual(actFileMap, new Map<string, string>([
 			[
@@ -118,8 +118,6 @@ suite("Extension E2E Roslyn Test Suite", () => {
 	});
 
 	test("rename file", async () => {
-		await helper.activateExtension();
-
 		const oldUri = helper.getDocUri("m1.bas");
 		const newUri = helper.getDocUri("re_m1.bas");
 		await vscode.workspace.fs.rename(oldUri, newUri);
@@ -141,8 +139,6 @@ suite("Extension E2E Roslyn Test Suite", () => {
 	});
 
 	test("change content", async () => {
-		await helper.activateExtension();
-
 		const actFileMap = await getServerFileMap();
 		assert.deepEqual(actFileMap, new Map<string, string>([
 			[
@@ -186,8 +182,6 @@ suite("Extension E2E Roslyn Test Suite", () => {
 	});
 
 	test("change module name", async () => {
-		await helper.activateExtension();
-
 		const actFileMap = await getServerFileMap();
 		assert.deepEqual(actFileMap, new Map<string, string>([
 			[
@@ -236,8 +230,6 @@ suite("Extension E2E Roslyn Test Suite", () => {
 	});
 
 	test("change class name", async () => {
-		await helper.activateExtension();
-
 		const actFileMap = await getServerFileMap();
 		assert.deepEqual(actFileMap, new Map<string, string>([
 			[
@@ -286,8 +278,6 @@ suite("Extension E2E Roslyn Test Suite", () => {
 	});
 
 	test("delete file", async () => {
-		await helper.activateExtension();
-
 		const uri = helper.getDocUri("c1.cls");
 		await deleteFile(uri);
 

@@ -6,14 +6,20 @@ import { VBACommands } from './vba-commands';
 import { Project } from './project';
 import { VbaDocumentSymbolProvider } from "./vba-documentsymbolprovider";
 import { Logger } from "./logger";
-import { LSPClient } from "./lsp-client";
+import { FileEvents } from "./file-events";
 import { VBALanguageServerUtil } from "./vba-language-server-util";
 import { VBASignatureHelpProvider } from "./vba-signaturehelp-provider";
+import { VBADefinitionProvider } from "./vba-definition-provider";
+import { VBAHoverProvider } from "./vba-hover-provider";
+import { VBACompletionItemProvider } from "./vba-completionitem-provider";
+import { VBAReferenceProvider } from "./vba-reference-provider";
+import { VBALSRequest } from './vba-ls-request';
 
 let outlineDisp: vscode.Disposable;
 let outputChannel: vscode.OutputChannel;
 let logger: Logger;
-let lspClient: LSPClient;
+let fileEvents: FileEvents;
+let vbaLSRequest: VBALSRequest;
 let vbaLangServerUtil: VBALanguageServerUtil;
 let statusBarItem: vscode.StatusBarItem;
 let disposables: vscode.Disposable[] = [];
@@ -51,7 +57,8 @@ export async function activate(context: vscode.ExtensionContext) {
 	let vbaLanguageServerPath = await config.get("vsc-excel-vba.VBALanguageServerPath") as string;
 	let enableVBACompileAfterImport = await config.get("vsc-excel-vba.enableVBACompileAfterImport") as boolean;
 
-	lspClient = new LSPClient();
+	vbaLSRequest = new VBALSRequest(vbaLanguageServerPort);
+	fileEvents = new FileEvents(vbaLSRequest);
 	vbaLangServerUtil = new VBALanguageServerUtil(vbaLanguageServerPort);
 	const project = new Project("vbaproject.json");
 	const vbaCommand = new VBACommands(context.asAbsolutePath("scripts"));
@@ -110,7 +117,16 @@ export async function activate(context: vscode.ExtensionContext) {
 		await vbaCommand.exceue(project, "runVBASubProc");
 	}));
 	context.subscriptions.push(vscode.commands.registerCommand("vsc-excel-vba.startLanguageServer", async () => {
-		await lspClient.start(context, vbaLanguageServerPort, outputChannel);	
+		const docSelector = { language: "vb" };
+
+		disposables.push(vscode.languages.registerDefinitionProvider(
+			docSelector, new VBADefinitionProvider(vbaLanguageServerPort)));
+
+		disposables.push(vscode.languages.registerHoverProvider(
+			docSelector, new VBAHoverProvider(vbaLanguageServerPort)));
+
+		disposables.push(vscode.languages.registerCompletionItemProvider(
+			docSelector, new VBACompletionItemProvider(vbaLanguageServerPort)));
 	}));
 
 	context.subscriptions.push(vscode.commands.registerCommand("testView.myCommand", async (args) => {
@@ -149,9 +165,6 @@ export async function activate(context: vscode.ExtensionContext) {
 	const startServer = async (report: (msg: string)=>void) => {
 		report("Start server");
 
-		report("Stop LSP client");
-		await lspClient.stop();	
-
 		if(enableAutoLaunchVBALanguageServer){
 			report("Shutdown VBALanguageServer");
 			await vbaLangServerUtil.shutdown();
@@ -162,28 +175,41 @@ export async function activate(context: vscode.ExtensionContext) {
 			await vbaLangServerUtil.reset();
 		}
 
-		report("Start LSP client");
-		await lspClient.start(context, vbaLanguageServerPort, outputChannel);
-		lspClient.registerFileEvents(project.srcDir);
+		report("Register FileEvent");
+		fileEvents.registerFileEvent(project.srcDir);
 
 		const uris1 = await project.getSrcFileUris();
 		const uris2 = loadDefinitionFiles?project.getDefinitionFileUris(context):[];
 		const uris = uris1.concat(uris2);
 		if(uris.length > 0){
 			report("Add source");
-			await lspClient.addDocuments(uris);
+			await vbaLSRequest.addDocuments(uris);
 		}
 
-		const activeUri = vscode.window.activeTextEditor?.document.uri;
-		if(activeUri){
-			if(activeUri.fsPath.endsWith(".bas") || activeUri.fsPath.endsWith(".cls")){
+		const activeDoc = vscode.window.activeTextEditor?.document;
+		if(activeDoc){
+			const activePath = activeDoc.uri.fsPath;
+			if(activePath.endsWith(".bas") || activePath.endsWith(".cls")){
 				report("Diagnose active document");
-				await lspClient.diagnostics(activeUri.toString());
+				await vbaLSRequest.diagnostic(activeDoc);
 			}
 		}
 
+		const docSelector = { language: "vb" };
 		disposables.push(vscode.languages.registerSignatureHelpProvider(
-			{ language: "vb" }, new VBASignatureHelpProvider(vbaLanguageServerPort), '(', ','));
+			docSelector, new VBASignatureHelpProvider(vbaLanguageServerPort), '(', ','));
+
+		disposables.push(vscode.languages.registerDefinitionProvider(
+			docSelector, new VBADefinitionProvider(vbaLanguageServerPort)));
+
+		disposables.push(vscode.languages.registerHoverProvider(
+			docSelector, new VBAHoverProvider(vbaLanguageServerPort)));
+
+		disposables.push(vscode.languages.registerCompletionItemProvider(
+			docSelector, new VBACompletionItemProvider(vbaLanguageServerPort)));
+		
+		disposables.push(vscode.languages.registerReferenceProvider(
+			docSelector, new VBAReferenceProvider(vbaLanguageServerPort)));
 
 		report("Server started successfully");
 	};
@@ -208,8 +234,6 @@ export async function activate(context: vscode.ExtensionContext) {
 				vscode.window.showInformationMessage("Success");
 				statusBarItem.text = `Stop ${extName}`;
 			} catch (error) {
-				await lspClient.stop();	
-
 				let errorMsg = "Fail start";
 				if(error instanceof Error){
 					errorMsg = `${error.message}`;
@@ -226,9 +250,9 @@ export async function activate(context: vscode.ExtensionContext) {
 			outlineDisp.dispose();
 		}
 		dispose();
+		fileEvents.dispose();
 
 		await vbaLangServerUtil.shutdown();
-		await lspClient.stop();
 		statusBarItem.text = `Run ${extName}`;
 	}));
 }
@@ -236,7 +260,7 @@ export async function activate(context: vscode.ExtensionContext) {
 // This method is called when your extension is deactivated
 export async function deactivate() {
 	dispose();
+	fileEvents.dispose();
 
 	await vbaLangServerUtil.shutdown();
-	await lspClient.stop();
 }

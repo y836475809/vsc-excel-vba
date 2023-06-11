@@ -20,7 +20,7 @@ suite("Extension E2E Roslyn Test Suite", () => {
 		await helper.addDocuments(port, uris);
 
 		await helper.activateExtension();
-        await vscode.commands.executeCommand("vsc-excel-vba.startLanguageServer");
+        await vscode.commands.executeCommand("vsc-excel-vba.test.registerProvider");
 		await helper.sleep(500);
     });
     suiteTeardown(async () => {

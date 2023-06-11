@@ -79,8 +79,8 @@
         "title": "vsc-excel-vba stop"
       },
       {
-        "command": "vsc-excel-vba.startLanguageServer",
-        "title": "startLanguageServer"
+        "command": "vsc-excel-vba.test.registerProvider",
+        "title": "registerProvider command for test"
       },
       {
         "command": "testView.myCommand",

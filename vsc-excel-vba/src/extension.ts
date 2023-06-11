@@ -116,17 +116,8 @@ export async function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(vscode.commands.registerCommand("vsc-excel-vba.runVBASubProc", async () => {
 		await vbaCommand.exceue(project, "runVBASubProc");
 	}));
-	context.subscriptions.push(vscode.commands.registerCommand("vsc-excel-vba.startLanguageServer", async () => {
-		const docSelector = { language: "vb" };
-
-		disposables.push(vscode.languages.registerDefinitionProvider(
-			docSelector, new VBADefinitionProvider(vbaLanguageServerPort)));
-
-		disposables.push(vscode.languages.registerHoverProvider(
-			docSelector, new VBAHoverProvider(vbaLanguageServerPort)));
-
-		disposables.push(vscode.languages.registerCompletionItemProvider(
-			docSelector, new VBACompletionItemProvider(vbaLanguageServerPort)));
+	context.subscriptions.push(vscode.commands.registerCommand("vsc-excel-vba.test.registerProvider", async () => {
+		registerProvider();
 	}));
 
 	context.subscriptions.push(vscode.commands.registerCommand("testView.myCommand", async (args) => {
@@ -151,6 +142,26 @@ export async function activate(context: vscode.ExtensionContext) {
 		const xlsmFileName = project.projectData.targetfilename;
 		await vbaCommand.openSheet(xlsmFileName, args.fsPath);
 	}));
+
+	const registerProvider = () => {
+		dispose();
+
+		const docSelector = { language: "vb" };
+		disposables.push(vscode.languages.registerSignatureHelpProvider(
+			docSelector, new VBASignatureHelpProvider(vbaLanguageServerPort), '(', ','));
+
+		disposables.push(vscode.languages.registerDefinitionProvider(
+			docSelector, new VBADefinitionProvider(vbaLanguageServerPort)));
+
+		disposables.push(vscode.languages.registerHoverProvider(
+			docSelector, new VBAHoverProvider(vbaLanguageServerPort)));
+
+		disposables.push(vscode.languages.registerCompletionItemProvider(
+			docSelector, new VBACompletionItemProvider(vbaLanguageServerPort)));
+		
+		disposables.push(vscode.languages.registerReferenceProvider(
+			docSelector, new VBAReferenceProvider(vbaLanguageServerPort)));
+	};
 
 	const loadProject = async (report: (msg: string)=>void) => {
 		report("Load Project");
@@ -195,21 +206,22 @@ export async function activate(context: vscode.ExtensionContext) {
 			}
 		}
 
-		const docSelector = { language: "vb" };
-		disposables.push(vscode.languages.registerSignatureHelpProvider(
-			docSelector, new VBASignatureHelpProvider(vbaLanguageServerPort), '(', ','));
+		// const docSelector = { language: "vb" };
+		// disposables.push(vscode.languages.registerSignatureHelpProvider(
+		// 	docSelector, new VBASignatureHelpProvider(vbaLanguageServerPort), '(', ','));
 
-		disposables.push(vscode.languages.registerDefinitionProvider(
-			docSelector, new VBADefinitionProvider(vbaLanguageServerPort)));
+		// disposables.push(vscode.languages.registerDefinitionProvider(
+		// 	docSelector, new VBADefinitionProvider(vbaLanguageServerPort)));
 
-		disposables.push(vscode.languages.registerHoverProvider(
-			docSelector, new VBAHoverProvider(vbaLanguageServerPort)));
+		// disposables.push(vscode.languages.registerHoverProvider(
+		// 	docSelector, new VBAHoverProvider(vbaLanguageServerPort)));
 
-		disposables.push(vscode.languages.registerCompletionItemProvider(
-			docSelector, new VBACompletionItemProvider(vbaLanguageServerPort)));
+		// disposables.push(vscode.languages.registerCompletionItemProvider(
+		// 	docSelector, new VBACompletionItemProvider(vbaLanguageServerPort)));
 		
-		disposables.push(vscode.languages.registerReferenceProvider(
-			docSelector, new VBAReferenceProvider(vbaLanguageServerPort)));
+		// disposables.push(vscode.languages.registerReferenceProvider(
+		// 	docSelector, new VBAReferenceProvider(vbaLanguageServerPort)));
+		registerProvider();
 
 		report("Server started successfully");
 	};

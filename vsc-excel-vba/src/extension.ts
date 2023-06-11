@@ -7,7 +7,7 @@ import { Project } from './project';
 import { VbaDocumentSymbolProvider } from "./vba-documentsymbolprovider";
 import { Logger } from "./logger";
 import { FileEvents } from "./file-events";
-import { VBALanguageServerUtil } from "./vba-language-server-util";
+import { VBALanguageServerUtil } from "./vba-ls-launch";
 import { VBASignatureHelpProvider } from "./vba-signaturehelp-provider";
 import { VBADefinitionProvider } from "./vba-definition-provider";
 import { VBAHoverProvider } from "./vba-hover-provider";

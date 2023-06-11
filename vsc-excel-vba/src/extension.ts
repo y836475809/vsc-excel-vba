@@ -4,10 +4,10 @@ import * as vscode from 'vscode';
 import { MyTreeItem, TreeDataProvider } from './treeDataProvider';
 import { VBACommands } from './vba-commands';
 import { Project } from './project';
-import { VbaDocumentSymbolProvider } from "./vba-documentsymbolprovider";
 import { Logger } from "./logger";
 import { FileEvents } from "./file-events";
-import { VBALanguageServerUtil } from "./vba-ls-launch";
+import { VBALSLaunch } from "./vba-ls-launch";
+import { VBADocumentSymbolProvider } from "./vba-document-symbol-provider";
 import { VBASignatureHelpProvider } from "./vba-signaturehelp-provider";
 import { VBADefinitionProvider } from "./vba-definition-provider";
 import { VBAHoverProvider } from "./vba-hover-provider";
@@ -15,27 +15,17 @@ import { VBACompletionItemProvider } from "./vba-completionitem-provider";
 import { VBAReferenceProvider } from "./vba-reference-provider";
 import { VBALSRequest } from './vba-ls-request';
 
-let outlineDisp: vscode.Disposable;
 let outputChannel: vscode.OutputChannel;
 let logger: Logger;
 let fileEvents: FileEvents;
 let vbaLSRequest: VBALSRequest;
-let vbaLangServerUtil: VBALanguageServerUtil;
+let vbaLSLaunch: VBALSLaunch;
 let statusBarItem: vscode.StatusBarItem;
 let disposables: vscode.Disposable[] = [];
 
 function dispose() {
 	disposables.forEach(x=>x.dispose());
 	disposables = [];
-}
-
-function setupOutline(context: vscode.ExtensionContext) {
-	if(outlineDisp){
-		outlineDisp.dispose();
-	}
-	outlineDisp = vscode.languages.registerDocumentSymbolProvider(
-		{ language: "vb" }, new VbaDocumentSymbolProvider());
-	context.subscriptions.push(outlineDisp);
 }
 
 // This method is called when your extension is activated
@@ -59,7 +49,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	vbaLSRequest = new VBALSRequest(vbaLanguageServerPort);
 	fileEvents = new FileEvents(vbaLSRequest);
-	vbaLangServerUtil = new VBALanguageServerUtil(vbaLanguageServerPort);
+	vbaLSLaunch = new VBALSLaunch(vbaLanguageServerPort);
 	const project = new Project("vbaproject.json");
 	const vbaCommand = new VBACommands(context.asAbsolutePath("scripts"));
 
@@ -147,28 +137,33 @@ export async function activate(context: vscode.ExtensionContext) {
 		dispose();
 
 		const docSelector = { language: "vb" };
-		disposables.push(vscode.languages.registerSignatureHelpProvider(
-			docSelector, new VBASignatureHelpProvider(vbaLanguageServerPort), '(', ','));
 
-		disposables.push(vscode.languages.registerDefinitionProvider(
-			docSelector, new VBADefinitionProvider(vbaLanguageServerPort)));
+		disposables.push(vscode.languages.registerDocumentSymbolProvider(
+			docSelector, new VBADocumentSymbolProvider()));
 
-		disposables.push(vscode.languages.registerHoverProvider(
-			docSelector, new VBAHoverProvider(vbaLanguageServerPort)));
+		if(enableLSP){
+			disposables.push(vscode.languages.registerSignatureHelpProvider(
+				docSelector, new VBASignatureHelpProvider(vbaLanguageServerPort), '(', ','));
 
-		disposables.push(vscode.languages.registerCompletionItemProvider(
-			docSelector, new VBACompletionItemProvider(vbaLanguageServerPort)));
-		
-		disposables.push(vscode.languages.registerReferenceProvider(
-			docSelector, new VBAReferenceProvider(vbaLanguageServerPort)));
+			disposables.push(vscode.languages.registerDefinitionProvider(
+				docSelector, new VBADefinitionProvider(vbaLanguageServerPort)));
+
+			disposables.push(vscode.languages.registerHoverProvider(
+				docSelector, new VBAHoverProvider(vbaLanguageServerPort)));
+
+			disposables.push(vscode.languages.registerCompletionItemProvider(
+				docSelector, new VBACompletionItemProvider(vbaLanguageServerPort)));
+			
+			disposables.push(vscode.languages.registerReferenceProvider(
+				docSelector, new VBAReferenceProvider(vbaLanguageServerPort)));
+		}
 	};
 
 	const loadProject = async (report: (msg: string)=>void) => {
 		report("Load Project");
 		await project.readProject();
 
-		report("Setup Outline");
-		setupOutline(context);
+		registerProvider();
 
 		report("Loaded project successfully");
 	};
@@ -178,12 +173,12 @@ export async function activate(context: vscode.ExtensionContext) {
 
 		if(enableAutoLaunchVBALanguageServer){
 			report("Shutdown VBALanguageServer");
-			await vbaLangServerUtil.shutdown();
-			report("Launch VBALanguageServer");
-			await vbaLangServerUtil.launch(vbaLanguageServerPort, vbaLanguageServerPath);
+			await vbaLSLaunch.shutdown();
+			report("Start VBALanguageServer");
+			await vbaLSLaunch.start(vbaLanguageServerPort, vbaLanguageServerPath);
 		}else{
 			report("Reset VBALanguageServer");
-			await vbaLangServerUtil.reset();
+			await vbaLSLaunch.reset();
 		}
 
 		report("Register FileEvent");
@@ -206,21 +201,6 @@ export async function activate(context: vscode.ExtensionContext) {
 			}
 		}
 
-		// const docSelector = { language: "vb" };
-		// disposables.push(vscode.languages.registerSignatureHelpProvider(
-		// 	docSelector, new VBASignatureHelpProvider(vbaLanguageServerPort), '(', ','));
-
-		// disposables.push(vscode.languages.registerDefinitionProvider(
-		// 	docSelector, new VBADefinitionProvider(vbaLanguageServerPort)));
-
-		// disposables.push(vscode.languages.registerHoverProvider(
-		// 	docSelector, new VBAHoverProvider(vbaLanguageServerPort)));
-
-		// disposables.push(vscode.languages.registerCompletionItemProvider(
-		// 	docSelector, new VBACompletionItemProvider(vbaLanguageServerPort)));
-		
-		// disposables.push(vscode.languages.registerReferenceProvider(
-		// 	docSelector, new VBAReferenceProvider(vbaLanguageServerPort)));
 		registerProvider();
 
 		report("Server started successfully");
@@ -258,13 +238,10 @@ export async function activate(context: vscode.ExtensionContext) {
 	}));
 
 	context.subscriptions.push(vscode.commands.registerCommand("vsc-excel-vba.stop", async () => {
-		if(outlineDisp){
-			outlineDisp.dispose();
-		}
 		dispose();
 		fileEvents.dispose();
 
-		await vbaLangServerUtil.shutdown();
+		await vbaLSLaunch.shutdown();
 		statusBarItem.text = `Run ${extName}`;
 	}));
 }
@@ -274,5 +251,5 @@ export async function deactivate() {
 	dispose();
 	fileEvents.dispose();
 
-	await vbaLangServerUtil.shutdown();
+	await vbaLSLaunch.shutdown();
 }

@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 
-export class VbaDocumentSymbolProvider implements vscode.DocumentSymbolProvider {
+export class VBADocumentSymbolProvider implements vscode.DocumentSymbolProvider {
     private getRootSymbol(document: vscode.TextDocument): vscode.DocumentSymbol{
         let symKind = vscode.SymbolKind.Module;
         let line = "Root";

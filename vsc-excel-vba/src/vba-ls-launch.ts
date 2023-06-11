@@ -2,7 +2,7 @@ import { spawn } from "child_process";
 import * as fs from "fs";
 import { LPSRequest, MakeReqData } from "./lsp-request";
 
-export class VBALanguageServerUtil {
+export class VBALSLaunch {
 	lspRequest: LPSRequest;
 
 	constructor(port: number){
@@ -18,7 +18,7 @@ export class VBALanguageServerUtil {
 		}
 	}
 
-	async launch(port: number, exeFilePath: string){
+	async start(port: number, exeFilePath: string){
 		if(await this.isReady()){
 			return;
 		}

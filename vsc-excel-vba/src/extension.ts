@@ -152,7 +152,7 @@ export async function activate(context: vscode.ExtensionContext) {
 				docSelector, new VBAHoverProvider(vbaLanguageServerPort)));
 
 			disposables.push(vscode.languages.registerCompletionItemProvider(
-				docSelector, new VBACompletionItemProvider(vbaLanguageServerPort)));
+				docSelector, new VBACompletionItemProvider(vbaLanguageServerPort), "."));
 			
 			disposables.push(vscode.languages.registerReferenceProvider(
 				docSelector, new VBAReferenceProvider(vbaLanguageServerPort)));

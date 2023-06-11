@@ -19,8 +19,11 @@ const isVbaAttributeError = (item: any): item is Array<VbaAttributeError> => {
 
 export class VBALSRequest {
     lpsRequest: LPSRequest;
+    diagnosticCollection: vscode.DiagnosticCollection;
+
     constructor(port: number){
         this.lpsRequest = new LPSRequest(port);
+        this.diagnosticCollection = vscode.languages.createDiagnosticCollection("vba");
     }
 
     async addDocuments(uris: vscode.Uri[]) {
@@ -63,9 +66,8 @@ export class VBALSRequest {
                 items.push(...attrDiagnostics);
             }
         }
-        const diagnosticCollection = vscode.languages.createDiagnosticCollection("stuff");
-        const diagnostics : vscode.Diagnostic[] = items;
-        diagnosticCollection.set(document.uri, diagnostics);
+
+        this.diagnosticCollection.set(document.uri, items);
     }
     async diagnostic(document: vscode.TextDocument) {
         const uri = document.uri;
@@ -87,9 +89,8 @@ export class VBALSRequest {
                 items.push(...attrDiagnostics);
             }
         } 
-        const diagnosticCollection = vscode.languages.createDiagnosticCollection("stuff");
-        const diagnostics : vscode.Diagnostic[] = items;
-        diagnosticCollection.set(document.uri, diagnostics);
+
+        this.diagnosticCollection.set(document.uri, items);
     }
     async reset() {
         const data = MakeReqData.reset();

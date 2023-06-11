@@ -35,6 +35,16 @@ const vbaAttributeValidation = new VbaAttributeValidation();
 
 const defaultPort = 9088;
 
+const isVbaAttributeError = (item: any): item is Array<VbaAttributeError> => {
+    if(item.length !== undefined){
+        return false;
+    }
+    if(!(item[0] instanceof VbaAttributeError)){
+        return false;
+    }
+    return true;
+};
+
 export class LSPServer {
     hasWorkspaceFolderCapability: boolean;
     symbolKindMap:Map<string, CompletionItemKind>;
@@ -170,7 +180,7 @@ export class LSPServer {
             try {
                 vbaAttributeValidation.validate(URI.parse(uri), doc.getText());
             } catch (error) {
-                if(error instanceof Array<VbaAttributeError>){
+                if(isVbaAttributeError(error)){
                     const attrDiagnostics = makeAttributeDiagnostics(error);
                     items.push(...attrDiagnostics);
                 }
@@ -192,7 +202,7 @@ export class LSPServer {
             try {
                 vbaAttributeValidation.validate(URI.parse(uri), doc.getText());
             } catch (error) {
-                if(error instanceof Array<VbaAttributeError>){
+                if(isVbaAttributeError(error)){
                     const attrDiagnostics = makeAttributeDiagnostics(error);
                     items.push(...attrDiagnostics);
                 }

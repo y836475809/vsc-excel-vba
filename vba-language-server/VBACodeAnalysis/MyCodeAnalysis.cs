@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using System.Xml.Linq;
 using System.Linq;
 using Microsoft.CodeAnalysis.VisualBasic.Syntax;
+using Microsoft.CodeAnalysis.VisualBasic;
 
 namespace VBACodeAnalysis {
     using lineCharaOffDict = Dictionary<int, (int, int)>;
@@ -225,6 +226,135 @@ namespace VBACodeAnalysis {
                 return false;
             }
             return true;
+        }
+
+        public (int, int) GetSignaturePosition(string name, string text, int line, int chara) {
+            var procChara = -1;
+            var argPosition = 0;
+
+            if (!doc_id_dict.ContainsKey(name)) {
+                return (procChara, - 1);
+            }
+            var docId = doc_id_dict[name];
+            if (!workspace.CurrentSolution.ContainsDocument(docId)) {
+                return (procChara, -1);
+            }
+
+			ChangeDocument(name, text);
+
+            var doc = workspace.CurrentSolution.GetDocument(docId);
+            var position = doc.GetTextAsync().Result.Lines.GetPosition(new LinePosition(line, chara));
+            var rootNode = doc.GetSyntaxRootAsync().Result;
+            var currentToken = rootNode.FindToken(position);
+            var currentNode = rootNode.FindNode(currentToken.Span);
+
+            var preToken = currentToken.GetPreviousToken();
+            if (preToken.Text == "(") {
+                var chNodes = currentNode.Parent.ChildNodes();
+				if (chNodes.Any()) {
+					var args = chNodes.Where(x => x.IsKind(SyntaxKind.ArgumentList));
+					if (args.Any()) {
+                        var procToken = args.First().ChildTokens().First().GetPreviousToken();
+                        var lp = procToken.GetLocation().GetLineSpan();
+                        procChara = lp.EndLinePosition.Character;
+                    }
+				}
+                return (procChara, argPosition);
+            } 
+
+            if (currentNode.IsKind(SyntaxKind.ArgumentList)) {
+                var procToken = currentNode.ChildTokens().First().GetPreviousToken().GetLocation().GetLineSpan();
+                procChara = procToken.EndLinePosition.Character;
+                var commnaTokens = currentNode.ChildTokens().Where(x => x.IsKind(SyntaxKind.CommaToken));
+                foreach (var item in commnaTokens) {
+                    if (item.Span.End <= position) {
+                        argPosition++;
+                    }
+                }
+                return (procChara, argPosition);
+            } 
+
+            var node = rootNode.FindNode(currentToken.Span).Parent;
+            const int seacrhMax = 5;
+            for (int i = 0; i < seacrhMax; i++) {
+                if (node.IsKind(SyntaxKind.ArgumentList)) {
+                    var procToken = node.ChildTokens().First().GetPreviousToken();
+                    var lp = procToken.GetLocation().GetLineSpan();
+                    procChara = lp.EndLinePosition.Character;
+                    var commnaTokens = node.ChildTokens().Where(x => x.IsKind(SyntaxKind.CommaToken));
+                    foreach (var item in commnaTokens) {
+                        if (item.Span.End <= position) {
+                            argPosition++;
+                        }
+                    }
+                    break;
+                }
+                if (node.Parent == null) {
+                    break;
+                }
+                node = node.Parent;
+            }
+
+            return (procChara, argPosition);
+        }
+
+        public async Task<SignatureHelpItem> GetSignatureHelp(string name, string text, int position) {
+            if (!doc_id_dict.ContainsKey(name)) {
+                return null;
+            }
+            var docId = doc_id_dict[name];
+            if (!workspace.CurrentSolution.ContainsDocument(docId)) {
+                return null;
+            }
+            var doc = workspace.CurrentSolution.GetDocument(docId);
+            var model = await doc.GetSemanticModelAsync();
+            var symbol = await SymbolFinder.FindSymbolAtPositionAsync(model, position, workspace);
+            if (symbol == null) {
+                return null;
+            }
+
+            var item = new SignatureHelpItem();
+            if (symbol is IMethodSymbol methodSymb) {
+				foreach (var param in methodSymb.Parameters) {
+                    item.Args.Add(new ArgumentItem(
+                        param.Name, param.Type.ToDisplayString()));
+                } 
+            }
+            
+            if (symbol.ContainingType?.Name == rewriteSetting.NameSpace
+                    && rewriteSetting.getRestoreDict().ContainsKey(symbol.Name)) {
+                var rewName = $"{symbol.Name}(";
+                var resName = $"{rewriteSetting.getRestoreDict()[symbol.Name]}(";
+                item.DisplayText = symbol.ToDisplayString().Replace(
+                    rewName, resName);
+            } else {
+                item.DisplayText = symbol.ToDisplayString();
+            }
+
+            item.Description = symbol.GetDocumentationCommentXml();
+            item.Kind = symbol.Kind.ToString();
+            item.ReturnType = "";
+            if (symbol.Kind == SymbolKind.Method) {
+                var methodSymbol = symbol as IMethodSymbol;
+                item.ReturnType = methodSymbol.ReturnType.ToDisplayString();
+            }
+            if (symbol.Kind == SymbolKind.Local) {
+                var localSymbol = symbol as ILocalSymbol;
+                var kind = localSymbol.Type.Name;
+                var kindLower = kind.ToLower();
+                if (kindLower == "int64") {
+                    kind = "Long";
+                }
+                if (kindLower == "int32") {
+                    kind = "Integer";
+                }
+                if (kindLower == "datetime") {
+                    kind = "Date";
+                }
+                item.DisplayText = kind;
+                item.Kind = kind;
+            }
+            return item;
         }
 
         public async Task<CompletionItem> GetHover(string name, string text, int position) {

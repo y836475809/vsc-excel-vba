@@ -38,6 +38,19 @@ namespace Hoge {
         end: Location;
     };
 
+    export type SignatureHelpArgItem = {
+        name: string;
+        astype: string;
+    };
+    export type SignatureHelpItem = {
+        displaytext: string;
+        description: string;
+        returntype: string;
+        kind: string;
+        args: SignatureHelpArgItem[];
+        activeparameter: number;
+    };
+
     export type RequestId = 
         "AddDocuments" 
         | "DeleteDocuments" 
@@ -52,6 +65,7 @@ namespace Hoge {
         | "IsReady"
         | "IgnoreShutdown"
         | "References"
+        | "SignatureHelp"
         | "Debug:GetDocuments";
     export type RequestParam = {
         id: RequestId;

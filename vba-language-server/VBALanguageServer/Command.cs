@@ -149,4 +149,19 @@ namespace VBALanguageServer {
             this.Chara = Chara;
         }
     }
+
+    public class SignatureHelpEventArgs : EventArgs {
+        public string FilePath { get; set; }
+        public string Text { get; set; }
+        public int Line { get; set; }
+        public int Chara { get; set; }
+        public List<SignatureHelpItem> Items { get; set; }
+
+        public SignatureHelpEventArgs(string FilePath, string Text, int Line, int Chara) {
+            this.FilePath = FilePath;
+            this.Text = Text;
+            this.Line = Line;
+            this.Chara = Chara;
+        }
+    }
 }

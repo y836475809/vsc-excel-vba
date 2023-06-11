@@ -8,6 +8,7 @@ import { VbaDocumentSymbolProvider } from "./vba-documentsymbolprovider";
 import { Logger } from "./logger";
 import { LSPClient } from "./lsp-client";
 import { VBALanguageServerUtil } from "./vba-language-server-util";
+import { VBASignatureHelpProvider } from "./vba-signaturehelp-provider";
 
 let outlineDisp: vscode.Disposable;
 let outputChannel: vscode.OutputChannel;
@@ -15,6 +16,12 @@ let logger: Logger;
 let lspClient: LSPClient;
 let vbaLangServerUtil: VBALanguageServerUtil;
 let statusBarItem: vscode.StatusBarItem;
+let disposables: vscode.Disposable[] = [];
+
+function dispose() {
+	disposables.forEach(x=>x.dispose());
+	disposables = [];
+}
 
 function setupOutline(context: vscode.ExtensionContext) {
 	if(outlineDisp){
@@ -175,6 +182,9 @@ export async function activate(context: vscode.ExtensionContext) {
 			}
 		}
 
+		disposables.push(vscode.languages.registerSignatureHelpProvider(
+			{ language: "vb" }, new VBASignatureHelpProvider(vbaLanguageServerPort), '(', ','));
+
 		report("Server started successfully");
 	};
 
@@ -215,6 +225,8 @@ export async function activate(context: vscode.ExtensionContext) {
 		if(outlineDisp){
 			outlineDisp.dispose();
 		}
+		dispose();
+
 		await vbaLangServerUtil.shutdown();
 		await lspClient.stop();
 		statusBarItem.text = `Run ${extName}`;
@@ -223,6 +235,8 @@ export async function activate(context: vscode.ExtensionContext) {
 
 // This method is called when your extension is deactivated
 export async function deactivate() {
+	dispose();
+
 	await vbaLangServerUtil.shutdown();
 	await lspClient.stop();
 }

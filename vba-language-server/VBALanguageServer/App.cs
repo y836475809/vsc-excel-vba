@@ -196,6 +196,42 @@ namespace VBALanguageServer {
                 e.Items = items;
                 logger.Info("ReferencesReq");
             };
+            server.SignatureHelpReq += (object sender, SignatureHelpEventArgs e) => {
+                var items = new List<SignatureHelpItem>();
+                if (!codeAdapter.Has(e.FilePath)) {
+                    e.Items = items;
+                    logger.Info($"SignatureHelpReq, non: {Path.GetFileName(e.FilePath)}");
+                    return;
+                }
+                var vbCodeInfo = codeAdapter.GetVbCodeInfo(e.FilePath);
+                var vbCode = vbCodeInfo.VbCode;
+				var line = e.Line - vbCodeInfo.LineOffset;
+                if (line < 0) {
+                    e.Items = items;
+                    logger.Info($"SignatureHelpReq, line < 0: {Path.GetFileName(e.FilePath)}");
+                    return;
+                }
+                var (procCharaPos, argPosition) = mc.GetSignaturePosition(e.FilePath, e.Text, line, e.Chara);
+                if (procCharaPos < 0) {
+                    e.Items = items;
+                    logger.Info($"SignatureHelpReq, procCharaPos < 0: {Path.GetFileName(e.FilePath)}");
+                    return;
+                }
+
+                var Items = mc.GetDefinitions(e.FilePath, vbCode, line, procCharaPos-1).Result;
+                foreach (var item in Items) {
+                    var sp = item.Start.Positon;
+                    var ep = item.End.Positon;
+                    var sigItem = mc.GetSignatureHelp(item.FilePath, e.Text, (int)((sp + ep) / 2)).Result;
+                    if(sigItem != null) {
+                        sigItem.ActiveParameter = argPosition;
+                        items.Add(sigItem);
+                    }
+                }
+                e.Items = items;
+                logger.Info("SignatureHelpReq");
+            };
+
             logger.Info("Initialized");
         }
         private Settings LoadConfig() {

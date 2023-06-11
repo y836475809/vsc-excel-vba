@@ -19,6 +19,7 @@ namespace VBALanguageServer {
         public event EventHandler<EventArgs> ResetReq;
         public event EventHandler<DebugEventArgs> DebugGetDocumentsEvent;
         public event EventHandler<ReferencesEventArgs> ReferencesReq;
+        public event EventHandler<SignatureHelpEventArgs> SignatureHelpReq;
         private HttpListener listener;
         private JsonSerializerOptions jsonOptions;
 
@@ -125,6 +126,11 @@ namespace VBALanguageServer {
                             var args_refs = new ReferencesEventArgs(cmd.filepaths[0], cmd.line, cmd.chara);
                             ReferencesReq?.Invoke(this, args_refs);
                             Response(response, args_refs.Items);
+                            break;
+                        case "SignatureHelp":
+                            var argsSignatureHelp = new SignatureHelpEventArgs(cmd.filepaths[0], cmd.text, cmd.line, cmd.chara);
+                            SignatureHelpReq?.Invoke(this, argsSignatureHelp);
+                            Response(response, argsSignatureHelp.Items);
                             break;
                     }
                 } catch (Exception e) {

@@ -38,6 +38,7 @@ export class VBACompletionItemProvider implements vscode.CompletionItemProvider 
 				const kind = val?val:vscode.CompletionItemKind.Text;
 				return {
 					label: item.displaytext,
+					detail: item.completiontext,
 					insertText: item.completiontext,
 					kind: kind
 				};

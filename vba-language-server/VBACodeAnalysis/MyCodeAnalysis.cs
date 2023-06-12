@@ -144,8 +144,8 @@ namespace VBACodeAnalysis {
                 if (!IsCompletionItem(symbol)) {
                     break;
                 }
-                completionItem.DisplayText = symbol.ToDisplayString();
-                completionItem.CompletionText = symbol.MetadataName;
+                completionItem.DisplayText = symbol.MetadataName;
+                completionItem.CompletionText = symbol.ToDisplayString();
                 completionItem.Description = symbol.GetDocumentationCommentXml();
                 completionItem.Kind = symbol.Kind.ToString();
                 if (symbol is INamedTypeSymbol namedType) {

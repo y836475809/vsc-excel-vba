@@ -35,27 +35,32 @@ suite("Extension E2E Completion Test Suite", () => {
 		await testCompletion(docUri, targetPos, {
 			items: [
 				{
-					label: "Public Name As String",
+					label: "Name",
+					detail: "Public Name As String",
 					insertText: "Name",
 					kind: vscode.CompletionItemKind.Field
 				},
 				{
-					label: "Public Age As Long",
+					label: "Age",
+					detail: "Public Age As Long",
 					insertText: "Age",
 					kind: vscode.CompletionItemKind.Field
 				},
 				{
-					label: "Public Property Prop1(index As Long) As Long",
+					label: "Prop1",
+					detail: "Public Property Prop1(index As Long) As Long",
 					insertText: "Prop1",
 					kind: vscode.CompletionItemKind.Property
 				},
 				{
-					label: "Public Sub Hello(val1 As String)",
+					label: "Hello",
+					detail: "Public Sub Hello(val1 As String)",
 					insertText: "Hello",
 					kind: vscode.CompletionItemKind.Method
 				},
 				{
-					label: "Public Function GetHello(val As String) As String",
+					label: "GetHello",
+					detail: "Public Function GetHello(val As String) As String",
 					insertText: "GetHello",
 					kind: vscode.CompletionItemKind.Method
 				}
@@ -72,46 +77,55 @@ suite("Extension E2E Completion Test Suite", () => {
 			items: [
 				{
 					label: "Class1",
+					detail: "Class1",
 					insertText: "Class1",
 					kind: vscode.CompletionItemKind.Class
 				},
 				{
-					label: "Private buf As String",
+					label: "buf",
+					detail: "Private buf As String",
 					insertText: "buf",
 					kind: vscode.CompletionItemKind.Field
 				},
 				{
-					label: "Public Sub Sample1()",
+					label: "Sample1",
+					detail: "Public Sub Sample1()",
 					insertText: "Sample1",
 					kind: vscode.CompletionItemKind.Method
 				},
 				{
-					label: "Private Function Sample2() As String",
+					label: "Sample2",
+					detail: "Private Function Sample2() As String",
 					insertText: "Sample2",
 					kind: vscode.CompletionItemKind.Method
 				},
 				{
-					label: "Private Sub Sample3()",
+					label: "Sample3",
+					detail: "Private Sub Sample3()",
 					insertText: "Sample3",
 					kind: vscode.CompletionItemKind.Method
 				},
 				{
-					label: "public Sub Module2Sample1()",
+					label: "Module2Sample1",
+					detail: "public Sub Module2Sample1()",
 					insertText: "Module2Sample1",
 					kind: vscode.CompletionItemKind.Method
 				},
 				{
-					label: "Public Sub call1()",
+					label: "call1",
+					detail: "Public Sub call1()",
 					insertText: "call1",
 					kind: vscode.CompletionItemKind.Method
 				},
 				{
 					label: "c",
+					detail: "c",
 					insertText: "c",
 					kind: vscode.CompletionItemKind.Variable
 				},
 				{
 					label: "c1",
+					detail: "c1",
 					insertText: "c1",
 					kind: vscode.CompletionItemKind.Variable
 				},

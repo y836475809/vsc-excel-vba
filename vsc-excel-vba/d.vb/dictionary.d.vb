@@ -3,17 +3,21 @@ Imports System.Collections
 Public Class Dictionary : Implements IEnumerable
     Public Count As Long
 
-    Public Sub Add(key As String, item As Object)
+    Public Sub Add(Key As String, Item As Object)
     End Sub
 
-    Public Sub Add(key As Long, item As Object)
+    Public Sub Add(Key As Long, Item As Object)
     End Sub
 
-    Public Function Item(index As Long) As Object
-    End Function
+    Default Public Property Item(Index As Long) As Object
+        Get : End Get
+        Set(Value As Object) : End Set
+    End Property
 
-    Public Function Item(key As String) As Object
-    End Function
+    Default Public Property Item(Key As String) As Object
+        Get : End Get
+        Set(Value As Object) : End Set
+    End Property
 
     Public Function Items() As Object()
     End Function
@@ -24,16 +28,16 @@ Public Class Dictionary : Implements IEnumerable
     Public Function Keys() As Long()
     End Function
 
-    Public Function Exists(key As String) As Boolean
+    Public Function Exists(Key As String) As Boolean
     End Function
 
-    Public Function Exists(key As Long) As Boolean
+    Public Function Exists(Key As Long) As Boolean
     End Function
 
-    Public Sub Remove(key As String)
+    Public Sub Remove(Key As String)
     End Sub
     
-    Public Sub Remove(key As Long)
+    Public Sub Remove(Key As Long)
     End Sub
 
     Public Sub RemoveAll()

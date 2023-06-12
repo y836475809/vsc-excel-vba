@@ -1,7 +1,7 @@
-Public Module Debug
-    Public Sub Print(output As Object)
+Public Class Debug
+    Public Shared Sub Print(Output As Object)
     End Sub
     
-    Public Sub Assert(expression As Boolean)
+    Public Shared Sub Assert(Expression As Boolean)
     End Sub
 End Module

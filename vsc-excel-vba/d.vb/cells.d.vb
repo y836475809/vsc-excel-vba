@@ -1,12 +1,7 @@
-Public Class Range
-    Default Public Property Item(Cell1 As String, Optional Cell2 As String = "") As Range
+Public Class Cells
+    Default Public Property Item(RowIndex As Long, ColumIndex As Long) As Range
         Get : End Get
-        Set(Value As Range) : End Set
-    End Property
-
-    Default Public Property Item(Cell1 As Range, Optional Cell2 As Range = Nothing) As Range
-        Get : End Get
-        Set(Value As Range) : End Set
+        Set(value As Range) : End Set
     End Property
 
     Public Function Activate()

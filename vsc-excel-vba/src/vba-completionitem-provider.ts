@@ -13,6 +13,7 @@ export class VBACompletionItemProvider implements vscode.CompletionItemProvider 
             ["Property", vscode.CompletionItemKind.Property],
             ["Local",    vscode.CompletionItemKind.Variable],
             ["Class",    vscode.CompletionItemKind.Class],
+			["Keyword",    vscode.CompletionItemKind.Keyword],
         ]);
     }
 	

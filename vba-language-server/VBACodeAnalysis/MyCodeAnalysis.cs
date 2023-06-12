@@ -1,4 +1,4 @@
-using Microsoft.CodeAnalysis;
+﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.FindSymbols;
 using Microsoft.CodeAnalysis.Host.Mef;
 using Microsoft.CodeAnalysis.Recommendations;
@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using System.Xml.Linq;
 using System.Linq;
 using Microsoft.CodeAnalysis.VisualBasic.Syntax;
+using Microsoft.CodeAnalysis.Completion;
 using Microsoft.CodeAnalysis.VisualBasic;
 
 namespace VBACodeAnalysis {
@@ -138,6 +139,20 @@ namespace VBACodeAnalysis {
             var docId = doc_id_dict[name];
             var doc = workspace.CurrentSolution.GetDocument(docId);
             var position = doc.GetTextAsync().Result.Lines.GetPosition(new LinePosition(line, adjChara));
+
+            var completionService = CompletionService.GetService(doc);
+            var results = await completionService.GetCompletionsAsync(doc, position);
+            completions.AddRange(results.ItemsList.Where(x => {
+                return x.Tags.Contains("Keyword");
+            }).Select(x => {
+                var compItem = new CompletionItem();
+                compItem.DisplayText = x.DisplayText;
+                compItem.CompletionText = x.DisplayText;
+                compItem.Description = x.Properties.Values.ToString();
+                compItem.Kind = "Keyword";
+                return compItem;
+            }));
+
             var symbols = await Recommender.GetRecommendedSymbolsAtPositionAsync(doc, position);
             foreach (var symbol in symbols) {
                 var completionItem = new CompletionItem();

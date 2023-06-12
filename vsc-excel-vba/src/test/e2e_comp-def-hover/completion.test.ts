@@ -158,7 +158,8 @@ async function testCompletion(
 
 	const actualCompletionItems = actualCompletionList.items.filter(x => {
 		return x.kind !== vscode.CompletionItemKind.Snippet
-			&& x.kind !== vscode.CompletionItemKind.Text;
+			&& x.kind !== vscode.CompletionItemKind.Text
+			&& x.kind !== vscode.CompletionItemKind.Keyword;
 	}).sort(sotrFunc);
 	const expectedCompletionItems = expectedCompletionList.items.sort(sotrFunc);
 

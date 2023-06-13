@@ -3,7 +3,10 @@
 		"RewriteSetting": {
 			"namespace": "f",
 			"mapping": [
-				[ "Range", "Ran" ]
+				[ "Range", "Ran" ],
+				[ "Workbooks", "WorkBks" ],
+				[ "Worksheets", "Workshts" ],
+				[ "Cells", "Cls" ]
 			]
 		}
 	}

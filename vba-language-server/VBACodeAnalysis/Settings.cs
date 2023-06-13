@@ -32,6 +32,7 @@ namespace VBACodeAnalysis {
 		public RewriteSetting() {
 			Rewrite = new Dictionary<string, string>();
 			Restore = new Dictionary<string, string>();
+			Mapping = new List<List<string>>();
 		}
 
 		public Dictionary<string, string> getRewriteDict() {

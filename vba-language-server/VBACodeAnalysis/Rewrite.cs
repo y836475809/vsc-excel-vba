@@ -54,18 +54,34 @@ namespace VBACodeAnalysis {
             var rewriteDict = setting.getRewriteDict();
             var allChanges = new List<TextChange>();
             //var docRoot = doc.GetSyntaxRootAsync().Result;
-            var forStmt = node.OfType<InvocationExpressionSyntax>();
+            var invExpStmt = node.OfType<InvocationExpressionSyntax>();
             var set = new HashSet<string>();
-            foreach (var stmt in forStmt) {
-                var tt = stmt.GetFirstToken().Text;
-                if (rewriteDict.ContainsKey(tt) && stmt.ArgumentList != null) {
+            foreach (var stmt in invExpStmt) {
+                var text = stmt.GetFirstToken().Text;
+                if (rewriteDict.ContainsKey(text) && stmt.ArgumentList != null) {
                     var sp = stmt.GetFirstToken().Span;
-                    var k = $"{sp.Start}-{sp.End}";
-                    if (!set.Contains(k)) {
-                        var rename = $"{ns}.{rewriteDict[tt]}";
+                    var key = $"{sp.Start}-{sp.End}";
+                    if (!set.Contains(key)) {
+                        var rename = $"{ns}.{rewriteDict[text]}";
                         allChanges.Add(new TextChange(stmt.GetFirstToken().Span, rename));
                     }
-                    set.Add(k);
+                    set.Add(key);
+                }
+            }
+
+            var forStmt = node.OfType<ForEachStatementSyntax>();
+            foreach (var stmt in forStmt) {
+                var identTokens = stmt.ChildNodes().Where(x => {
+                    return rewriteDict.ContainsKey(x.ToString());
+                });
+                foreach (var ident in identTokens) {
+                    var sp = ident.Span;
+                    var key = $"{sp.Start}-{sp.End}";
+                    if (!set.Contains(key)) {
+                        var rename = $"{ns}.{rewriteDict[ident.ToString()]}";
+                        allChanges.Add(new TextChange(sp, rename));
+                    }
+                    set.Add(key);
                 }
             }
             return allChanges;

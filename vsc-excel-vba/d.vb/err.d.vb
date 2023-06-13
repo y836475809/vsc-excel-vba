@@ -1,4 +1,5 @@
 Public Class Err
+    Public Shared Property Number As Long
     Public Shared Property Source As String
     Public Shared Property Description As String
     Public Shared Property Helpfile As String

@@ -1,4 +1,6 @@
 Public Class Application
+	Public Shared Property ScreenUpdating As Boolean
+
     Public Shared Property ThisWorkbook As Workbook
 
 	Public Shared Property ActiveSheet As Worksheet
@@ -17,4 +19,7 @@ Public Class Application
 	End Function
 	Public Shared Function Worksheets(Index As Long) As Worksheet
 	End Function
+
+	Public Shared Sub Quit()
+	End Sub
 End Class

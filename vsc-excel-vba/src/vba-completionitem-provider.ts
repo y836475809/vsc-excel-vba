@@ -40,7 +40,7 @@ export class VBACompletionItemProvider implements vscode.CompletionItemProvider 
 				return {
 					label: item.displaytext,
 					detail: item.completiontext,
-					insertText: item.completiontext,
+					insertText: item.displaytext,
 					kind: kind
 				};
 			});

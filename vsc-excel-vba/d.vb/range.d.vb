@@ -1,4 +1,6 @@
-Public Class Range
+Imports System.Collections
+
+Public Class Range : Implements IEnumerable
     Default Public Property Item(Cell1 As String, Optional Cell2 As String = "") As Range
         Get : End Get
         Set(Value As Range) : End Set
@@ -28,6 +30,9 @@ Public Class Range
 
     Public ReadOnly Property Areas As Areas
     Public ReadOnly Property Count As Long
+    Public ReadOnly Property Row As Long
+    Public ReadOnly Property Column As Long
+    Public ReadOnly Property Columns As Range
     Public Property Cells As Range
     Public Property Value As Object
     Public Property Rows As Range
@@ -36,5 +41,14 @@ Public Class Range
         Criteria1 As String, AutoFilterOperator As Long, 
         Optional Criteria2 As String = "",
         Optional VisibleDropDown As Boolean = True) As Object
+    End Function
+
+    Public Function Find(What As Object, 
+        After As Object, 
+        Optional LookIn As XlFindLookIn = xlValues, 
+        Optional LookAt As XlLookAt = xlWhole) As Range
+    End Function
+
+    Public Function End(Direction As XlDirection) As Range
     End Function
 End Class

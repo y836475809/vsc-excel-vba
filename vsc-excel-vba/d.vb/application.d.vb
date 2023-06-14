@@ -1,10 +1,15 @@
 Public Class Application
+	Public Shared Property UserName As String
+	Public Shared Property DisplayAlerts As Boolean
 	Public Shared Property ScreenUpdating As Boolean
 
     Public Shared Property ThisWorkbook As Workbook
 
 	Public Shared Property ActiveSheet As Worksheet
 	Public Shared Property ActiveWorkbook As Workbook
+	
+	Public Shared Property Sheets As Worksheets
+	End Function
 
 	Public Shared Function Workbooks() As Workbooks
 	End Function

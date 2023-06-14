@@ -34,5 +34,9 @@ Public Module f
     Public Function Workshts(index As Long) As Worksheet
     End Function
 
+    Public Function Rows() As Range
+    End Function
 
+    Public Function ThisWorkbook() As Workbook
+    End Function
 End Module

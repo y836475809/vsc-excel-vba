@@ -19,8 +19,7 @@ Public Module ExcelVBAFunctions
         String1 As String, String2 As String, 
         Optional Compare As Long = -1) As Long
     End Function
-    Public Function InStr(Optional Start As Long, 
-        String1 As String, String2 As String, 
+    Public Function InStr(String1 As String, String2 As String, 
         Optional Compare As Long = -1) As Long
     End Function
 
@@ -44,10 +43,22 @@ Public Module ExcelVBAFunctions
 
     Public Function Len(Str As String) As Long
     End Function
+    Public Function LenB(Str As String) As Long
+    End Function
 
     Public Function UCase(Str As String) As String
     End Function
 
     Public Function UCase(Expression As String, Optional Format As String = "") As String
     End Function
+
+    Public Function Mid(Str As String, Start As Long, Optional Length As Long = -1) As String
+    End Function
+
+    Public Function StrConv(Str As String, Conversion As Integer)
+    End Function
+
+    Public Function Now() As Date
+    End Function
+
 End Module

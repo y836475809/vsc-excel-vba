@@ -226,6 +226,9 @@ export async function activate(context: vscode.ExtensionContext) {
 				vscode.window.showInformationMessage("Success");
 				statusBarItem.text = `Stop ${extName}`;
 			} catch (error) {
+				dispose();
+				fileEvents.dispose();
+				
 				let errorMsg = "Fail start";
 				if(error instanceof Error){
 					errorMsg = `${error.message}`;

@@ -3,6 +3,12 @@ Imports System.Collections
 Public Class IXMLDOMNode
     Public text As String
     Public Property childNodes As IXMLDOMNodeList
+
+    Public Function SelectNodes(xpath As String) As IXMLDOMNodeList
+    End Function
+
+    Public Function SelectSingleNode(xpath As String) As IXMLDOMNode
+    End Function    
 End Class
 
 Public Class IXMLDOMNodeList : Implements IEnumerable

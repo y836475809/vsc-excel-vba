@@ -36,15 +36,18 @@ Public Class Range : Implements IEnumerable
     Public Property Cells As Range
     Public Property Value As Object
     Public Property Rows As Range
+    Public Property Range As Range
 
-    Public Function AutoFilter(Field As Long, 
-        Criteria1 As String, AutoFilterOperator As Long, 
+    Public Function AutoFilter(
+        Optional Field As Long, 
+        Optional Criteria1 As String, 
+        Optional AutoFilterOperator As Long, 
         Optional Criteria2 As String = "",
-        Optional VisibleDropDown As Boolean = True) As Object
+        Optional VisibleDropDown As Boolean = True) As Range
     End Function
 
     Public Function Find(What As Object, 
-        After As Object, 
+        Optional After As Object, 
         Optional LookIn As XlFindLookIn = xlValues, 
         Optional LookAt As XlLookAt = xlWhole) As Range
     End Function

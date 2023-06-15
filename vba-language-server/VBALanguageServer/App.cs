@@ -1,4 +1,4 @@
-﻿using VBACodeAnalysis;
+﻿﻿using VBACodeAnalysis;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
@@ -211,14 +211,14 @@ namespace VBALanguageServer {
                     logger.Info($"SignatureHelpReq, line < 0: {Path.GetFileName(e.FilePath)}");
                     return;
                 }
-                var (procCharaPos, argPosition) = mc.GetSignaturePosition(e.FilePath, e.Text, line, e.Chara);
-                if (procCharaPos < 0) {
+                var (procLine, procCharaPos, argPosition) = mc.GetSignaturePosition(e.FilePath, e.Text, line, e.Chara);
+                if (procLine < 0) {
                     e.Items = items;
-                    logger.Info($"SignatureHelpReq, procCharaPos < 0: {Path.GetFileName(e.FilePath)}");
+                    logger.Info($"SignatureHelpReq, procLine < 0: {Path.GetFileName(e.FilePath)}");
                     return;
                 }
 
-                var Items = mc.GetDefinitions(e.FilePath, vbCode, line, procCharaPos-1).Result;
+                var Items = mc.GetDefinitions(e.FilePath, vbCode, procLine, procCharaPos).Result;
                 foreach (var item in Items) {
                     var sp = item.Start.Positon;
                     var ep = item.End.Positon;

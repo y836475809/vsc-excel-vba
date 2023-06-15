@@ -243,16 +243,17 @@ namespace VBACodeAnalysis {
             return true;
         }
 
-        public (int, int) GetSignaturePosition(string name, string text, int line, int chara) {
+        public (int, int, int) GetSignaturePosition(string name, string text, int line, int chara) {
+            var procLine = -1;
             var procChara = -1;
             var argPosition = 0;
 
             if (!doc_id_dict.ContainsKey(name)) {
-                return (procChara, - 1);
+                return (procLine, procChara, - 1);
             }
             var docId = doc_id_dict[name];
             if (!workspace.CurrentSolution.ContainsDocument(docId)) {
-                return (procChara, -1);
+                return (procLine, procChara, -1);
             }
 
 			ChangeDocument(name, text);
@@ -271,22 +272,24 @@ namespace VBACodeAnalysis {
 					if (args.Any()) {
                         var procToken = args.First().ChildTokens().First().GetPreviousToken();
                         var lp = procToken.GetLocation().GetLineSpan();
-                        procChara = lp.EndLinePosition.Character;
+                        procLine = lp.StartLinePosition.Line;
+                        procChara = lp.StartLinePosition.Character;
+                        return (procLine, procChara, argPosition);
                     }
 				}
-                return (procChara, argPosition);
             } 
 
             if (currentNode.IsKind(SyntaxKind.ArgumentList)) {
                 var procToken = currentNode.ChildTokens().First().GetPreviousToken().GetLocation().GetLineSpan();
-                procChara = procToken.EndLinePosition.Character;
+                procLine = procToken.StartLinePosition.Line;
+                procChara = procToken.StartLinePosition.Character;
                 var commnaTokens = currentNode.ChildTokens().Where(x => x.IsKind(SyntaxKind.CommaToken));
                 foreach (var item in commnaTokens) {
                     if (item.Span.End <= position) {
                         argPosition++;
                     }
                 }
-                return (procChara, argPosition);
+                return (procLine, procChara, argPosition);
             } 
 
             var node = rootNode.FindNode(currentToken.Span).Parent;
@@ -295,7 +298,8 @@ namespace VBACodeAnalysis {
                 if (node.IsKind(SyntaxKind.ArgumentList)) {
                     var procToken = node.ChildTokens().First().GetPreviousToken();
                     var lp = procToken.GetLocation().GetLineSpan();
-                    procChara = lp.EndLinePosition.Character;
+                    procLine = lp.StartLinePosition.Line;
+                    procChara = lp.StartLinePosition.Character;
                     var commnaTokens = node.ChildTokens().Where(x => x.IsKind(SyntaxKind.CommaToken));
                     foreach (var item in commnaTokens) {
                         if (item.Span.End <= position) {
@@ -310,7 +314,7 @@ namespace VBACodeAnalysis {
                 node = node.Parent;
             }
 
-            return (procChara, argPosition);
+            return (procLine, procChara, argPosition);
         }
 
         public async Task<SignatureHelpItem> GetSignatureHelp(string name, string text, int position) {

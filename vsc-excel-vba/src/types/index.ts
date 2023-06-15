@@ -76,8 +76,8 @@ namespace Hoge {
     };
 
     export type RequestRenameParam = {
-        olduri: string,
-        newuri: string
+        olduri: string;
+        newuri: string;
     };
 
     export type ProjectData = {

@@ -38,8 +38,8 @@ export class FileEvents {
         const method: Hoge.RequestId = "RenameDocument";
         let renameParams: Hoge.RequestRenameParam[] = [];
         for(const file of files){
-            const oldUri = file.oldUri.toString();
-            const newUri = file.newUri.toString();
+            const oldUri = file.oldUri;
+            const newUri = file.newUri;
             renameParams.push({
                 olduri: oldUri,
                 newuri: newUri
@@ -52,7 +52,10 @@ export class FileEvents {
         const method: Hoge.RequestId = "DeleteDocuments";
         const uris = files.map(uri => {
             return uri.toString();
-        });
+        }).filter(x => x.scheme === "file");
+        if(!uris.length){
+            return;
+        } 
         await this.request.deleteDocuments(uris);
     }
 
@@ -62,7 +65,8 @@ export class FileEvents {
         this.srcDir = srcDir;
 
         this.disposables.push(vscode.workspace.onDidCreateFiles(async (e: vscode.FileCreateEvent) => {
-            const uris = e.files.filter(file => this.isInSrcDir(file));
+            const uris = e.files.filter(file => this.isInSrcDir(file))
+                .filter(x => x.scheme === "file");
             if(!uris.length){
                 return;
             }
@@ -72,7 +76,7 @@ export class FileEvents {
         this.disposables.push(vscode.workspace.onDidDeleteFiles(async (e: vscode.FileDeleteEvent) => {
             const files = e.files.filter(file => this.isInSrcDir(file)).map(file => {
                 return file;
-            });
+            }).filter(x => x.scheme === "file");
             if(!files.length){
                 return;
             }
@@ -80,7 +84,9 @@ export class FileEvents {
         }));
 
         this.disposables.push(vscode.workspace.onDidRenameFiles(async (e: vscode.FileRenameEvent) => {
-            const files = e.files.filter(file => this.isInSrcDir(file.newUri)).map(file => {
+            const files = e.files.filter(file => this.isInSrcDir(file.newUri))
+            .filter(x => x.newUri.scheme === "file" && x.oldUri.scheme === "file")
+            .map(file => {
                 return {
                     oldUri: file.oldUri,
                     newUri: file.newUri
@@ -104,16 +110,21 @@ export class FileEvents {
                 // }
                 // // isDirty=false, e.reason!=undefined
                 // // ->undo or redoで変更をもどした場合なので更新通知必要
-
-                if(!this.isInSrcDir(e.document.uri)){
+                const uri = e.document.uri;
+                if(!this.isInSrcDir(uri)){
                     return;
                 }
-                const uri = e.document.uri.toString();
+                if(uri.scheme !== "file"){
+                    return;
+                }      
                 await this.request.changeDocument(e.document);
         }, delayTimeMs)));
 
         this.disposables.push(vscode.window.onDidChangeActiveTextEditor(
             debounce(async (e: vscode.TextEditor) => {
+                if(e.document.uri.scheme !== "file"){
+                    return;
+                }  
                 const fname = e.document.fileName;
                 if(fname.endsWith(".bas") || fname.endsWith(".cls")){
                     await this.request.diagnostic(e.document);

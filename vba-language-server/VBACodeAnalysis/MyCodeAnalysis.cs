@@ -188,7 +188,15 @@ namespace VBACodeAnalysis {
                 var adjChara = getoffset(name, line, chara) + chara;
                 var doc = workspace.CurrentSolution.GetDocument(docId);
                 var model = await doc.GetSemanticModelAsync();
-                var position = doc.GetTextAsync().Result.Lines.GetPosition(new LinePosition(line, adjChara));
+                var lines = doc.GetTextAsync().Result.Lines;
+                if(lines.Count <= line || line < 0) {
+                    return items;
+                }
+                if (lines[line].End <= adjChara || adjChara < 0) {
+                    return items;
+                }
+
+                var position = lines.GetPosition(new LinePosition(line, adjChara));
                 var symbol = await SymbolFinder.FindSymbolAtPositionAsync(model, position, workspace);
 
                 if (symbol == null) {

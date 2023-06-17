@@ -1,26 +1,17 @@
 import * as vscode from 'vscode';
-import { LPSRequest } from './lsp-request';
+import { VBALSRequest } from './vba-ls-request';
 
 export class VBAHoverProvider implements vscode.HoverProvider {
-    lpsRequest: LPSRequest;
+    request: VBALSRequest;
 
-    constructor(port: number){
-        this.lpsRequest = new LPSRequest(port);
+    constructor(request: VBALSRequest){
+        this.request = request;
     }
 
 	async provideHover(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken)
 	: Promise<vscode.Hover | undefined> {
 		try {
-			const fp = document.uri.fsPath;
-			const text = document.getText();
-			const data = {
-				id: "Hover",
-				filepaths: [fp],
-				line: position.line,
-				chara: position.character,
-				text: text
-			} as Hoge.RequestParam;
-			const items = await this.lpsRequest.send(data) as Hoge.CompletionItem[];
+			const items = await this.request.hover(document, position);
 			if(items.length === 0){
 				return undefined;
 			}

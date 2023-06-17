@@ -1,12 +1,12 @@
 import * as vscode from 'vscode';
-import { LPSRequest } from './lsp-request';
+import { VBALSRequest } from './vba-ls-request';
 
 export class VBACompletionItemProvider implements vscode.CompletionItemProvider {
-    lpsRequest: LPSRequest;
+    request: VBALSRequest;
 	symbolKindMap: Map<string, vscode.CompletionItemKind>;
 
-    constructor(port: number){
-        this.lpsRequest = new LPSRequest(port);
+    constructor(request: VBALSRequest){
+        this.request = request;
 		this.symbolKindMap = new Map<string, vscode.CompletionItemKind>([
             ["Method",   vscode.CompletionItemKind.Method],
             ["Field",    vscode.CompletionItemKind.Field],
@@ -20,20 +20,7 @@ export class VBACompletionItemProvider implements vscode.CompletionItemProvider 
 	async provideCompletionItems(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken, context: vscode.CompletionContext)
 	: Promise<vscode.CompletionItem[]> {
 		try {
-			const fp = document.uri.fsPath;
-			const text = document.getText();
-			if(!text){
-				return [];
-			}
-
-			const data = {
-				id: "Completion",
-				filepaths: [fp],
-				line: position.line,
-				chara: position.character,
-				text: text
-			} as Hoge.RequestParam;
-			const items = await this.lpsRequest.send(data) as Hoge.CompletionItem[];
+			const items = await this.request.completionItems(document, position);
 			let comlItems = items.map(item => {
 				const val = this.symbolKindMap.get(item.kind);
 				const kind = val?val:vscode.CompletionItemKind.Text;

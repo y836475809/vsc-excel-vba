@@ -28,6 +28,34 @@ function dispose() {
 	disposables = [];
 }
 
+const registerProvider = (srcDir: string, enableLSP: boolean) => {
+	const docSelector = { language: "vb" };
+
+	dispose();
+
+	disposables.push(vscode.languages.registerDocumentSymbolProvider(
+		docSelector, new VBADocumentSymbolProvider()));
+
+	if(enableLSP){
+		vbaLSRequest.srcDir = srcDir;
+
+		disposables.push(vscode.languages.registerSignatureHelpProvider(
+			docSelector, new VBASignatureHelpProvider(vbaLSRequest), '(', ','));
+
+		disposables.push(vscode.languages.registerDefinitionProvider(
+			docSelector, new VBADefinitionProvider(vbaLSRequest)));
+
+		disposables.push(vscode.languages.registerHoverProvider(
+			docSelector, new VBAHoverProvider(vbaLSRequest)));
+
+		disposables.push(vscode.languages.registerCompletionItemProvider(
+			docSelector, new VBACompletionItemProvider(vbaLSRequest), "."));
+		
+		disposables.push(vscode.languages.registerReferenceProvider(
+			docSelector, new VBAReferenceProvider(vbaLSRequest)));
+	}
+};
+
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export async function activate(context: vscode.ExtensionContext) {
@@ -107,7 +135,9 @@ export async function activate(context: vscode.ExtensionContext) {
 		await vbaCommand.exceue(project, "runVBASubProc");
 	}));
 	context.subscriptions.push(vscode.commands.registerCommand("vsc-excel-vba.test.registerProvider", async () => {
-		registerProvider();
+		const wfs = vscode.workspace.workspaceFolders!;
+		const srcDir = wfs[0].uri.fsPath;
+		registerProvider(srcDir, true);
 	}));
 
 	context.subscriptions.push(vscode.commands.registerCommand("testView.myCommand", async (args) => {
@@ -133,37 +163,11 @@ export async function activate(context: vscode.ExtensionContext) {
 		await vbaCommand.openSheet(xlsmFileName, args.fsPath);
 	}));
 
-	const registerProvider = () => {
-		dispose();
-
-		const docSelector = { language: "vb" };
-
-		disposables.push(vscode.languages.registerDocumentSymbolProvider(
-			docSelector, new VBADocumentSymbolProvider()));
-
-		if(enableLSP){
-			disposables.push(vscode.languages.registerSignatureHelpProvider(
-				docSelector, new VBASignatureHelpProvider(vbaLanguageServerPort), '(', ','));
-
-			disposables.push(vscode.languages.registerDefinitionProvider(
-				docSelector, new VBADefinitionProvider(vbaLanguageServerPort)));
-
-			disposables.push(vscode.languages.registerHoverProvider(
-				docSelector, new VBAHoverProvider(vbaLanguageServerPort)));
-
-			disposables.push(vscode.languages.registerCompletionItemProvider(
-				docSelector, new VBACompletionItemProvider(vbaLanguageServerPort), "."));
-			
-			disposables.push(vscode.languages.registerReferenceProvider(
-				docSelector, new VBAReferenceProvider(vbaLanguageServerPort)));
-		}
-	};
-
 	const loadProject = async (report: (msg: string)=>void) => {
 		report("Load Project");
 		await project.readProject();
 
-		registerProvider();
+		registerProvider(project.srcDir, false);
 
 		report("Loaded project successfully");
 	};
@@ -182,26 +186,22 @@ export async function activate(context: vscode.ExtensionContext) {
 		}
 
 		report("Register FileEvent");
-		fileEvents.registerFileEvent(project.srcDir);
+		fileEvents.registerFileEvent();
 
-		const uris1 = await project.getSrcFileUris();
-		const uris2 = loadDefinitionFiles?project.getDefinitionFileUris(context):[];
-		const uris = uris1.concat(uris2);
-		if(uris.length > 0){
-			report("Add source");
-			await vbaLSRequest.addDocuments(uris);
-		}
+		registerProvider(project.srcDir, true);
+		
+		report("Add VBA define");
+		await vbaLSRequest.addVBADefines(
+			loadDefinitionFiles?project.getDefinitionFileUris(context):[]);
+
+		report("Add source");
+		await vbaLSRequest.addDocuments(await project.getSrcFileUris());
 
 		const activeDoc = vscode.window.activeTextEditor?.document;
 		if(activeDoc){
-			const activePath = activeDoc.uri.fsPath;
-			if(activePath.endsWith(".bas") || activePath.endsWith(".cls")){
-				report("Diagnose active document");
-				await vbaLSRequest.diagnostic(activeDoc);
-			}
+			report("Diagnose active document");
+			await vbaLSRequest.diagnostic(activeDoc);
 		}
-
-		registerProvider();
 
 		report("Server started successfully");
 	};

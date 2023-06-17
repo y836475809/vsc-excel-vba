@@ -1,24 +1,17 @@
 import * as vscode from 'vscode';
-import { LPSRequest } from './lsp-request';
+import { VBALSRequest } from './vba-ls-request';
 
 export class VBASignatureHelpProvider implements vscode.SignatureHelpProvider {
-    lpsRequest: LPSRequest;
-    constructor(port: number){
-        this.lpsRequest = new LPSRequest(port);
+    request: VBALSRequest;
+
+    constructor(request: VBALSRequest){
+        this.request = request;
     }
 
     async provideSignatureHelp(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken)
 		: Promise<vscode.SignatureHelp | undefined>  {
 		try {
-            const chara = position.character;
-            const data = {
-                id: "SignatureHelp",
-                filepaths: [document.uri.fsPath],
-                line: position.line,
-                chara: chara,
-                text: document.getText()
-            } as Hoge.RequestParam;
-			const items = await this.lpsRequest.send(data) as Hoge.SignatureHelpItem[];
+			const items = await this.request.signatureHelp(document, position);
 			if(items.length === 0){
 				return undefined;
 			}

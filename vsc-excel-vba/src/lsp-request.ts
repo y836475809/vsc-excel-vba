@@ -1,8 +1,12 @@
 import * as http from "http";
 import * as vscode from "vscode";
-import { URI } from 'vscode-uri';
 
 const url = "http://localhost";
+
+export type RenameParam = {
+    oldUri: vscode.Uri;
+    newUri: vscode.Uri;
+};
 
 export class LPSRequest {
     private port: number;
@@ -81,16 +85,14 @@ export class MakeReqData {
         return param;
     }
 
-    static renameDocuments(renameArgs: Hoge.RequestRenameParam[]): Hoge.RequestParam[] {
+    static renameDocuments(renameArgs: RenameParam[]): Hoge.RequestParam[] {
         if(!renameArgs){
             return [];
         }
         const params: Hoge.RequestParam[] = [];
         for(const renameArg of renameArgs){
-            const oldUri = renameArg.olduri;
-            const newUri = renameArg.newuri;
-            const oldFsPath = URI.parse(oldUri).fsPath;
-            const newFsPath = URI.parse(newUri).fsPath;
+            const oldFsPath = renameArg.oldUri.fsPath;
+            const newFsPath = renameArg.newUri.fsPath;
             const data = {
                 id: "RenameDocument",
                 filepaths: [oldFsPath, newFsPath],

@@ -16,12 +16,10 @@ function debounce(fn: any, interval: number){
 
 export class FileEvents {
     request: VBALSRequest;
-    srcDir: string;
     disposables: vscode.Disposable[];
 
     constructor(request: VBALSRequest){
         this.request = request;
-        this.srcDir = "";
         this.disposables = [];
     }
 
@@ -30,72 +28,27 @@ export class FileEvents {
         this.disposables = [];
     }
 
-    private isInSrcDir(uri: vscode.Uri): boolean{
-        return path.dirname(uri.fsPath).startsWith(this.srcDir);
-    }
-
-    private async renameFiles(files: any[]){
-        const method: Hoge.RequestId = "RenameDocument";
-        let renameParams: Hoge.RequestRenameParam[] = [];
-        for(const file of files){
-            const oldUri = file.oldUri;
-            const newUri = file.newUri;
-            renameParams.push({
-                olduri: oldUri,
-                newuri: newUri
-            });
-        }
-        await this.request.renameDocument(renameParams);
-    }
-
-    private async deleteFiles(files: any[]){
-        const method: Hoge.RequestId = "DeleteDocuments";
-        const uris = files.map(uri => {
-            return uri.toString();
-        }).filter(x => x.scheme === "file");
-        if(!uris.length){
-            return;
-        } 
-        await this.request.deleteDocuments(uris);
-    }
-
-    public registerFileEvent(srcDir: string): void {
+    public registerFileEvent(): void {
         this.dispose();
 
-        this.srcDir = srcDir;
-
         this.disposables.push(vscode.workspace.onDidCreateFiles(async (e: vscode.FileCreateEvent) => {
-            const uris = e.files.filter(file => this.isInSrcDir(file))
-                .filter(x => x.scheme === "file");
-            if(!uris.length){
-                return;
-            }
+            const uris = e.files.map(x => x);
             await this.request.addDocuments(uris);
         }));
 
         this.disposables.push(vscode.workspace.onDidDeleteFiles(async (e: vscode.FileDeleteEvent) => {
-            const files = e.files.filter(file => this.isInSrcDir(file)).map(file => {
-                return file;
-            }).filter(x => x.scheme === "file");
-            if(!files.length){
-                return;
-            }
-            await this.deleteFiles(files);
+            const uris = e.files.map(x => x);
+            await this.request.deleteDocuments(uris);
         }));
 
         this.disposables.push(vscode.workspace.onDidRenameFiles(async (e: vscode.FileRenameEvent) => {
-            const files = e.files.filter(file => this.isInSrcDir(file.newUri))
-            .filter(x => x.newUri.scheme === "file" && x.oldUri.scheme === "file")
-            .map(file => {
+            const files = e.files.map(file => {
                 return {
                     oldUri: file.oldUri,
                     newUri: file.newUri
                 };
             });
-            if(!files.length){
-                return;
-            }
-            await this.renameFiles(files);
+            await this.request.renameDocument(files);
         }));
 
         const delayTimeMs = 1000;
@@ -110,21 +63,12 @@ export class FileEvents {
                 // }
                 // // isDirty=false, e.reason!=undefined
                 // // ->undo or redoで変更をもどした場合なので更新通知必要
-                const uri = e.document.uri;
-                if(!this.isInSrcDir(uri)){
-                    return;
-                }
-                if(uri.scheme !== "file"){
-                    return;
-                }      
+
                 await this.request.changeDocument(e.document);
         }, delayTimeMs)));
 
         this.disposables.push(vscode.window.onDidChangeActiveTextEditor(
-            debounce(async (e: vscode.TextEditor) => {
-                if(e.document.uri.scheme !== "file"){
-                    return;
-                }  
+            debounce(async (e: vscode.TextEditor) => { 
                 const fname = e.document.fileName;
                 if(fname.endsWith(".bas") || fname.endsWith(".cls")){
                     await this.request.diagnostic(e.document);

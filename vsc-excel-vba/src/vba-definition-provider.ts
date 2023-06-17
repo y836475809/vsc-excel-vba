@@ -1,29 +1,18 @@
 import * as vscode from 'vscode';
 import { URI } from 'vscode-uri';
-import { LPSRequest } from './lsp-request';
+import { VBALSRequest } from './vba-ls-request';
 
 export class VBADefinitionProvider implements vscode.DefinitionProvider {
-    lpsRequest: LPSRequest;
-    constructor(port: number){
-        this.lpsRequest = new LPSRequest(port);
+    request: VBALSRequest;
+
+    constructor(request: VBALSRequest){
+        this.request = request;
     }
 
 	async provideDefinition(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken)
 	: Promise<vscode.Location[] | undefined> {
-		try {
-			const fp = document.uri.fsPath;
-			const line = position.line;
-			const chara = position.character;
-
-			const data = {
-				id: "Definition",
-				filepaths: [fp],
-				line: line,
-				chara: chara,
-				text: ""
-			} as Hoge.RequestParam;
-			
-			const items = await this.lpsRequest.send(data) as Hoge.DefinitionItem[];
+		try {	
+			const items = await this.request.definition(document.uri, position) as Hoge.DefinitionItem[];
 			const locations: vscode.Location[] = [];
 			items.forEach(item => {
 				const uri = URI.file(item.filepath);

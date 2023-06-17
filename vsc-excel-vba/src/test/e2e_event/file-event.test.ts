@@ -281,6 +281,8 @@ suite("Extension E2E Roslyn Test Suite", () => {
 		const uri = helper.getDocUri("c1.cls");
 		await deleteFile(uri);
 
+		await helper.sleep(500);
+
 		const actFileMap = await getServerFileMap();
 		assert.deepEqual(actFileMap, new Map<string, string>([
 			[

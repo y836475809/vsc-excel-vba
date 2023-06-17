@@ -1,24 +1,18 @@
 import * as vscode from 'vscode';
-import { LPSRequest } from './lsp-request';
+import { VBALSRequest } from './vba-ls-request';
 
 export class VBAReferenceProvider implements vscode.ReferenceProvider {
-    lpsRequest: LPSRequest;
-    constructor(port: number){
-        this.lpsRequest = new LPSRequest(port);
+    request: VBALSRequest;
+
+    constructor(request: VBALSRequest){
+        this.request = request;
     }
+
 	async provideReferences(document: vscode.TextDocument, position: vscode.Position, context: vscode.ReferenceContext, token: vscode.CancellationToken)
 	: Promise<vscode.Location[]> {
 		try {
 			const uri = document.uri;
-			const fp = uri.fsPath;
-			const data = {
-				id: "References",
-				filepaths: [fp],
-				line: position.line,
-				chara: position.character,
-				text: ""
-			} as Hoge.RequestParam;
-			const items = await this.lpsRequest.send(data) as Hoge.ReferencesItem[];
+			const items = await this.request.references(document, position);
 			const locs = items.map(x => {
 				return new vscode.Location(
 					uri,

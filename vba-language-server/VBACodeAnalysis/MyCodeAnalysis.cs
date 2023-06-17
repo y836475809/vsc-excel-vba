@@ -48,7 +48,7 @@ namespace VBACodeAnalysis {
             myDiagnostic = new MyDiagnostic(rewriteSetting);
         }
 
-        public void AddDocument(string name, string text) {
+        public void AddDocument(string name, string text, bool applyChanges= true) {
             if (doc_id_dict.ContainsKey(name)) {
                 var docId = doc_id_dict[name];
                 workspace.TryApplyChanges(
@@ -60,7 +60,28 @@ namespace VBACodeAnalysis {
                     workspace.CurrentSolution.WithDocumentFilePath(doc.Id, name));
                 doc_id_dict.Add(name, doc.Id);
             }
-             ChangeDocument(name, text);
+			if (applyChanges) {
+                ChangeDocument(name, text);
+            }
+        }
+        public void ApplyChanges(List<string> names) {
+            Solution solution = workspace.CurrentSolution;
+            foreach (var name in names) {
+                if (!doc_id_dict.ContainsKey(name)) {
+                    continue;
+                }
+                if (name.EndsWith(".d.vb")) {
+                    continue;
+                }
+                var docId = doc_id_dict[name];
+                var doc = solution.GetDocument(docId);
+                var reSourceText = rewrite.RewriteStatement(doc);
+                charaOffsetDict[name] = rewrite.charaOffsetDict;
+                lineMappingDict[name] = rewrite.lineMappingDict;
+
+                solution = solution.WithDocumentText(docId, reSourceText);
+            }
+            workspace.TryApplyChanges(solution);
         }
 
         public void DeleteDocument(string name)
@@ -89,15 +110,6 @@ namespace VBACodeAnalysis {
             lineMappingDict[name] = rewrite.lineMappingDict;
             workspace.TryApplyChanges(
                 workspace.CurrentSolution.WithDocumentText(docId, reSourceText));
-        }
-
-        public void ChangeDocument(string name, SyntaxNode doc) {
-            if (!doc_id_dict.ContainsKey(name)) {
-                return;
-            }
-            var docId = doc_id_dict[name];
-            workspace.TryApplyChanges(
-                workspace.CurrentSolution.WithDocumentSyntaxRoot(docId, doc));
         }
 
         private bool IsCompletionItem(ISymbol symbol) {

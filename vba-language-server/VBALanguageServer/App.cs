@@ -42,8 +42,9 @@ namespace VBALanguageServer {
                 foreach (var FilePath in e.FilePaths) {
                     codeAdapter.SetCode(FilePath, Helper.getCode(FilePath));
                     var vbCode = codeAdapter.GetVbCodeInfo(FilePath).VbCode;
-                    mc.AddDocument(FilePath, vbCode);
+                    mc.AddDocument(FilePath, vbCode, false);
                 }
+                mc.ApplyChanges(e.FilePaths);
                 logger.Info("DocumentAdded");
             };
             server.DocumentDeleted += (object sender, DocumentDeletedEventArgs e) => {

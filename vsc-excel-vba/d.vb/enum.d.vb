@@ -27,4 +27,11 @@ Public Module ExcelVBAEnum
     Public Const xlToLeft
     Public Const xlToRight
     Public Const xlUp
+
+    Public Enum XlAutoFilterOperator
+        xlAnd
+        xlOr
+    End Enum
+    Public Const xlAnd
+    Public Const xlOr 
 End Module

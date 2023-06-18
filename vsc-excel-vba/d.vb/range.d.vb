@@ -33,6 +33,7 @@ Public Class Range : Implements IEnumerable
     Public ReadOnly Property Row As Long
     Public ReadOnly Property Column As Long
     Public ReadOnly Property Columns As Range
+    Public ReadOnly Property CurrentRegion As Range
     Public Property Cells As Range
     Public Property Value As Object
     Public Property Rows As Range

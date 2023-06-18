@@ -61,4 +61,26 @@ Public Module ExcelVBAFunctions
     Public Function Now() As Date
     End Function
 
+    Public Function Left(Str As String, length As Long) As String
+    End Function
+
+    Public Function LBound(Ary As Object, Optional dimension As Long = 1) As Long
+    End Function
+
+    Public Function UBound(Ary As Object, Optional dimension As Long = 1) As Long
+    End Function
+
+    Public Function Val(Str As String) As Double
+    End Function
+    
+    Public Function Chr(CharCode As Long) As String
+    End Function
+
+    Public Function Str(Number As Long) As String
+    End Function
+    Public Function Str(Number As Double) As String
+    End Function
+
+    Public Function FreeFile(Optional Rangenumber As Object = 0) As Integer
+    End Function
 End Module

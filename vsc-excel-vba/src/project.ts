@@ -87,7 +87,7 @@ export class Project {
     hasProject(): boolean{
         const wsPath = this.getWorkspacePath();
         if(!wsPath){
-            return false;
+            throw new Error(`Not find workspace Folders`);
         }
         const pfs = path.join(wsPath, this.projectFileName);
         return fs.existsSync(pfs);

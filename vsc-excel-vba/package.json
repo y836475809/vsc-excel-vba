@@ -87,8 +87,8 @@
         "title": "registerProvider command for test"
       },
       {
-        "command": "testView.myCommand",
-        "title": "testView reg"
+        "command": "vsc-excel-vba.createProject",
+        "title": "Create vba project"
       },
       {
         "command": "vsc-excel-vba.import",
@@ -160,7 +160,7 @@
       "explorer/context": [
         {
           "when": "resourceExtname == .xlsm",
-          "command": "testView.myCommand",
+          "command": "vsc-excel-vba.createProject",
           "group": "myGroup"
         },
         {

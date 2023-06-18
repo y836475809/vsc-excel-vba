@@ -140,11 +140,14 @@ export async function activate(context: vscode.ExtensionContext) {
 		registerProvider(srcDir, true);
 	}));
 
-	context.subscriptions.push(vscode.commands.registerCommand("testView.myCommand", async (args) => {
+	context.subscriptions.push(vscode.commands.registerCommand("vsc-excel-vba.createProject", async (args) => {
 		try {
 			if(project.hasProject()){
-				throw new Error(
-					`Not find ${project.projectFileName}. create project`);
+				const ret = await vscode.window.showInformationMessage(
+					`${project.projectFileName} exists. Overwrite?`, "Yes", "No");
+				if(ret === "No"){
+					return;
+				}
 			}
 			const targetFilePath = args.fsPath;		
 			await project.setupConfig();
@@ -154,7 +157,7 @@ export async function activate(context: vscode.ExtensionContext) {
 			if(error instanceof Error){
 				vscode.window.showErrorMessage(error.message);
 			}else{
-				vscode.window.showErrorMessage("Fail create project");
+				vscode.window.showErrorMessage("Fail create vba project");
 			}
 		}
 	}));

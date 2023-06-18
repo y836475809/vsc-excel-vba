@@ -111,8 +111,8 @@
         "title": "gotoVSCode"
       },
       {
-        "command": "vsc-excel-vba.runVBASubProc",
-        "title": "Run Sub proc"
+        "command": "vsc-excel-vba.runVBAProc",
+        "title": "Run VBA procedure"
       },
       {
         "command": "vsc-excel-vba.openSheet",
@@ -130,7 +130,7 @@
         "when": "resourceExtname == .bas || resourceExtname == .cls"
       },
       {
-        "command": "vsc-excel-vba.runVBASubProc",
+        "command": "vsc-excel-vba.runVBAProc",
         "key": "f5",
         "when": "editorTextFocus && resourceExtname == .bas"
       }
@@ -175,7 +175,7 @@
           "group": "myGroup@3"
         },
         {
-          "command": "vsc-excel-vba.runVBASubProc",
+          "command": "vsc-excel-vba.runVBAProc",
           "when": "resourceExtname == .bas",
           "group": "myGroup@4"
         },

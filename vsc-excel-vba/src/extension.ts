@@ -138,8 +138,8 @@ export async function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(vscode.commands.registerCommand("vsc-excel-vba.compile", async () => {
 		await vbaCommand.exceue(project, "compile");
 	}));
-	context.subscriptions.push(vscode.commands.registerCommand("vsc-excel-vba.runVBASubProc", async () => {
-		await vbaCommand.exceue(project, "runVBASubProc");
+	context.subscriptions.push(vscode.commands.registerCommand("vsc-excel-vba.runVBAProc", async () => {
+		await vbaCommand.exceue(project, "runVBAProc");
 	}));
 	context.subscriptions.push(vscode.commands.registerCommand("vsc-excel-vba.setBreakpoints", async () => {
 		await vbaCommand.exceue(project, "setBreakpoints");

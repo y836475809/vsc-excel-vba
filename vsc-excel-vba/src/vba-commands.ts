@@ -70,8 +70,8 @@ export class VBACommands {
             if(cmd === "setBreakpoints"){
                 await this.setBreakpoints();
             }
-            if(cmd === "runVBASubProc"){
-                await this.runVBASubProc();
+            if(cmd === "runVBAProc"){
+                await this.runVBAProc();
             }
         });
     }
@@ -174,8 +174,8 @@ export class VBACommands {
         await this.run("set-breakpoints.ps1", args);
     }
 
-    async runVBASubProc(){
-        await this.tryCatch("runVBASubProc", async () => {
+    async runVBAProc(){
+        await this.tryCatch("runVBAProc", async () => {
             const editor = vscode.window.activeTextEditor;
             if(!editor){
                 return;
@@ -197,10 +197,12 @@ export class VBACommands {
             }
             const moduleName = path.parse(uri.fsPath).name;;
             const symName = targetSymbols[0].detail;
-            const mt = symName.match(/Sub\s+(.+)\(\s*\)/);
-            if(mt && mt.length > 1){
-                const procName = mt[1];
+            const mt = symName.match(/(Sub|Function)\s+(.+)\(\s*\)/);
+            if(mt && mt.length > 2){
+                const procName = mt[2];
                 await this.run("run-vba-proc.ps1", [`${moduleName}.${procName}`]);
+            }else{
+                throw new Error(`Can't run "${symName}"`);
             }
         });
     }

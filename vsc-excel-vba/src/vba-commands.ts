@@ -50,12 +50,12 @@ export class VBACommands {
             }
             if(cmd === "import"){
                 await this.import(project.srcDir);
-                await this.resetBreakpoints();
+                await this.setBreakpoints();
                 await this.gotoVBA();     
             }
             if(cmd === "importAndCompile"){
                 await this.import(project.srcDir);
-                await this.resetBreakpoints();
+                await this.setBreakpoints();
                 await this.gotoVBA();
                 await this.compile();
             }
@@ -65,8 +65,8 @@ export class VBACommands {
             if(cmd === "compile"){
                 await this.compile();
             }
-            if(cmd === "resetBreakpoints"){
-                await this.resetBreakpoints();
+            if(cmd === "setBreakpoints"){
+                await this.setBreakpoints();
             }
             if(cmd === "runVBASubProc"){
                 await this.runVBASubProc();
@@ -148,7 +148,7 @@ export class VBACommands {
         await this.run("compile.ps1", []);
     }
 
-    async resetBreakpoints(){
+    async setBreakpoints(){
         const dict = new Map<string, number[]>();
        
         vscode.debug.breakpoints.forEach(x => {
@@ -169,7 +169,7 @@ export class VBACommands {
         for (const [key, value] of dict) {
             args.push(`${key}:${value.join("-")}`);
         }
-        await this.run("resetbreakpoints.ps1", args);
+        await this.run("set-breakpoints.ps1", args);
     }
 
     async runVBASubProc(){

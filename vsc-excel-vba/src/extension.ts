@@ -134,6 +134,9 @@ export async function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(vscode.commands.registerCommand("vsc-excel-vba.runVBASubProc", async () => {
 		await vbaCommand.exceue(project, "runVBASubProc");
 	}));
+	context.subscriptions.push(vscode.commands.registerCommand("vsc-excel-vba.setBreakpoints", async () => {
+		await vbaCommand.exceue(project, "setBreakpoints");
+	}));
 	context.subscriptions.push(vscode.commands.registerCommand("vsc-excel-vba.test.registerProvider", async () => {
 		const wfs = vscode.workspace.workspaceFolders!;
 		const srcDir = wfs[0].uri.fsPath;

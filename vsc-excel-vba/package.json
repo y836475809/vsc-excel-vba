@@ -122,6 +122,10 @@
       {
         "command": "vsc-excel-vba.openSheet",
         "title": "openSheet"
+      },
+      {
+        "command": "vsc-excel-vba.setBreakpoints",
+        "title": "Set breakpoints to VBA"
       }
     ],
     "keybindings": [
@@ -189,6 +193,11 @@
           "command": "vsc-excel-vba.runVBASubProc",
           "when": "resourceExtname == .bas",
           "group": "myGroup@4"
+        },
+        {
+          "command": "vsc-excel-vba.setBreakpoints",
+          "when": "resourceExtname == .bas || resourceExtname == .cls",
+          "group": "myGroup@5"
         }
       ]
     }

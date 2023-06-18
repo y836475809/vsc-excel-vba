@@ -83,4 +83,13 @@ Public Module ExcelVBAFunctions
 
     Public Function FreeFile(Optional Rangenumber As Object = 0) As Integer
     End Function
+
+    Public Sub Print(Filenumber As Object, Expression As String)
+    End Sub
+
+    Public Sub Write(Filenumber As Object, Expression As String)
+    End Sub
+
+    Public Sub Close(Filenumber As Object)
+    End Sub
 End Module

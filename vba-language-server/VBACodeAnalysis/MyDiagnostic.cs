@@ -42,11 +42,24 @@ namespace VBACodeAnalysis {
                     return false;
 				}
 
-                if (IsOpen(x, node, ref AddItems)) {
-                    return false;
+                if (x.Id == "BC30451") {
+                    //  BC30451 宣言されていません。アクセスできない保護レベルになっています
+                    if (IsFileInOutStatement1(x, node, ref AddItems)) {
+                        return false;
+                    }
                 }
-                if (IsClose(x, node, ref AddItems)) {
-                    return false;
+                if (x.Id == "BC30800" || x.Id == "BC32017") {
+                    // BC30800 メソッドの引数はかっこで囲む必要があります。
+                    // BC32017 コンマ、')'、または有効な式の継続文字が必要です。
+                    if (IsFileInOutStatement2(x, node, ref AddItems)) {
+                        return false;
+                    }
+                }
+                if (x.Id == "BC30201") {
+                    // BC30201 #1 式が必要です
+                    if (IsFileInOutStatement3(x, node, ref AddItems)) {
+                        return false;
+                    }
                 }
 
 				if (x.Id == "BC30800") {
@@ -155,146 +168,84 @@ namespace VBACodeAnalysis {
             }
 		}
 
-        private bool IsOpen(Diagnostic x, SyntaxNode node, ref  List<DiagnosticItem> dls) {
-            // Open fname For Output As #1
-            if (x.Id == "BC30451") {
-                // Open 宣言されていません。アクセスできない保護レベルになっています
-                var token = node.FindToken(x.Location.SourceSpan.Start);
-                if (token.Text == "Open") {        
-					try {
-                        // fname
-                        var neToken1 = node.FindToken(x.Location.SourceSpan.End + 1);
-                        //  For Output As #1
-                        var neToken2 = node.FindToken(neToken1.GetLocation().SourceSpan.End + 1);
-                        if (neToken2.LeadingTrivia.Count == 0) {
-                            var lineSpan1 = neToken1.GetLocation().GetLineSpan();
-                            //var slp1 = lineSpan1.StartLinePosition;
-							var elp1 = lineSpan1.EndLinePosition;
-							dls.Add(new DiagnosticItem(
-                                DiagnosticSeverity.Error.ToString(),
-                                "Requires 4 arguments, Open {FilePath} For Input | Output | Append As #{Number}",
-                                elp1.Line, elp1.Character+1,
-                                elp1.Line, elp1.Character+1));
-                        }
-                        var argsText = neToken2.LeadingTrivia[0].ToFullString();
-                        var args = argsText.Split(" ").Where(x => x.Length > 0).ToList();
-                        var argLineSpan = token.GetLocation().GetLineSpan();
-                        var argslp = argLineSpan.StartLinePosition;
-                        var argelp = argLineSpan.EndLinePosition;
-                        //Input Output Append
-                        if (args.Count != 4) {
-
-                            dls.Add(new DiagnosticItem(
-                                DiagnosticSeverity.Error.ToString(),
-                                "Requires 4 arguments, Open {FilePath} For Input | Output | Append As #{Number}",
-                                argslp.Line, argslp.Character,
-                                argelp.Line, argelp.Character));
-                        }
-                        if (args.Count == 4) {
-                            if(args[0].ToLower() != "for") {
-                                dls.Add(new DiagnosticItem(
-                                     DiagnosticSeverity.Error.ToString(),
-                                     "\"For\" is required, Open {FilePath} For Input | Output | Append As #{Number}",
-                                     argslp.Line, argslp.Character,
-                                     argelp.Line, argelp.Character));
-                            }
-                            var otypes = new string[] { "Input", "Output", "Append"};
-                            if (!otypes.Contains(args[1])) {
-                                dls.Add(new DiagnosticItem(
-                                     DiagnosticSeverity.Error.ToString(),
-                                     "\"Access\" is required, Input or Output or Append, Open {FilePath} For Input | Output | Append As #{Number}",
-                                     argslp.Line, argslp.Character,
-                                     argelp.Line, argelp.Character));
-                            }
-                            if (args[2].ToLower() != "as") {
-                                dls.Add(new DiagnosticItem(
-                                     DiagnosticSeverity.Error.ToString(),
-                                     "\"As\" is required, Open {FilePath} For Input | Output | Append As #{Number}",
-                                     argslp.Line, argslp.Character,
-                                     argelp.Line, argelp.Character));
-                            }
-                        }
-                    } catch (Exception ex) {
-						//throw;
-					}
-                    return true;
-                }
+        private bool IsFileInOutStatement1(Diagnostic x, SyntaxNode node, ref List<DiagnosticItem> dls) {
+            //  BC30451 宣言されていません。アクセスできない保護レベルになっています
+            var idefNode = node.FindNode(x.Location.SourceSpan);
+            var name = idefNode.ToString().ToLower();
+            var targets = new string[] { "open", "close", "print", "write" };
+            if (!targets.Contains(name)) {
+                return false;
             }
-            if (x.Id == "BC30800") {
-                // メソッドの引数はかっこで囲む必要があります。
-                var token = node.FindToken(x.Location.SourceSpan.Start);
-                var pre = token.GetPreviousToken();
-                if (pre.Text == "Open") {
-                    return true;
-                }
+            var parentNode = idefNode.Parent;
+            var childNodes = parentNode?.ChildNodes();
+            if (childNodes == null) {
+                return false;
             }
-            if (x.Id == "BC32017") {
-                // コンマ、')'、または有効な式の継続文字が必要です。
-                var token = node.FindToken(x.Location.SourceSpan.Start);
-                var pre = token.GetPreviousToken().GetPreviousToken();
-                if (pre.Text == "Open") {
+            if (childNodes.Count() < 2) {
+                return false;
+            }
+            var agsNode = childNodes.ElementAt(1);
+            var arg = agsNode as ArgumentListSyntax;
+            if (arg is null) {
+                return false;
+            }
+            if (name == "open") {
+                // Open fname For Output As #1
+                var result = Regex.IsMatch(arg.ToFullString(),
+                    @"\S+\s+For\s+(Input|Output|Append|Random|Binary)\s+As\s+#(\d|\S+)",
+                    RegexOptions.IgnoreCase);
+                if (result) {
                     return true;
                 }
+                var lsp = parentNode.GetLocation().GetLineSpan();
+                var sp = lsp.StartLinePosition;
+                var ep = lsp.EndLinePosition;
+                dls.Add(new DiagnosticItem(
+                    DiagnosticSeverity.Error.ToString(),
+                    "Requires 4 arguments. Open {FilePath} For Input | Output | Append As #Filenumber",
+                    sp.Line, sp.Character,
+                    ep.Line, ep.Character));
             }
             return false;
         }
 
-        private bool IsClose(Diagnostic x, SyntaxNode node, ref List<DiagnosticItem> dls) {
-            // Close #1
-            if (x.Id == "BC30451") {
-                // Open 宣言されていません。アクセスできない保護レベルになっています
-                var token = node.FindToken(x.Location.SourceSpan.Start);
-                if (token.Text == "Close") {
-                    //Close #1    '1番のファイルを閉じます
-                    //Close       '現在開いているすべてのファイルを閉じます
-                    var neToken = node.FindToken(x.Location.SourceSpan.End + 1);
-                    var neTrivia = neToken.TrailingTrivia;
-                    if (neTrivia.Count == 2) {
-                        var hasFileNum = Regex.IsMatch(neTrivia[0].ToFullString(), "#[0-9]+$");
-                        if (!hasFileNum || !neTrivia[1].IsKind(SyntaxKind.EndOfLineTrivia)) {
-                            var lineSpan = neToken.GetLocation().GetLineSpan();
-                            var slp = lineSpan.StartLinePosition;
-                            var elp = lineSpan.EndLinePosition;
-                            dls.Add(new DiagnosticItem(
-                             DiagnosticSeverity.Error.ToString(),
-                             "Close #{Number}",
-                             slp.Line, slp.Character,
-                             elp.Line, elp.Character));
-                        }
-                    } else if (neTrivia.Count > 2) {
-                        var lineSpan = neToken.GetLocation().GetLineSpan();
-                        var slp = lineSpan.StartLinePosition;
-                        var elp = lineSpan.EndLinePosition;
-                        dls.Add(new DiagnosticItem(
-                         DiagnosticSeverity.Error.ToString(),
-                         "Close #{Number}",
-                         slp.Line, slp.Character,
-                         elp.Line, elp.Character));
+        private bool IsFileInOutStatement2(Diagnostic x, SyntaxNode node, ref List<DiagnosticItem> dls) {
+            // BC30800 メソッドの引数はかっこで囲む必要があります。
+            // BC32017 コンマ、')'、または有効な式の継続文字が必要です。
+            var openParent = node.FindNode(x.Location.SourceSpan).Parent;
+            var openChild = openParent.ChildNodes();
+            if (!openChild.Any()) {
+                return false;
+            }
+            var name = openChild.First().ToString().ToLower();
+            var targets = new string[] { "open" };
+            if (targets.Contains(name)) {
+                return true;
+            }
+            return false;
+        }
+        private bool IsFileInOutStatement3(Diagnostic x, SyntaxNode node, ref List<DiagnosticItem> dls) {
+            // BC30201 #1 式が必要です
+            var fileNum = node.FindNode(x.Location.SourceSpan);
+            if (!fileNum.ToFullString().StartsWith("#")) {
+                return false;
+            }
+            {
+                var child = fileNum.Parent?.ChildNodes();
+                if (child != null && child.Any()) {
+                    var name = child.First().ToString().ToLower();
+                    if (name == "close") {
+                        return true;
                     }
-                    return true;
                 }
             }
-            if (x.Id == "BC30800") {
-                // メソッドの引数はかっこで囲む必要があります。
-                var token = node.FindToken(x.Location.SourceSpan.Start);
-                var pre = token.GetPreviousToken();
-                if (pre.Text == "Close") {
-                    return true;
-                }
-            }
-            if (x.Id == "BC32017") {
-                // コンマ、')'、または有効な式の継続文字が必要です。
-                var token = node.FindToken(x.Location.SourceSpan.Start);
-                var pre = token.GetPreviousToken().GetPreviousToken();
-                if (pre.Text == "Close") {
-                    return true;
-                }
-            }
-            if (x.Id == "BC30201") {
-                // #1 式が必要です
-                var token = node.FindToken(x.Location.SourceSpan.Start);
-                if (token.GetPreviousToken().Text == "Close") {
-                    return true;
+            {
+                var child = fileNum.Parent?.Parent?.ChildNodes();
+                if (child != null && child.Any()) {
+                    var name = child.First().ToString().ToLower();
+                    if (name == "open" || name == "print" || name == "write") {
+                        return true;
+                    }
                 }
             }
             return false;

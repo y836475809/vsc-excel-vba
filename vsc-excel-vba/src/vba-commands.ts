@@ -22,20 +22,22 @@ export class VBACommands {
         this.xlsmFileName = "";
     }
 
-    async tryCatch(cmd: string, func: ()=>Promise<void>){
+    async tryCatch(cmd: string, func: ()=>Promise<void>): Promise<boolean>{
         try {
             await func();
+            return true;
         } catch (error: unknown) {
             let msg = `Failed to ${cmd}`;
             if(error instanceof Error){
                 msg = `${msg}, ${error.message}`;
             }
             vscode.window.showErrorMessage(msg);
+            return false;
         } 
     }
 
-    async exceue(project: Project, cmd: string){
-        await this.tryCatch(cmd, async () => {
+    async exceue(project: Project, cmd: string): Promise<boolean>{
+        return await this.tryCatch(cmd, async () => {
             this.xlsmFileName = project.projectData.targetfilename;
             if(!this.xlsmFileName){
                 throw new Error(

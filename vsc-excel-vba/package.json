@@ -168,6 +168,11 @@
           "group": "myGroup"
         },
         {
+          "when": "resourceExtname == .xlsm",
+          "command": "vsc-excel-vba.export",
+          "group": "myGroup"
+        },
+        {
           "when": "resourceExtname == .csv",
           "command": "vsc-excel-vba.openSheet",
           "group": "myGroup"

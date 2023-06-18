@@ -14,6 +14,7 @@ try {
     exit
 }
 try {
+    $null = New-Item $distdir -ItemType Directory -Force 
     foreach($vbcmp in $bk.VBProject.VBComponents){
         $ext = $null
         if($vbcmp.Type -eq $vbext_ct_StdModule){

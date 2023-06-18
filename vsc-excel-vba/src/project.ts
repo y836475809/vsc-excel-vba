@@ -93,6 +93,10 @@ export class Project {
         return fs.existsSync(pfs);
     }
 
+    existSrcDir(): boolean {
+        return fs.existsSync(this.srcDir);
+    }
+
     private getWorkspacePath(): string | undefined{
         const wf = vscode.workspace.workspaceFolders;
         return (wf && (wf.length > 0)) ? wf[0].uri.fsPath : undefined;

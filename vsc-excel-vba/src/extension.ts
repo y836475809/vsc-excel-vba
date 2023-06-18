@@ -126,7 +126,19 @@ export async function activate(context: vscode.ExtensionContext) {
 		}
 	}));
 	context.subscriptions.push(vscode.commands.registerCommand("vsc-excel-vba.export", async () => {
-		await vbaCommand.exceue(project, "export");
+		if(await vscode.window.showInformationMessage(
+			`Export?`, "Yes", "No") === "No"){
+			return;
+		}
+		if(project.existSrcDir()){
+			if(await vscode.window.showInformationMessage(
+				`${project.srcDir} exists. Overwrite?`, "Yes", "No") === "No"){
+				return;
+			}
+		}
+		if(await vbaCommand.exceue(project, "export")){
+			vscode.window.showInformationMessage(`Success export to ${project.srcDir}`);
+		}
 	}));
 	context.subscriptions.push(vscode.commands.registerCommand("vsc-excel-vba.compile", async () => {
 		await vbaCommand.exceue(project, "compile");

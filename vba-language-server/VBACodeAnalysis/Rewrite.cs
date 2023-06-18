@@ -1,12 +1,10 @@
 ﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.FindSymbols;
 using Microsoft.CodeAnalysis.Text;
 using Microsoft.CodeAnalysis.VisualBasic;
 using Microsoft.CodeAnalysis.VisualBasic.Syntax;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace VBACodeAnalysis {
     public class Rewrite {
@@ -32,8 +30,9 @@ namespace VBACodeAnalysis {
             charaOffsetDict = rewriteProp.charaOffsetDict;
             lineMappingDict = rewriteProp.lineMappingDict;
 
-            nodes = docRoot.DescendantNodes();  
-            var changes = ReplaceStatement(nodes);
+           var updatedDoc =  doc.WithSyntaxRoot(docRoot);
+            nodes = docRoot.DescendantNodes();
+            var changes = VBAClassToFunction(updatedDoc, nodes);
             return docRoot.GetText().WithChanges(changes);
         }
 
@@ -49,24 +48,37 @@ namespace VBACodeAnalysis {
             return changeDict.Values.ToList();
         }
 
-        public List<TextChange> ReplaceStatement(IEnumerable<SyntaxNode> node) {
+        public List<TextChange> VBAClassToFunction(
+                    Document doc, IEnumerable<SyntaxNode> node) {
+            SemanticModel model = null;
             var ns = setting.NameSpace;
             var rewriteDict = setting.getRewriteDict();
+
             var allChanges = new List<TextChange>();
-            //var docRoot = doc.GetSyntaxRootAsync().Result;
-            var invExpStmt = node.OfType<InvocationExpressionSyntax>();
             var set = new HashSet<string>();
-            foreach (var stmt in invExpStmt) {
-                var text = stmt.GetFirstToken().Text;
-                if (rewriteDict.ContainsKey(text) && stmt.ArgumentList != null) {
-                    var sp = stmt.GetFirstToken().Span;
-                    var key = $"{sp.Start}-{sp.End}";
-                    if (!set.Contains(key)) {
-                        var rename = $"{ns}.{rewriteDict[text]}";
-                        allChanges.Add(new TextChange(stmt.GetFirstToken().Span, rename));
-                    }
-                    set.Add(key);
+
+            var invExpStmts = node.OfType<InvocationExpressionSyntax>();
+            foreach (var stmt in invExpStmts) {
+                var fiestToken = stmt.GetFirstToken();
+                var text = fiestToken.Text;
+                if (!rewriteDict.ContainsKey(text)) {
+                    continue;
                 }
+                if (model == null) {
+                    model = doc.GetSemanticModelAsync().Result;
+                }
+                var pos = fiestToken.GetLocation().SourceSpan.Start + 1;
+                var symbol = SymbolFinder.FindSymbolAtPositionAsync(doc, pos).Result;
+                if (!IsClass(symbol, text)) {
+                    continue;
+                }
+                var sp = stmt.GetFirstToken().Span;
+                var key = $"{sp.Start}-{sp.End}";
+                if (!set.Contains(key)) {
+                    var rename = $"{ns}.{rewriteDict[text]}";
+                    allChanges.Add(new TextChange(stmt.GetFirstToken().Span, rename));
+                }
+                set.Add(key);
             }
 
             var forStmt = node.OfType<ForEachStatementSyntax>();
@@ -85,6 +97,17 @@ namespace VBACodeAnalysis {
                 }
             }
             return allChanges;
+        }
+
+        private bool IsClass(ISymbol symbol, string name) {
+            if (symbol is INamedTypeSymbol namedType) {
+                if (namedType.TypeKind == TypeKind.Class) {
+                    if (namedType.Name == name) {
+                        return true;
+                    }
+                }
+            }
+            return false;
         }
 
         private List<TextChange> SetStatement(IEnumerable<SyntaxNode> node) {

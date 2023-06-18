@@ -7,6 +7,7 @@ using VBACodeAnalysis;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Host.Mef;
 using Microsoft.CodeAnalysis.Text;
+using Xunit;
 
 namespace TestProject {
     class Helper {
@@ -47,6 +48,15 @@ namespace TestProject {
                 return a.StartChara - b.EndChara;
             });
             return items.FindAll(x => errorTypes.Contains(x.Severity.ToLower()));
+        }
+
+        public static void AssertCode(string pre, string act) {
+            var preLines = pre.Split("\r\n");
+            var actLines = act.Split("\r\n");
+            Assert.Equal(preLines.Length, actLines.Length);
+            for (int i = 0; i < preLines.Length; i++) {
+                Assert.True(preLines[i] == actLines[i], $"Fault {i}");
+            }
         }
     }
 }

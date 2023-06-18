@@ -15,7 +15,7 @@ Public Module f
     End Function
 
     ' Cells
-    Public Function Cls(RowIndex As Long, Optional ColumIndex As Long = 1) As Range
+    Public Function Cls(Optional RowIndex As Long, Optional ColumIndex As Long) As Range
     End Function
 
     ' Workbooks

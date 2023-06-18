@@ -1,7 +1,6 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
-import { MyTreeItem, TreeDataProvider } from './treeDataProvider';
 import { VBACommands } from './vba-commands';
 import { Project } from './project';
 import { Logger } from "./logger";
@@ -108,10 +107,6 @@ export async function activate(context: vscode.ExtensionContext) {
 		}
 	}));
 
-	vscode.window.registerTreeDataProvider("testView", new TreeDataProvider());
-	context.subscriptions.push(vscode.commands.registerCommand("vsc-excel-vba.runViewItem", async (args: MyTreeItem) => {
-		await vbaCommand.exceue(project, args.vbaCommand);
-	}));
 	context.subscriptions.push(vscode.commands.registerCommand("vsc-excel-vba.gotoVBA", async () => {
 		await vbaCommand.exceue(project, "gotoVBA");
 	}));

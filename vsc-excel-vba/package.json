@@ -115,11 +115,6 @@
         "title": "Run Sub proc"
       },
       {
-        "command": "vsc-excel-vba.runViewItem",
-        "title": "Run",
-        "icon": "$(run)"
-      },
-      {
         "command": "vsc-excel-vba.openSheet",
         "title": "openSheet"
       },
@@ -140,27 +135,12 @@
         "when": "editorTextFocus && resourceExtname == .bas"
       }
     ],
-    "views": {
-      "explorer": [
-        {
-          "id": "testView",
-          "name": "Test View"
-        }
-      ]
-    },
     "breakpoints": [
       {
         "language": "vb"
       }
     ],
     "menus": {
-      "view/item/context": [
-        {
-          "command": "vsc-excel-vba.runViewItem",
-          "when": "view == testView",
-          "group": "inline"
-        }
-      ],
       "explorer/context": [
         {
           "when": "resourceExtname == .xlsm",

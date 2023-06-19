@@ -55,4 +55,7 @@ Public Class Range : Implements IEnumerable
 
     Public Function End(Direction As XlDirection) As Range
     End Function
+
+    Public Function SpecialCells(Type As XlCellType, Optional Value As Object) As Range
+    End Function   
 End Class

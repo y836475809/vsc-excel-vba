@@ -13,6 +13,6 @@ Public Class Workbooks : Implements IEnumerable
 
     Public Property Count As Long
 
-    Public Function Add() As Workbook
+    Public Function Add(Optional Template As Object) As Workbook
     End Function
 End Class

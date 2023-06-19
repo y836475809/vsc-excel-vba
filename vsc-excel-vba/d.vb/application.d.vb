@@ -25,6 +25,11 @@ Public Class Application
 	Public Shared Function Worksheets(Index As Long) As Worksheet
 	End Function
 
+	Public Shared Function GetOpenFilename(
+		Optional FileFilter As String, Optional FilterIndex As Long, 
+		Optional Title As String, Optional ButtonText As String, Optional MultiSelect As Boolean = False) As Object
+	End Function
+
 	Public Shared Sub Quit()
 	End Sub
 End Class

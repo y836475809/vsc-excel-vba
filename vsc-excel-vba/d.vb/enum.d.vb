@@ -34,4 +34,27 @@ Public Module ExcelVBAEnum
     End Enum
     Public Const xlAnd
     Public Const xlOr 
+
+    Public Enum XlCellType
+        lCellTypeAllFormatConditions
+        xlCellTypeAllValidation
+        xlCellTypeBlanks
+        xlCellTypeComments
+        xlCellTypeConstants
+        xlCellTypeFormulas
+        xlCellTypeLastCell
+        xlCellTypeSameFormatConditions
+        xlCellTypeSameValidation
+        xlCellTypeVisible
+    End Enum
+    Public Const lCellTypeAllFormatConditions
+    Public Const xlCellTypeAllValidation
+    Public Const xlCellTypeBlanks
+    Public Const xlCellTypeComments
+    Public Const xlCellTypeConstants
+    Public Const xlCellTypeFormulas
+    Public Const xlCellTypeLastCell
+    Public Const xlCellTypeSameFormatConditions
+    Public Const xlCellTypeSameValidation
+    Public Const xlCellTypeVisible
 End Module

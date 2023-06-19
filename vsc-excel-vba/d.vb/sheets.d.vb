@@ -13,6 +13,7 @@ Public Class Sheets : Implements IEnumerable
     
     Public Property Count As Long
 
-    Public Function Add() As Workbook
+    Public Function Add(Optional Before As Object, Optional After As Object, 
+        Optional Count As Object, Optional Type As Object) As Worksheet
     End Function
 End Class

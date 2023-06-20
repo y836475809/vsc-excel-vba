@@ -1,8 +1,6 @@
 Public Module ExcelVBAConstant
     Public Const vbCrLf = "\r\n"
 
-    Public Const xlCellTypeVisible = 4
-
     Public Const vbUpperCase = 1
     Public Const vbLowerCase = 2
     Public Const vbProperCase = 3

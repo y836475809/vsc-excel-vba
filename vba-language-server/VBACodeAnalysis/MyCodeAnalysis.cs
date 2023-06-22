@@ -433,27 +433,57 @@ namespace VBACodeAnalysis {
                         var methodSymbol = symbol as IMethodSymbol;
                         completionItem.ReturnType = methodSymbol.ReturnType.ToDisplayString();
                     }
-                    if (symbol.Kind == SymbolKind.Local) {
-                        var localSymbol = symbol as ILocalSymbol;
-                        var kind = localSymbol.Type.Name;
-                        var kindLower = kind.ToLower();
-                        if (kindLower == "int64") {
-                            kind = "Long";
+                    if (symbol is IFieldSymbol fieldSymbol) {
+                        var typeName = ConvKind(fieldSymbol.Type.Name);
+                        var accessibility = fieldSymbol.DeclaredAccessibility.ToString();
+                        var dispText = $"{accessibility} {fieldSymbol.Name} As {typeName}";
+                        if (fieldSymbol.IsConst) {
+                            var constValue = fieldSymbol.ConstantValue;
+                            if (typeName.ToLower() == "string") {
+                                constValue = @$"""{constValue}""";
+                            }
+                            dispText = $"{accessibility} Const {fieldSymbol.Name} As {typeName} = {constValue}";
+						}
+                        completionItem.DisplayText = dispText;
+                        completionItem.CompletionText = typeName;
+                        completionItem.Kind = typeName;
+                    }
+                    if (symbol is ILocalSymbol localSymbol) {
+                        var typeName = ConvKind(localSymbol.Type.Name);
+                        var accessibility = "Local";
+                        var dispText = $"{accessibility} {localSymbol.Name} As {typeName}";
+                        if (localSymbol.IsConst) {
+                            var constValue = localSymbol.ConstantValue;
+                            if (typeName.ToLower() == "string") {
+                                constValue = @$"""{constValue}""";
+                            }
+                            dispText = $"{accessibility} Const {localSymbol.Name} As {typeName} = {constValue}";
                         }
-                        if (kindLower == "int32") {
-                            kind = "Integer";
-                        }
-                        if (kindLower == "datetime") {
-                            kind = "Date";
-                        }
-                        completionItem.DisplayText = kind;
-                        completionItem.CompletionText = kind;
-                        completionItem.Kind = kind;
+                        completionItem.DisplayText = dispText;
+                        completionItem.CompletionText = typeName;
+                        completionItem.Kind = typeName;
                     }
                 }
-                //completions.Add(completionItem);
             }
             return completionItem;
+        }
+
+        private string ConvKind(string TypeName) {
+            var lower = TypeName.ToLower();
+            var convTypeName = lower;
+            if (lower == "int64") {
+                convTypeName = "Long";
+            }
+            if (lower == "int32") {
+                convTypeName = "Integer";
+            }
+            if (lower == "datetime") {
+                convTypeName = "Date";
+            }
+            if (lower == "object") {
+                convTypeName = "Variant";
+            }
+            return convTypeName;
         }
 
         public async Task<List<DiagnosticItem>> GetDiagnostics(string name) {

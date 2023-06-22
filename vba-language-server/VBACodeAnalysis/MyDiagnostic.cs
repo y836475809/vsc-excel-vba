@@ -192,7 +192,7 @@ namespace VBACodeAnalysis {
             if (name == "open") {
                 // Open fname For Output As #1
                 var result = Regex.IsMatch(arg.ToFullString(),
-                    @"\S+\s+For\s+(Input|Output|Append|Random|Binary)\s+As\s+#(\d|\S+)",
+                    @"\S+\s+For\s+(Input|Output|Append|Random|Binary)\s+As\s+(#\d+|\S+)",
                     RegexOptions.IgnoreCase);
                 if (result) {
                     return true;
@@ -227,26 +227,27 @@ namespace VBACodeAnalysis {
         private bool IsFileInOutStatement3(Diagnostic x, SyntaxNode node, ref List<DiagnosticItem> dls) {
             // BC30201 #1 式が必要です
             var fileNum = node.FindNode(x.Location.SourceSpan);
-            if (!fileNum.ToFullString().StartsWith("#")) {
+            var result = Regex.IsMatch(fileNum.ToFullString(),
+                @"#\d+", RegexOptions.IgnoreCase);
+			if (!result) {
                 return false;
-            }
-            {
-                var child = fileNum.Parent?.ChildNodes();
-                if (child != null && child.Any()) {
-                    var name = child.First().ToString().ToLower();
-                    if (name == "close") {
-                        return true;
-                    }
+			}
+            var parent = fileNum;
+			for (int i = 0; i < 2; i++) {
+                if(parent == null) {
+                    return false;
                 }
-            }
-            {
-                var child = fileNum.Parent?.Parent?.ChildNodes();
-                if (child != null && child.Any()) {
-                    var name = child.First().ToString().ToLower();
-                    if (name == "open" || name == "print" || name == "write") {
-                        return true;
-                    }
+                if (parent.IsKind(SyntaxKind.ArgumentList)) {
+                    parent = parent.Parent;
+                    break;
                 }
+                parent = parent.Parent;
+            }
+            var names = new List<string> { "close", "print", "write" };
+            var childnodes = parent?.ChildNodes();
+            if(childnodes != null && childnodes.Any()) {
+                var name = childnodes.First().ToString().ToLower();
+                return names.Contains(name);
             }
             return false;
         }

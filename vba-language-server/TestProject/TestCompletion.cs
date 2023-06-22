@@ -1,4 +1,4 @@
-using VBACodeAnalysis;
+Ôªøusing VBACodeAnalysis;
 using System;
 using System.Collections.Generic;
 using Xunit;
@@ -36,7 +36,7 @@ namespace TestProject {
                 new CompletionItem(){
                     DisplayText = "Public Sub SayHello(val1 As Object, val2 As Object)",
                     CompletionText = "SayHello",
-                    Description = "<member name=\"M:Person.SayHello(System.Object,System.Object)\">\r\n <summary>\r\n  ÉeÉXÉgÉÅÉbÉZÅ[ÉW\r\n </summary>\r\n <param name='val1'></param>\r\n <param name='val2'></param>\r\n <returns></returns>\r\n</member>",
+                    Description = "<member name=\"M:Person.SayHello(System.Object,System.Object)\">\r\n <summary>\r\n  „ÉÜ„Çπ„Éà„É°„ÉÉ„Çª„Éº„Ç∏\r\n </summary>\r\n <param name='val1'></param>\r\n <param name='val2'></param>\r\n <returns></returns>\r\n</member>",
                     ReturnType = "Void",
                     Kind = "Method",
                 },
@@ -75,7 +75,7 @@ namespace TestProject {
                 new CompletionItem(){
                     DisplayText = "Public Sub SayHello(val1 As Object, val2 As Object)",
                     CompletionText = "SayHello",
-                    Description = "<member name=\"M:Person.SayHello(System.Object,System.Object)\">\r\n <summary>\r\n  ÉeÉXÉgÉÅÉbÉZÅ[ÉW\r\n </summary>\r\n <param name='val1'></param>\r\n <param name='val2'></param>\r\n <returns></returns>\r\n</member>",
+                    Description = "<member name=\"M:Person.SayHello(System.Object,System.Object)\">\r\n <summary>\r\n  „ÉÜ„Çπ„Éà„É°„ÉÉ„Çª„Éº„Ç∏\r\n </summary>\r\n <param name='val1'></param>\r\n <param name='val2'></param>\r\n <returns></returns>\r\n</member>",
                     ReturnType = "Void",
                     Kind = "Method",
                 },
@@ -105,7 +105,7 @@ namespace TestProject {
                 new CompletionItem(){
                     DisplayText = "Public Sub SayHello2(val1 As Object, val2 As Object)",
                     CompletionText = "SayHello2",
-                    Description = "<member name=\"M:Person.SayHello2(System.Object,System.Object)\">\r\n <summary>\r\n  ÉeÉXÉgÉÅÉbÉZÅ[ÉW\r\n </summary>\r\n <param name='val1'></param>\r\n <param name='val2'></param>\r\n <returns></returns>\r\n</member>",
+                    Description = "<member name=\"M:Person.SayHello2(System.Object,System.Object)\">\r\n <summary>\r\n  „ÉÜ„Çπ„Éà„É°„ÉÉ„Çª„Éº„Ç∏\r\n </summary>\r\n <param name='val1'></param>\r\n <param name='val2'></param>\r\n <returns></returns>\r\n</member>",
                     ReturnType = "Void",
                     Kind = "Method",
                 },
@@ -143,7 +143,7 @@ namespace TestProject {
                 new CompletionItem(){
                     DisplayText = "Public Sub SayHello(val1 As Object, val2 As Object)",
                     CompletionText = "SayHello",
-                    Description = "<member name=\"M:Person.SayHello(System.Object,System.Object)\">\r\n <summary>\r\n  ÉeÉXÉgÉÅÉbÉZÅ[ÉW\r\n </summary>\r\n <param name='val1'></param>\r\n <param name='val2'></param>\r\n <returns></returns>\r\n</member>",
+                    Description = "<member name=\"M:Person.SayHello(System.Object,System.Object)\">\r\n <summary>\r\n  „ÉÜ„Çπ„Éà„É°„ÉÉ„Çª„Éº„Ç∏\r\n </summary>\r\n <param name='val1'></param>\r\n <param name='val2'></param>\r\n <returns></returns>\r\n</member>",
                     ReturnType = "Void",
                     Kind = "Method",
                 },

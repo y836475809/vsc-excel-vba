@@ -121,6 +121,14 @@
       {
         "command": "vsc-excel-vba.setBreakpoints",
         "title": "Set breakpoints to VBA"
+      },
+      {
+        "command": "vsc-excel-vba.newClassFile",
+        "title": "New VBA class file"
+      },
+      {
+        "command": "vsc-excel-vba.newModuleFile",
+        "title": "New VBA module file"
       }
     ],
     "keybindings": [
@@ -155,6 +163,16 @@
         {
           "when": "resourceExtname == .csv",
           "command": "vsc-excel-vba.openSheet",
+          "group": "myGroup"
+        },
+        {
+          "when": "explorerResourceIsFolder",
+          "command": "vsc-excel-vba.newClassFile",
+          "group": "myGroup"
+        },
+        {
+          "when": "explorerResourceIsFolder",
+          "command": "vsc-excel-vba.newModuleFile",
           "group": "myGroup"
         }
       ],
@@ -193,7 +211,8 @@
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
-    "test": "node ./out/test/runTest.js"
+    "test": "node ./out/test/runTest.js",
+    "unittest": "mocha --ui tdd ./out/test/unittest/*.test.js"
   },
   "devDependencies": {
     "@types/glob": "^8.0.0",

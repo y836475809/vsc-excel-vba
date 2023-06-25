@@ -79,4 +79,8 @@ namespace Hoge {
         targetfilename: string;
         srcdir: string;
     };
+
+    export type VBAObjectType = 
+        "class"
+        | "module";
 }

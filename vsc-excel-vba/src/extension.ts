@@ -13,6 +13,7 @@ import { VBAHoverProvider } from "./vba-hover-provider";
 import { VBACompletionItemProvider } from "./vba-completionitem-provider";
 import { VBAReferenceProvider } from "./vba-reference-provider";
 import { VBALSRequest } from './vba-ls-request';
+import { VBACreateFile } from "./vba-create-file";
 
 let outputChannel: vscode.OutputChannel;
 let logger: Logger;
@@ -174,6 +175,14 @@ export async function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(vscode.commands.registerCommand("vsc-excel-vba.openSheet", async (args) => {	
 		const xlsmFileName = project.projectData.targetfilename;
 		await vbaCommand.openSheet(xlsmFileName, args.fsPath);
+	}));
+	context.subscriptions.push(vscode.commands.registerCommand("vsc-excel-vba.newClassFile", async (uri: vscode.Uri) => {	
+		const vbacf = new VBACreateFile();
+		await vbacf.create(uri, "class");
+	}));
+	context.subscriptions.push(vscode.commands.registerCommand("vsc-excel-vba.newModuleFile", async (uri: vscode.Uri) => {	
+		const vbacf = new VBACreateFile();
+		await vbacf.create(uri, "module");
 	}));
 
 	const loadProject = async (report: (msg: string)=>void) => {

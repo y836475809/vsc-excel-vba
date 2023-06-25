@@ -72,43 +72,43 @@
     "commands": [
       {
         "command": "vsc-excel-vba.toggle",
-        "title": "toggle"
+        "title": "Toggle vsc-excel-vba"
       },
       {
         "command": "vsc-excel-vba.start",
-        "title": "vsc-excel-vba start"
+        "title": "Start vsc-excel-vba"
       },
       {
         "command": "vsc-excel-vba.stop",
-        "title": "vsc-excel-vba stop"
+        "title": "Stop vsc-excel-vba"
       },
       {
         "command": "vsc-excel-vba.test.registerProvider",
-        "title": "registerProvider command for test"
+        "title": "registerProvider command for vsc-excel-vba test"
       },
       {
         "command": "vsc-excel-vba.createProject",
-        "title": "Create vba project"
+        "title": "Create VBA project"
       },
       {
         "command": "vsc-excel-vba.import",
-        "title": "import"
+        "title": "Import VBA files"
       },
       {
         "command": "vsc-excel-vba.export",
-        "title": "export"
+        "title": "Export VBA code"
       },
       {
         "command": "vsc-excel-vba.compile",
-        "title": "compile"
+        "title": "Run VBA compile"
       },
       {
         "command": "vsc-excel-vba.gotoVBA",
-        "title": "gotoVBA"
+        "title": "Goto VBA editor"
       },
       {
         "command": "vsc-excel-vba.gotoVSCode",
-        "title": "gotoVSCode"
+        "title": "Goto VSCode editor"
       },
       {
         "command": "vsc-excel-vba.runVBAProc",
@@ -116,7 +116,7 @@
       },
       {
         "command": "vsc-excel-vba.openSheet",
-        "title": "openSheet"
+        "title": "Open excel sheet"
       },
       {
         "command": "vsc-excel-vba.setBreakpoints",
@@ -149,58 +149,112 @@
       }
     ],
     "menus": {
+      "commandPalette": [
+        {
+          "command": "vsc-excel-vba.toggle",
+          "when": "false"
+        },
+        {
+          "command": "vsc-excel-vba.test.registerProvider",
+          "when": "false"
+        },
+        {
+          "command": "vsc-excel-vba.createProject",
+          "when": "false"
+        },
+        {
+          "command": "vsc-excel-vba.import",
+          "when": "false"
+        },
+        {
+          "command": "vsc-excel-vba.export",
+          "when": "false"
+        },
+        {
+          "command": "vsc-excel-vba.compile",
+          "when": "false"
+        },
+        {
+          "command": "vsc-excel-vba.gotoVBA",
+          "when": "false"
+        },
+        {
+          "command": "vsc-excel-vba.gotoVSCode",
+          "when": "false"
+        },
+        {
+          "command": "vsc-excel-vba.runVBAProc",
+          "when": "false"
+        },
+        {
+          "command": "vsc-excel-vba.openSheet",
+          "when": "false"
+        },
+        {
+          "command": "vsc-excel-vba.setBreakpoints",
+          "when": "false"
+        },
+        {
+          "command": "vsc-excel-vba.newClassFile",
+          "when": "false"
+        },
+        {
+          "command": "vsc-excel-vba.newModuleFile",
+          "when": "false"
+        }
+      ],
       "explorer/context": [
         {
           "when": "resourceExtname == .xlsm",
           "command": "vsc-excel-vba.createProject",
-          "group": "myGroup"
+          "group": "vevGroup"
         },
         {
           "when": "resourceExtname == .xlsm",
           "command": "vsc-excel-vba.export",
-          "group": "myGroup"
+          "group": "vevGroup"
         },
         {
           "when": "resourceExtname == .csv",
           "command": "vsc-excel-vba.openSheet",
-          "group": "myGroup"
+          "group": "vevGroup"
         },
         {
           "when": "explorerResourceIsFolder",
           "command": "vsc-excel-vba.newClassFile",
-          "group": "myGroup"
+          "group": "vevGroup"
         },
         {
           "when": "explorerResourceIsFolder",
           "command": "vsc-excel-vba.newModuleFile",
-          "group": "myGroup"
+          "group": "vevGroup"
         }
       ],
       "editor/context": [
         {
           "command": "vsc-excel-vba.import",
           "when": "resourceExtname == .bas || resourceExtname == .cls",
-          "group": "myGroup@1"
+          "group": "vevGroup@1"
         },
         {
           "command": "vsc-excel-vba.gotoVBA",
           "when": "resourceExtname == .bas || resourceExtname == .cls",
-          "group": "myGroup@2"
+          "group": "vevGroup@2"
         },
         {
           "command": "vsc-excel-vba.gotoVSCode",
           "when": "resourceExtname == .bas || resourceExtname == .cls",
-          "group": "myGroup@3"
+          "group": "vevGroup@3"
         },
         {
           "command": "vsc-excel-vba.runVBAProc",
           "when": "resourceExtname == .bas",
-          "group": "myGroup@4"
+          "group": "vevGroup@4"
         },
         {
           "command": "vsc-excel-vba.setBreakpoints",
           "when": "resourceExtname == .bas || resourceExtname == .cls",
-          "group": "myGroup@5"
+          "group": "vevGroup@5"
         }
       ]
     }

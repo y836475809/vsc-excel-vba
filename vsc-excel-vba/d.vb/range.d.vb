@@ -1,5 +1,10 @@
 Imports System.Collections
 
+Public Class Interior
+    Public Property Color As Object
+    Public Property ColorIndex As Long
+End Class
+
 Public Class Range : Implements IEnumerable
     Default Public Property Item(Cell1 As String, Optional Cell2 As String = "") As Range
         Get : End Get
@@ -38,6 +43,7 @@ Public Class Range : Implements IEnumerable
     Public Property Value As Object
     Public Property Rows As Range
     Public Property Range As Range
+    Public Property Interior As Interior
 
     Public Function AutoFilter(
         Optional Field As Long, 

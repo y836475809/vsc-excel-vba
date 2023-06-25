@@ -1,4 +1,4 @@
-using VBACodeAnalysis;
+﻿﻿using VBACodeAnalysis;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
@@ -224,7 +224,7 @@ namespace VBALanguageServer {
                 foreach (var item in Items) {
                     var sp = item.Start.Positon;
                     var ep = item.End.Positon;
-                    var sigItem = mc.GetSignatureHelp(item.FilePath, e.Text, (int)((sp + ep) / 2)).Result;
+                    var sigItem = mc.GetSignatureHelp(item.FilePath, (int)((sp + ep) / 2)).Result;
                     if(sigItem != null) {
                         sigItem.ActiveParameter = argPosition;
                         items.Add(sigItem);

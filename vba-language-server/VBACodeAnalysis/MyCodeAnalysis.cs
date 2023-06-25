@@ -1,4 +1,4 @@
-﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.FindSymbols;
 using Microsoft.CodeAnalysis.Host.Mef;
 using Microsoft.CodeAnalysis.Recommendations;
@@ -337,7 +337,7 @@ namespace VBACodeAnalysis {
             return (procLine, procChara, argPosition);
         }
 
-        public async Task<SignatureHelpItem> GetSignatureHelp(string name, string text, int position) {
+        public async Task<SignatureHelpItem> GetSignatureHelp(string name, int position) {
             if (!doc_id_dict.ContainsKey(name)) {
                 return null;
             }

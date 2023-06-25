@@ -1,4 +1,4 @@
-using Microsoft.CodeAnalysis;
+﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.FindSymbols;
 using Microsoft.CodeAnalysis.Host.Mef;
 using Microsoft.CodeAnalysis.Recommendations;
@@ -470,7 +470,7 @@ namespace VBACodeAnalysis {
 
         private string ConvKind(string TypeName) {
             var lower = TypeName.ToLower();
-            var convTypeName = lower;
+            var convTypeName = TypeName;
             if (lower == "int64") {
                 convTypeName = "Long";
             }

@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import * as path from 'path';
+import { VBAObjectNameValidation } from "./vba-object-name-validation";
 
 export class VbaAttributeError extends Error {
     line: number;
@@ -44,6 +45,26 @@ export class VbaAttributeValidation {
         }
     }
 
+    private validateObjectName(line: string, lineNum: number, lineLen: number): VbaAttributeError[] {
+        const errors: VbaAttributeError[] = [];
+
+        const validate = new VBAObjectNameValidation();
+        const objectName = line.split("=")[1].trim().replace(/^"|"$/g, "");
+        if(!validate.prefix(objectName)){
+            const msg = `VB_Name = "${objectName}" contains illegal prefix`;
+            errors.push(new VbaAttributeError(msg, lineNum, lineLen)); 
+        }
+        if(!validate.symbol(objectName)){
+            const msg = `VB_Name = "${objectName}" contains illegal symbols`;
+            errors.push(new VbaAttributeError(msg, lineNum, lineLen)); 
+        }
+        if(!validate.len(objectName)){
+            const msg = `VB_Name = "${objectName}" is too long`;
+            errors.push(new VbaAttributeError(msg, lineNum, lineLen)); 
+        }
+        return errors;
+    }
+
     private validateBAS(name: string, lines: string[]) {
         const errors: VbaAttributeError[] = [];
 
@@ -55,13 +76,15 @@ export class VbaAttributeValidation {
             throw errors;
         }
 
+        const lineNum = 0;
+        const len = lines[lineNum].length;
         const reg = new RegExp(`Attribute\\s+VB_Name\\s*=\\s*"${name}"`);
         if(!reg.test(lines[0])){
             const msg = `Correct is Attribute VB_Name = "${name}"`;
-            const line = 0;
-            const len = lines[line].length;
-            errors.push(new VbaAttributeError(msg, line, len-1));
+            errors.push(new VbaAttributeError(msg, lineNum, len-1));
         }
+        errors.push(...this.validateObjectName(lines[lineNum], lineNum, len-1));
+        
         if(errors.length){
             throw errors;
         }
@@ -115,6 +138,7 @@ export class VbaAttributeValidation {
             const msg = `Correct is Attribute VB_Name = "${name}"`;
             errors.push(new VbaAttributeError(msg, linenum, endpos));
         }
+        errors.push(...this.validateObjectName(line, linenum, endpos));
 
         [line, endpos] = getLineEndpos(++linenum);
         if(!/Attribute\s+VB_GlobalNameSpace\s+=\s+(True|False)/.test(line)){

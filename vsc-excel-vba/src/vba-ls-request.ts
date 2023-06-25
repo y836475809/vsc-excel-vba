@@ -9,13 +9,10 @@ import {
 
 const vbaAttributeValidation = new VbaAttributeValidation();
 const isVbaAttributeError = (item: any): item is Array<VbaAttributeError> => {
-    if(item.length !== undefined){
+    if(item.length === undefined){
         return false;
     }
-    if(!(item[0] instanceof VbaAttributeError)){
-        return false;
-    }
-    return true;
+    return item[0] instanceof VbaAttributeError;
 };
 
 export class VBALSRequest {

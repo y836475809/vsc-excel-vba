@@ -1,4 +1,4 @@
-namespace Hoge {
+namespace VEV {
     export type CompletionItem = {
         displaytext: string;
         completiontext: string;

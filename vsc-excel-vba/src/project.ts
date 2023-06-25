@@ -6,7 +6,7 @@ import * as fs from "fs";
 
 export class Project {
     srcDir: string;
-    projectData: Hoge.ProjectData; 
+    projectData: VEV.ProjectData; 
     projectFileName: string;
     constructor(projectFileName: string){
         this.srcDir = "";
@@ -30,7 +30,7 @@ export class Project {
         // const filename = targetFilePath.replace(wsPath, "");
 		const filename = path.basename(targetFilePath);
 		const projectFp = path.join(path.dirname(targetFilePath), this.projectFileName);
-		const data: Hoge.ProjectData = {
+		const data: VEV.ProjectData = {
 			targetfilename: filename,
 			srcdir: "src"
 		};
@@ -45,7 +45,7 @@ export class Project {
 		}
         const projectFp = path.join(wsPath,this.projectFileName);
         const json = await fs.promises.readFile(projectFp);
-        this.projectData = JSON.parse(json.toString()) as Hoge.ProjectData;
+        this.projectData = JSON.parse(json.toString()) as VEV.ProjectData;
         this.srcDir = path.join(wsPath,this.projectData.srcdir);
     }
 

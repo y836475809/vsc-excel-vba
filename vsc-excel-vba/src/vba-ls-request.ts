@@ -172,7 +172,7 @@ export class VBALSRequest {
     }
 
     async definition(uri: vscode.Uri, position: vscode.Position)
-        : Promise<Hoge.DefinitionItem[]> {
+        : Promise<VEV.DefinitionItem[]> {
         const srcUris = this.getSrcUris([uri]);
         if(!srcUris.length){
             return [];
@@ -184,12 +184,12 @@ export class VBALSRequest {
             line: position.line,
             chara: position.character,
             text: ""
-        } as Hoge.RequestParam;   
-        return await this.lpsRequest.send(data) as Hoge.DefinitionItem[];
+        } as VEV.RequestParam;   
+        return await this.lpsRequest.send(data) as VEV.DefinitionItem[];
     }
     
     async hover(document: vscode.TextDocument, position: vscode.Position)
-        : Promise<Hoge.CompletionItem[]> {
+        : Promise<VEV.CompletionItem[]> {
         const srcUris = this.getSrcUris([document.uri]);
         if(!srcUris.length){
             return [];
@@ -201,12 +201,12 @@ export class VBALSRequest {
             line: position.line,
             chara: position.character,
             text: document.getText()
-        } as Hoge.RequestParam;   
-        return await this.lpsRequest.send(data) as Hoge.CompletionItem[];
+        } as VEV.RequestParam;   
+        return await this.lpsRequest.send(data) as VEV.CompletionItem[];
     }
 
     async completionItems(document: vscode.TextDocument, position: vscode.Position)
-        : Promise<Hoge.CompletionItem[]> {
+        : Promise<VEV.CompletionItem[]> {
         const srcUris = this.getSrcUris([document.uri]);
         if(!srcUris.length){
             return [];
@@ -218,12 +218,12 @@ export class VBALSRequest {
             line: position.line,
             chara: position.character,
             text: document.getText()
-        } as Hoge.RequestParam;  
-        return await this.lpsRequest.send(data) as Hoge.CompletionItem[];
+        } as VEV.RequestParam;  
+        return await this.lpsRequest.send(data) as VEV.CompletionItem[];
     }
 
     async references(document: vscode.TextDocument, position: vscode.Position)
-        : Promise<Hoge.ReferencesItem[]> {
+        : Promise<VEV.ReferencesItem[]> {
         const srcUris = this.getSrcUris([document.uri]);
         if(!srcUris.length){
             return [];
@@ -235,12 +235,12 @@ export class VBALSRequest {
             line: position.line,
             chara: position.character,
             text: ""
-        } as Hoge.RequestParam; 
-        return await this.lpsRequest.send(data) as Hoge.ReferencesItem[];
+        } as VEV.RequestParam; 
+        return await this.lpsRequest.send(data) as VEV.ReferencesItem[];
     }
 
     async signatureHelp(document: vscode.TextDocument, position: vscode.Position)
-        : Promise<Hoge.SignatureHelpItem[]> {
+        : Promise<VEV.SignatureHelpItem[]> {
         const srcUris = this.getSrcUris([document.uri]);
         if(!srcUris.length){
             return [];
@@ -252,7 +252,7 @@ export class VBALSRequest {
             line: position.line,
             chara: position.character,
             text: document.getText()
-        } as Hoge.RequestParam;
-        return await this.lpsRequest.send(data) as Hoge.SignatureHelpItem[];
+        } as VEV.RequestParam;
+        return await this.lpsRequest.send(data) as VEV.SignatureHelpItem[];
     }
 }

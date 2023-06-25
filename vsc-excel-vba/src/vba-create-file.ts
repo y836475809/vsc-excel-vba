@@ -4,13 +4,13 @@ import * as fs from "fs";
 import { VBAObjectNameValidation } from "./vba-object-name-validation";
 
 export class VBACreateFile {
-    private objectType: Hoge.VBAObjectType;
+    private objectType: VEV.VBAObjectType;
 
     constructor(){
         this.objectType = "class";
     }
 
-    async create(distUri: vscode.Uri, objectType: Hoge.VBAObjectType) {
+    async create(distUri: vscode.Uri, objectType: VEV.VBAObjectType) {
         this.objectType = objectType;
         const validate = new VBAObjectNameValidation();
         const result = await vscode.window.showInputBox({

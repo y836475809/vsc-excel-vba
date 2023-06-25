@@ -32,7 +32,7 @@ export async function addDocuments(port: number, uris: vscode.Uri[]): Promise<vo
         line: 0,
         chara: 0,
         text: ""
-    } as Hoge.RequestParam;
+    } as VEV.RequestParam;
     await lpsRequest.send(data);
 };
 

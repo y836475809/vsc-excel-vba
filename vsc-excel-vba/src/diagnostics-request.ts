@@ -10,7 +10,7 @@ const severityMap = new Map<string, vscode.DiagnosticSeverity>([
 
 export async function diagnosticsRequest(fsPath: string, lpsRequest: LPSRequest){
     const data = MakeReqData.diagnostics(fsPath);
-    const items = await lpsRequest.send(data) as Hoge.DiagnosticItem[];
+    const items = await lpsRequest.send(data) as VEV.DiagnosticItem[];
     const diagnostics = items.map(item => {
         const severity = severityMap.get(item.severity)!;
         const diagnostic= new vscode.Diagnostic(

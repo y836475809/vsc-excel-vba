@@ -27,7 +27,7 @@ export class LPSRequest {
         };
     }
 
-    send(json: Hoge.RequestParam): Promise<any> {
+    send(json: VEV.RequestParam): Promise<any> {
         return new Promise((resolve, reject) => {
             const jsonStr = JSON.stringify(json);
             const options = this.getOptions(jsonStr);
@@ -59,7 +59,7 @@ export class LPSRequest {
 }
 
 export class MakeReqData {
-    static addDocuments(uris: vscode.Uri[]): Hoge.RequestParam {
+    static addDocuments(uris: vscode.Uri[]): VEV.RequestParam {
         const filePaths = uris.map(uri => uri.fsPath);
         const param = {
             id: "AddDocuments",
@@ -67,11 +67,11 @@ export class MakeReqData {
             line: 0,
             chara: 0,
             text: ""
-        } as Hoge.RequestParam;
+        } as VEV.RequestParam;
         return param;
     }
 
-    static deleteDocuments(uris: vscode.Uri[]): Hoge.RequestParam {
+    static deleteDocuments(uris: vscode.Uri[]): VEV.RequestParam {
         const fsPaths = uris.map(uri => {
             return uri.fsPath;
         });
@@ -81,15 +81,15 @@ export class MakeReqData {
             line: 0,
             chara: 0,
             text: ""
-        } as Hoge.RequestParam;  
+        } as VEV.RequestParam;  
         return param;
     }
 
-    static renameDocuments(renameArgs: RenameParam[]): Hoge.RequestParam[] {
+    static renameDocuments(renameArgs: RenameParam[]): VEV.RequestParam[] {
         if(!renameArgs){
             return [];
         }
-        const params: Hoge.RequestParam[] = [];
+        const params: VEV.RequestParam[] = [];
         for(const renameArg of renameArgs){
             const oldFsPath = renameArg.oldUri.fsPath;
             const newFsPath = renameArg.newUri.fsPath;
@@ -99,13 +99,13 @@ export class MakeReqData {
                 line: 0,
                 chara: 0,
                 text: ""
-            } as Hoge.RequestParam;  
+            } as VEV.RequestParam;  
             params.push(data);
         }
         return params;
     }
 
-    static changeDocument(uri: vscode.Uri, text: string): Hoge.RequestParam {
+    static changeDocument(uri: vscode.Uri, text: string): VEV.RequestParam {
         const fsPath = uri.fsPath;
         const param = {
             id: "ChangeDocument",
@@ -114,51 +114,51 @@ export class MakeReqData {
             line: 0,
             chara: 0,
             text: text
-        } as Hoge.RequestParam;
+        } as VEV.RequestParam;
         return param;
     }
 
-    static diagnostics(fsPath: string): Hoge.RequestParam {
+    static diagnostics(fsPath: string): VEV.RequestParam {
         const param = {
             id: "Diagnostic",
             filepaths: [fsPath],
             line: 0,
             chara: 0,
             text: ""
-            } as Hoge.RequestParam;
+            } as VEV.RequestParam;
         return param;
     }
 
-    static reset(): Hoge.RequestParam {
+    static reset(): VEV.RequestParam {
         const param = {
             id: "Reset",
             filepaths: [],
             line: 0,
             chara: 0,
             text: ""
-        } as Hoge.RequestParam;  
+        } as VEV.RequestParam;  
         return param;
     }
 
-    static isReady(): Hoge.RequestParam {
+    static isReady(): VEV.RequestParam {
         const param = {
             id: "IsReady",
             filepaths: [],
             line: 0,
             chara: 0,
             text: ""
-        } as Hoge.RequestParam;
+        } as VEV.RequestParam;
         return param;
     }
 
-    static shutdown(): Hoge.RequestParam {
+    static shutdown(): VEV.RequestParam {
         const param = {
             id: "Shutdown",
             filepaths: [],
             line: 0,
             chara: 0,
             text: ""
-        } as Hoge.RequestParam;
+        } as VEV.RequestParam;
         return param;
     }
 }

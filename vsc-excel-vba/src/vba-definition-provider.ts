@@ -12,7 +12,7 @@ export class VBADefinitionProvider implements vscode.DefinitionProvider {
 	async provideDefinition(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken)
 	: Promise<vscode.Location[] | undefined> {
 		try {	
-			const items = await this.request.definition(document.uri, position) as Hoge.DefinitionItem[];
+			const items = await this.request.definition(document.uri, position) as VEV.DefinitionItem[];
 			const locations: vscode.Location[] = [];
 			items.forEach(item => {
 				const uri = URI.file(item.filepath);

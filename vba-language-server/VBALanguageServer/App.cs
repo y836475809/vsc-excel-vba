@@ -1,4 +1,4 @@
-﻿﻿using VBACodeAnalysis;
+using VBACodeAnalysis;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
@@ -204,15 +204,16 @@ namespace VBALanguageServer {
                     logger.Info($"SignatureHelpReq, non: {Path.GetFileName(e.FilePath)}");
                     return;
                 }
-                var vbCodeInfo = codeAdapter.GetVbCodeInfo(e.FilePath);
+                codeAdapter.parse(e.FilePath, e.Text, out VbCodeInfo vbCodeInfo);
                 var vbCode = vbCodeInfo.VbCode;
-				var line = e.Line - vbCodeInfo.LineOffset;
+                var posOffset = vbCodeInfo.PositionOffset;
+                var line = e.Line - vbCodeInfo.LineOffset;
                 if (line < 0) {
                     e.Items = items;
                     logger.Info($"SignatureHelpReq, line < 0: {Path.GetFileName(e.FilePath)}");
                     return;
                 }
-                var (procLine, procCharaPos, argPosition) = mc.GetSignaturePosition(e.FilePath, e.Text, line, e.Chara);
+                var (procLine, procCharaPos, argPosition) = mc.GetSignaturePosition(e.FilePath, vbCode, line, e.Chara);
                 if (procLine < 0) {
                     e.Items = items;
                     logger.Info($"SignatureHelpReq, procLine < 0: {Path.GetFileName(e.FilePath)}");

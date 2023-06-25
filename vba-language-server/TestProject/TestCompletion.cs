@@ -20,22 +20,22 @@ namespace TestProject {
             var items = await mc.GetCompletions(mod1Name, mod1Code, 11, 6);
             var exp = new List<CompletionItem>() {
                 new CompletionItem(){
-                    DisplayText = "Public Name As String",
-                    CompletionText = "Name",
+                    DisplayText = "Name",
+                    CompletionText = "Public Name As String",
                     Description = "",
                     ReturnType = "",
                     Kind = "Field",
                 },
                 new CompletionItem(){
-                    DisplayText = "Public Mother As Person",
-                    CompletionText = "Mother",
+                    DisplayText = "Mother",
+                    CompletionText = "Public Mother As Person",
                     Description = "",
                     ReturnType = "",
                     Kind = "Field",
                 },
                 new CompletionItem(){
-                    DisplayText = "Public Sub SayHello(val1 As Object, val2 As Object)",
-                    CompletionText = "SayHello",
+                    DisplayText = "SayHello",
+                    CompletionText = "Public Sub SayHello(val1 As Object, val2 As Object)",
                     Description = "<member name=\"M:Person.SayHello(System.Object,System.Object)\">\r\n <summary>\r\n  テストメッセージ\r\n </summary>\r\n <param name='val1'></param>\r\n <param name='val2'></param>\r\n <returns></returns>\r\n</member>",
                     ReturnType = "Void",
                     Kind = "Method",
@@ -59,22 +59,22 @@ namespace TestProject {
             var items1 = await mc.GetCompletions(mod1Name, mod1Code, 11,6);
             var exp = new List<CompletionItem>() {
                 new CompletionItem(){
-                    DisplayText = "Public Name As String",
-                    CompletionText = "Name",
+                    DisplayText = "Name",
+                    CompletionText = "Public Name As String",
                     Description = "",
                     ReturnType = "",
                     Kind = "Field",
                 },
                 new CompletionItem(){
-                    DisplayText = "Public Mother As Person",
-                    CompletionText = "Mother",
+                    DisplayText = "Mother",
+                    CompletionText = "Public Mother As Person",
                     Description = "",
                     ReturnType = "",
                     Kind = "Field",
                 },
                 new CompletionItem(){
-                    DisplayText = "Public Sub SayHello(val1 As Object, val2 As Object)",
-                    CompletionText = "SayHello",
+                    DisplayText = "SayHello",
+                    CompletionText = "Public Sub SayHello(val1 As Object, val2 As Object)",
                     Description = "<member name=\"M:Person.SayHello(System.Object,System.Object)\">\r\n <summary>\r\n  テストメッセージ\r\n </summary>\r\n <param name='val1'></param>\r\n <param name='val2'></param>\r\n <returns></returns>\r\n</member>",
                     ReturnType = "Void",
                     Kind = "Method",
@@ -89,22 +89,22 @@ namespace TestProject {
             var items2 = await mc.GetCompletions(mod1Name, mod1Code, 11,6);
             var exp2 = new List<CompletionItem>() {
                 new CompletionItem(){
-                    DisplayText = "Public Name As String",
-                    CompletionText = "Name",
+                    DisplayText = "Name",
+                    CompletionText = "Public Name As String",
                     Description = "",
                     ReturnType = "",
                     Kind = "Field",
                 },
                 new CompletionItem(){
-                    DisplayText = "Public Mother As Person",
-                    CompletionText = "Mother",
+                    DisplayText = "Mother",
+                    CompletionText = "Public Mother As Person",
                     Description = "",
                     ReturnType = "",
                     Kind = "Field",
                 },
                 new CompletionItem(){
-                    DisplayText = "Public Sub SayHello2(val1 As Object, val2 As Object)",
-                    CompletionText = "SayHello2",
+                    DisplayText = "SayHello2",
+                    CompletionText = "Public Sub SayHello2(val1 As Object, val2 As Object)",
                     Description = "<member name=\"M:Person.SayHello2(System.Object,System.Object)\">\r\n <summary>\r\n  テストメッセージ\r\n </summary>\r\n <param name='val1'></param>\r\n <param name='val2'></param>\r\n <returns></returns>\r\n</member>",
                     ReturnType = "Void",
                     Kind = "Method",
@@ -127,22 +127,22 @@ namespace TestProject {
             var items = await mc.GetCompletions(mod1Name, mod1Code, 11,6);
             var exp = new List<CompletionItem>() {
                 new CompletionItem(){
-                    DisplayText = "Public Name As String",
-                    CompletionText = "Name",
+                    DisplayText = "Name",
+                    CompletionText = "Public Name As String",
                     Description = "",
                     ReturnType = "",
                     Kind = "Field",
                 },
                 new CompletionItem(){
-                    DisplayText = "Public Mother As Person",
-                    CompletionText = "Mother",
+                    DisplayText = "Mother",
+                    CompletionText = "Public Mother As Person",
                     Description = "",
                     ReturnType = "",
                     Kind = "Field",
                 },
                 new CompletionItem(){
-                    DisplayText = "Public Sub SayHello(val1 As Object, val2 As Object)",
-                    CompletionText = "SayHello",
+                    DisplayText = "SayHello",
+                    CompletionText = "Public Sub SayHello(val1 As Object, val2 As Object)",
                     Description = "<member name=\"M:Person.SayHello(System.Object,System.Object)\">\r\n <summary>\r\n  テストメッセージ\r\n </summary>\r\n <param name='val1'></param>\r\n <param name='val2'></param>\r\n <returns></returns>\r\n</member>",
                     ReturnType = "Void",
                     Kind = "Method",

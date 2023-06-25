@@ -79,22 +79,22 @@ export class VBACommands {
     async gotoVSCode(uris: vscode.Uri[]){
         const ret = await this.run("goto-vscode.ps1", []);
         const selJson = JSON.parse(ret.data);
-        const moduleName = selJson["module_name"];
-        const moduleType = selJson["module_type"];
+        const objectName = selJson["objectname"];
+        const objectType = selJson["objecttype"];
         const startline = selJson["startline"] - 1;
         const startcol = selJson["startcol"] - 1;
         const endline = selJson["endline"] - 1;
         const endcol = selJson["endcol"] - 1;
 
         let lineoffset = 0;
-        if(moduleType === "bas"){
+        if(objectType === "bas"){
             lineoffset = basLineOffset;
         }
-        if(moduleType === "cls"){
+        if(objectType === "cls"){
             lineoffset = clsLineOffset;
         }
 
-        const encFname = encodeURIComponent(`${moduleName}.${moduleType}`);
+        const encFname = encodeURIComponent(`${objectName}.${objectType}`);
         const files = uris.filter(x => {
             const fname = x.toString().split("/").at(-1);
             return fname === encFname;
@@ -126,7 +126,7 @@ export class VBACommands {
             return;
         }
         const fsPath = path.parse(editor.document.uri.fsPath);
-        const modulename = fsPath.name;
+        const objectName = fsPath.name;
         const ext = fsPath.ext;
         let line = editor.selection.start.line + 1;
         if(ext === ".bas"){
@@ -135,7 +135,7 @@ export class VBACommands {
         if(ext === ".cls"){
             line -= clsLineOffset;
         }
-        await this.run("goto-vba.ps1", [modulename, line.toString()]);
+        await this.run("goto-vba.ps1", [objectName, line.toString()]);
     }
 
     async import(srcDir: string){
@@ -158,12 +158,12 @@ export class VBACommands {
             const loc = s.location;
             const ret = this.getVBALine(loc.uri, loc.range.start.line);
             if(ret){
-                const modulename = ret[0];
+                const objectName = ret[0];
                 const line = ret[1];
-                if(!dict.has(modulename)){
-                    dict.set(modulename, []);
+                if(!dict.has(objectName)){
+                    dict.set(objectName, []);
                 }
-                dict.get(modulename)?.push(line);
+                dict.get(objectName)?.push(line);
             }
         });
         const args: string[] = [];
@@ -195,12 +195,12 @@ export class VBACommands {
             if(!targetSymbols.length){
                 return;
             }
-            const moduleName = path.parse(uri.fsPath).name;;
+            const objectName = path.parse(uri.fsPath).name;;
             const symName = targetSymbols[0].detail;
             const mt = symName.match(/(Sub|Function)\s+(.+)\(\s*\)/);
             if(mt && mt.length > 2){
                 const procName = mt[2];
-                await this.run("run-vba-proc.ps1", [`${moduleName}.${procName}`]);
+                await this.run("run-vba-proc.ps1", [`${objectName}.${procName}`]);
             }else{
                 throw new Error(`Can't run "${symName}"`);
             }
@@ -250,7 +250,7 @@ export class VBACommands {
 
     private getVBALine(uri: vscode.Uri, vscodeLine: number) : [string, number] | undefined{
         const fsPath = path.parse(uri.fsPath);
-        const modulename = fsPath.name;
+        const objectName = fsPath.name;
         const ext = fsPath.ext;
         let line = vscodeLine + 1;
         if(ext === ".bas"){
@@ -259,6 +259,6 @@ export class VBACommands {
         if(ext === ".cls"){
             line -= clsLineOffset;
         }
-        return [modulename, line];
+        return [objectName, line];
     }
 }

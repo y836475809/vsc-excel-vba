@@ -14,15 +14,15 @@ try {
 }
 
 $cm = $bk.Application.VBE.ActiveCodePane.CodeModule
-$module_name = $cm.Name
-$module_type = ""
+$objectName = $cm.Name
+$objectType = ""
 if($cm.Parent.Type -eq $vbext_ct_StdModule){
-    $module_type = "bas"
+    $objectType = "bas"
 }
 if($cm.Parent.Type -eq $vbext_ct_ClassModule){
-    $module_type = "cls"
+    $objectType = "cls"
 }
-$cmp = $bk.VBProject.VBComponents($module_name)
+$cmp = $bk.VBProject.VBComponents($objectName)
 $startline = -1
 $startcol = -1
 $endline = -1
@@ -31,8 +31,8 @@ $cmp.CodeModule.CodePane.GetSelection(
     [ref]$startline, [ref]$startcol, [ref]$endline, [ref]$endcol)
 
 $json = @{
-    "module_name" = $module_name;
-    "module_type" = $module_type;
+    "objectname" = $objectName;
+    "objecttype" = $objectType;
     "startline" = $startline;
     "startcol" = $startcol;
     "endline" = $endline;

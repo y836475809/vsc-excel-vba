@@ -38,7 +38,7 @@ export class VBACommands {
 
     async exceue(project: Project, cmd: string): Promise<boolean>{
         return await this.tryCatch(cmd, async () => {
-            this.xlsmFileName = project.projectData.targetfilename;
+            this.xlsmFileName = project.projectData.excelfilename;
             if(!this.xlsmFileName){
                 throw new Error(
                     "Excel file name is empty");

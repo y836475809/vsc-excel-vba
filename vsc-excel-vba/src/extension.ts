@@ -173,7 +173,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		}
 	}));
 	context.subscriptions.push(vscode.commands.registerCommand("vsc-excel-vba.openSheet", async (args) => {	
-		const xlsmFileName = project.projectData.targetfilename;
+		const xlsmFileName = project.projectData.excelfilename;
 		await vbaCommand.openSheet(xlsmFileName, args.fsPath);
 	}));
 	context.subscriptions.push(vscode.commands.registerCommand("vsc-excel-vba.newClassFile", async (uri: vscode.Uri) => {	

@@ -12,7 +12,7 @@ export class Project {
         this.srcDir = "";
         this.projectFileName = projectFileName;
         this.projectData = {
-            targetfilename:"",
+            excelfilename:"",
             srcdir: ""
         };
     }
@@ -31,7 +31,7 @@ export class Project {
 		const filename = path.basename(targetFilePath);
 		const projectFp = path.join(path.dirname(targetFilePath), this.projectFileName);
 		const data: VEV.ProjectData = {
-			targetfilename: filename,
+			excelfilename: filename,
 			srcdir: "src"
 		};
 		await fs.promises.writeFile(projectFp, JSON.stringify(data, null, 4));

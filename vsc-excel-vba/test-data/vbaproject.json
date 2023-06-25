@@ -1,4 +1,4 @@
 {
-    "targetfilename": "test.xlsm",
+    "excelfilename": "test.xlsm",
     "srcdir": "src"
 }

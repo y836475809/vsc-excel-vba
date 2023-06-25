@@ -76,7 +76,7 @@ namespace VEV {
     };
 
     export type ProjectData = {
-        targetfilename: string;
+        excelfilename: string;
         srcdir: string;
     };
 

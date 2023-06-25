@@ -266,7 +266,8 @@
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
     "test": "node ./out/test/runTest.js",
-    "unittest": "mocha --ui tdd ./out/test/unittest/*.test.js"
+    "unittest": "mocha --ui tdd ./out/test/unittest/*.test.js",
+    "package": "vsce package"
   },
   "devDependencies": {
     "@types/glob": "^8.0.0",

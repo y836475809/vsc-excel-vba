@@ -127,7 +127,7 @@ namespace VBACodeAnalysis {
             return true;
         }
 
-        private int getoffset(string name, int line, int chara) {
+        public int getoffset(string name, int line, int chara) {
             if (!charaOffsetDict.ContainsKey(name)) {
                 return 0;
             }

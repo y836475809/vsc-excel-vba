@@ -105,9 +105,11 @@ namespace VBALanguageServer {
                 }
                 var Items = mc.GetDefinitions(e.FilePath, vbCode, line, e.Chara).Result;
                 Location adjustLocation(Location location, int lineOffset, int chaOffset) {
-                    location.Line += lineOffset;
-                    location.Positon += chaOffset;
-                    if (location.Line < 0) {
+					int toVBAoffset = mc.getoffset(e.FilePath, location.Line, location.Character);
+					location.Line += lineOffset;
+                    location.Positon += chaOffset - toVBAoffset;
+					location.Character += - toVBAoffset;
+					if (location.Line < 0) {
                         location.Line = 0;
                     }
                     if (location.Positon < 0) {

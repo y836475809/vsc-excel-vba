@@ -5,6 +5,7 @@ using Microsoft.CodeAnalysis.VisualBasic;
 using Microsoft.CodeAnalysis.VisualBasic.Syntax;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace VBACodeAnalysis {
     public class Rewrite {
@@ -14,6 +15,8 @@ namespace VBACodeAnalysis {
 
         public Rewrite(RewriteSetting setting) {
             this.setting = setting;
+            charaOffsetDict = new Dictionary<int, (int, int)>();
+            lineMappingDict = new Dictionary<int, int>();
         }
 
         public SourceText RewriteStatement(Document doc) {
@@ -29,6 +32,8 @@ namespace VBACodeAnalysis {
             docRoot = rewriteProp.Rewrite(docRoot);
             charaOffsetDict = rewriteProp.charaOffsetDict;
             lineMappingDict = rewriteProp.lineMappingDict;
+
+            docRoot = TypeStatement(docRoot);
 
            var updatedDoc =  doc.WithSyntaxRoot(docRoot);
             nodes = docRoot.DescendantNodes();
@@ -152,6 +157,105 @@ namespace VBACodeAnalysis {
             }
 			return allChanges;
 		}
+
+        public SyntaxNode TypeStatement(SyntaxNode root) {
+			// 'Type' ステートメントはサポートされなくなりました
+			// 'Structure' ステートメントを使用してください
+			var code = "BC30802";
+			var diags = root.GetDiagnostics().Where(x => x.Id == code);
+			if (!diags.Any()) {
+				return root;
+			}
+
+			var typeCharaOffsetDict = new Dictionary<int, (int, int)>();
+            
+            var typeTokens = root.DescendantTokens().Where(x => {
+                if (x.IsKind(SyntaxKind.EndKeyword) 
+                    || x.IsKind(SyntaxKind.EmptyToken)
+                    || x.IsKind(SyntaxKind.PublicKeyword)
+                    || x.IsKind(SyntaxKind.PrivateKeyword)) {
+                    var trivias = x.TrailingTrivia.Select(y => y.ToString().ToLower().Trim());
+                    return trivias.Any(x => x.Contains("type"));
+                }
+                return false;
+            });
+
+            var lookup = new Dictionary<SyntaxToken, SyntaxToken>();
+            foreach (var item in typeTokens) {
+                if (item.IsKind(SyntaxKind.EmptyToken)) {
+                    var rep = SyntaxFactory.Token(SyntaxKind.EmptyToken,
+                        Regex.Replace(item.ToFullString(), "type", "Structure", RegexOptions.IgnoreCase));
+                    lookup.Add(item, rep);
+                } else {
+                    var rep = SyntaxFactory.Token(item.Kind(),
+                        Regex.Replace(item.ToFullString(), "type", "Structure", RegexOptions.IgnoreCase));
+                    lookup.Add(item, rep);
+                }
+                var trivias = item.TrailingTrivia.Where(
+                    x => x.ToString().ToLower().Trim().IndexOf("type") >= 0);
+				if (trivias.Any()) {
+                    var lp = trivias.First().GetLocation().GetLineSpan();
+                    var ltrivia = item.LeadingTrivia.ToFullString();
+                    var diff = "Structure".Length - "type".Length;
+                    var sp = lp.StartLinePosition;
+                    var ep = lp.EndLinePosition;
+                    typeCharaOffsetDict[sp.Line] =
+                        (sp.Character + "type".Length, diff);
+                }
+            }
+
+            if (lookup.Count == 0) {
+                return root;
+            }
+
+            var lookupMenber = new Dictionary<SyntaxToken, SyntaxToken>();
+            var repNode = root.ReplaceTokens(lookup.Keys, (s, d) => lookup[s]);
+            repNode = root.SyntaxTree.WithChangedText(repNode.GetText()).GetRootAsync().Result;
+            var stNodes = repNode.DescendantNodes().OfType<StructureBlockSyntax>();
+            foreach (var st in stNodes) {
+                foreach (var menber in st.Members) {
+                    var menberTokens = menber.ChildTokens();
+					if (!menberTokens.Any()) {
+                        continue;
+					}
+                    var token = menberTokens.First();
+					if (token.IsKind(SyntaxKind.EmptyToken)) {
+                        var rep = SyntaxFactory.Token(SyntaxKind.EmptyToken,
+                            $"Public {menber.GetTrailingTrivia()}");
+                        lookupMenber.Add(token, rep);
+                    } else {
+                        var rep = SyntaxFactory.Token(SyntaxKind.EmptyToken,
+                            $"Public {token.ToFullString()}");
+                        lookupMenber.Add(token, rep);
+                    }
+                    var lp = token.GetLocation().GetLineSpan();
+                    var sp = lp.StartLinePosition;
+                    typeCharaOffsetDict[sp.Line] = (sp.Character,  "Public ".Length);
+                }
+            }
+            if(lookupMenber.Count == 0) {
+				foreach (var item in typeCharaOffsetDict) {
+                    charaOffsetDict[item.Key] = item.Value;
+                }
+                return repNode;
+            }
+			try {
+                repNode = repNode.ReplaceTokens(lookupMenber.Keys, (s, d) => lookupMenber[s]);
+            } catch (System.Exception) {
+                return root;
+			}
+
+            updateCharaOffsetDict(typeCharaOffsetDict);
+
+            var repTree = repNode.SyntaxTree.WithChangedText(repNode.GetText());
+            return repTree.GetRootAsync().Result;
+        }
+
+        private void updateCharaOffsetDict(Dictionary<int, (int, int)> dict) {
+            foreach (var item in dict) {
+                charaOffsetDict[item.Key] = item.Value;
+            }
+        }
 
         private List<TextChange> LocalDeclarationStatement(IEnumerable<SyntaxNode> node) {
             var allChanges = new List<TextChange>();

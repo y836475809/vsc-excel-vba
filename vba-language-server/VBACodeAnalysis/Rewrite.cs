@@ -218,19 +218,30 @@ namespace VBACodeAnalysis {
 					if (!menberTokens.Any()) {
                         continue;
 					}
+                    var replaced = false;
                     var token = menberTokens.First();
-					if (token.IsKind(SyntaxKind.EmptyToken)) {
-                        var rep = SyntaxFactory.Token(SyntaxKind.EmptyToken,
-                            $"Public {menber.GetTrailingTrivia()}");
+                    if (token.IsKind(SyntaxKind.EmptyToken)) {
+                        var menTrivia = menber.GetTrailingTrivia();
+                        var skippedTokens = menTrivia.TakeWhile(x => !x.IsKind(SyntaxKind.SkippedTokensTrivia));
+                        var trailingTrivia = menTrivia.Skip(skippedTokens.Count()).Take(menTrivia.Count);
+                        var rep = SyntaxFactory.Token(SyntaxKind.EmptyToken, $"Public ")
+                            .WithLeadingTrivia(skippedTokens)
+                            .WithTrailingTrivia(trailingTrivia);
                         lookupMenber.Add(token, rep);
-                    } else {
-                        var rep = SyntaxFactory.Token(SyntaxKind.EmptyToken,
-                            $"Public {token.ToFullString()}");
-                        lookupMenber.Add(token, rep);
+                        replaced = true;
+                    } else if (token.IsKind(SyntaxKind.PublicKeyword)
+                            || token.IsKind(SyntaxKind.PrivateKeyword)) {
+                            var rep = SyntaxFactory.Token(SyntaxKind.EmptyToken, $"{token} {token}")
+                                .WithLeadingTrivia(token.LeadingTrivia)
+                                .WithTrailingTrivia(token.TrailingTrivia);
+                            lookupMenber.Add(token, rep);
+                        replaced = true;
                     }
-                    var lp = token.GetLocation().GetLineSpan();
-                    var sp = lp.StartLinePosition;
-                    typeCharaOffsetDict[sp.Line] = (sp.Character,  "Public ".Length);
+					if (replaced) {
+                        var lp = token.GetLocation().GetLineSpan();
+                        var sp = lp.StartLinePosition;
+                        typeCharaOffsetDict[sp.Line] = (sp.Character, "Public ".Length);
+                    }
                 }
             }
             if(lookupMenber.Count == 0) {

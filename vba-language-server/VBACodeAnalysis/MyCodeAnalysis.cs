@@ -1,4 +1,4 @@
-using Microsoft.CodeAnalysis;
+﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.FindSymbols;
 using Microsoft.CodeAnalysis.Host.Mef;
 using Microsoft.CodeAnalysis.Recommendations;
@@ -115,7 +115,7 @@ namespace VBACodeAnalysis {
         private bool IsCompletionItem(ISymbol symbol) {
             var names = new string[] {
                    "Int64", "Int32", "Double", "Byte",
-                   "String", "Boolean", "Object"
+                   "String", "Boolean", "Object", "ValueType"
             };
             var name = symbol.ContainingType?.Name;
             if(name != null) {

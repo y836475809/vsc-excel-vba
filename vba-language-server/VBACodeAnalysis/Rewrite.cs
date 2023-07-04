@@ -218,7 +218,7 @@ namespace VBACodeAnalysis {
 					if (!menberTokens.Any()) {
                         continue;
 					}
-                    var replaced = false;
+
                     var token = menberTokens.First();
                     if (token.IsKind(SyntaxKind.EmptyToken)) {
                         var menTrivia = menber.GetTrailingTrivia();
@@ -228,16 +228,16 @@ namespace VBACodeAnalysis {
                             .WithLeadingTrivia(skippedTokens)
                             .WithTrailingTrivia(trailingTrivia);
                         lookupMenber.Add(token, rep);
-                        replaced = true;
+                        var menToken = trailingTrivia.First().GetLocation();
+                        var lp = menToken.GetLineSpan();
+                        var sp = lp.StartLinePosition;
+                        typeCharaOffsetDict[sp.Line] = (sp.Character, "Public ".Length);
                     } else if (token.IsKind(SyntaxKind.PublicKeyword)
                             || token.IsKind(SyntaxKind.PrivateKeyword)) {
                             var rep = SyntaxFactory.Token(SyntaxKind.EmptyToken, $"{token} {token}")
                                 .WithLeadingTrivia(token.LeadingTrivia)
                                 .WithTrailingTrivia(token.TrailingTrivia);
                             lookupMenber.Add(token, rep);
-                        replaced = true;
-                    }
-					if (replaced) {
                         var lp = token.GetLocation().GetLineSpan();
                         var sp = lp.StartLinePosition;
                         typeCharaOffsetDict[sp.Line] = (sp.Character, "Public ".Length);

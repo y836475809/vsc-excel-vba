@@ -34,12 +34,11 @@ End Module";
         public void TestType() {
             var code = GetCode("", "Type", "", "");
             (var act, var dict) = rewriteType(code);
-            var pre = GetCode("", "Structure", "Public ", "Public ");
+            var pre = GetCode("", "Structure", " Public", " Public");
             Helper.AssertCode(pre, act);
 
-            //var v1 = (" ".Length + "Type".Length);
             var diff = "Structure".Length - "Type".Length;
-            var menS = 0;
+            var menS = 1;
             var menL = "Public ".Length;
             var predict = new Dictionary<int, (int, int)> {
                 {1, ("   ".Length + "Type".Length, diff)},
@@ -57,11 +56,11 @@ End Module";
         public void TestPublicType() {
             var code = GetCode("Public", "Type", "", "");
             (var act, var dict) = rewriteType(code);
-            var pre = GetCode("Public", "Structure", "Public ", "Public ");
+            var pre = GetCode("Public", "Structure", " Public", " Public");
             Helper.AssertCode(pre, act);
 
             var diff = "Structure".Length - "Type".Length;
-            var menS = 0;
+            var menS = 1;
             var menL = "Public ".Length;
             var predict = new Dictionary<int, (int, int)> {
                 {1, ("  Public ".Length + "Type".Length, diff)},
@@ -79,7 +78,7 @@ End Module";
         public void TestPrivateType() {
             var code = GetCode("Private", "Type", "", "");
             (var act, var dict) = rewriteType(code);
-            var pre = GetCode("Private", "Structure", "Public ", "Public ");
+            var pre = GetCode("Private", "Structure", " Public", " Public");
             Helper.AssertCode(pre, act);
         }
 
@@ -87,7 +86,7 @@ End Module";
         public void TestPublicTypePublicX() {
             var code = GetCode("Public", "Type", "Public", "");
             (var act, var dict) = rewriteType(code);
-            var pre = GetCode("Public", "Structure", "Public Public", "Public ");
+            var pre = GetCode("Public", "Structure", "Public Public", " Public");
             Helper.AssertCode(pre, act);
         }
 
@@ -95,7 +94,7 @@ End Module";
         public void TestTypePublicY() {
             var code = GetCode("Public", "Type", "", "Public");
             (var act, var dict) = rewriteType(code);
-            var pre = GetCode("Public", "Structure", "Public ", "Public Public");
+            var pre = GetCode("Public", "Structure", " Public", "Public Public");
             Helper.AssertCode(pre, act);
         }
 
@@ -150,7 +149,7 @@ End Module", act);
             Helper.AssertCode(@$"Public Module Module1
  Structure Point
 a X As Long
-Public  Y As Long
+ Public Y As Long
  End Structure
 End Module", act);
         }
@@ -161,7 +160,7 @@ End Module", act);
             (var act, var dict) = rewriteType(code);
             Helper.AssertCode(@$"Public Module Module1
  Structure Point
-Public  X As Long
+ Public X As Long
 a Y As Long
  End Structure
 End Module", act);
@@ -173,10 +172,48 @@ End Module", act);
             (var act, var dict) = rewriteType(code);
             Helper.AssertCode(@$"Public Module Module1
  Structure Point
-Public  X As Long
-Public  Y As Long
+ Public X As Long
+ Public Y As Long
 Public a End Structure
 End Module", act);
+        }
+
+        [Fact]
+        public void TestPublicType2() {
+            var code = @$"Public Module Module1
+Type Point
+' test1
+  X As Long
+
+  Y    As Long
+  
+End Type
+End Module";
+            (var act, var dict) = rewriteType(code);
+            var pre = @$"Public Module Module1
+Structure Point
+' test1
+  Public X As Long
+
+  Public Y    As Long
+  
+End Structure
+End Module";
+            Helper.AssertCode(pre, act);
+
+            var diff = "Structure".Length - "Type".Length;
+            var menS = 2;
+            var menL = "Public ".Length;
+            var predict = new Dictionary<int, (int, int)> {
+                {1, ("Type".Length, diff)},
+                {7, ("End ".Length + "Type".Length, diff)},
+                {3, (menS, menL)},
+                {5, (menS, menL)}
+            };
+            predict.All(x => dict.Contains(x));
+            foreach (var item in predict) {
+                Assert.Equal(item.Value, dict[item.Key]);
+            }
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.FindSymbols;
 using Microsoft.CodeAnalysis.Host.Mef;
 using Microsoft.CodeAnalysis.Recommendations;
@@ -164,6 +164,14 @@ namespace VBACodeAnalysis {
                 compItem.Kind = "Keyword";
                 return compItem;
             }));
+			if (completions.Any()) {
+                completions.Add(new CompletionItem {
+                    DisplayText = "Variant",
+                    CompletionText = "Variant",
+                    Description = "Variant",
+                    Kind = "Keyword"
+                });
+            }
 
             var symbols = await Recommender.GetRecommendedSymbolsAtPositionAsync(doc, position);
             foreach (var symbol in symbols) {

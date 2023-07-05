@@ -22,10 +22,10 @@ Public Class Dictionary : Implements IEnumerable
     Public Function Items() As Object()
     End Function
 
-    Public Function Keys() As String()
+    Public Function Keys() As Object()
     End Function
 
-    Public Function Keys() As Long()
+    Public Function Keys(Index As Long) As Object
     End Function
 
     Public Function Exists(Key As String) As Boolean

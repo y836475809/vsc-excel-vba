@@ -177,7 +177,7 @@ namespace VBACodeAnalysis {
             foreach (var symbol in symbols) {
                 var completionItem = new CompletionItem();
                 if (!IsCompletionItem(symbol)) {
-                    break;
+                    continue;
                 }
                 completionItem.DisplayText = symbol.MetadataName;
                 completionItem.CompletionText = symbol.ToDisplayString();

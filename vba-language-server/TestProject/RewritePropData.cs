@@ -75,5 +75,64 @@ End Sub
 Public Property Name1
 End Class";
         }
+
+        public static string GetSrcAsignSamePart() {
+            return @$"Public Class C1
+Private textname As String
+Property Get name() As String
+    name = textname
+End Property
+End Class";
+        }
+        public static string GetPreAsignSamePart() {
+            return @$"Public Class C1
+Private textname As String
+Private Function  getname() As String
+    getname = textname
+End Function
+Public Property name As String
+End Class";
+        }
+
+        public static string GetSrcSet() {
+            return @$"Public Class C1
+Private textname As Object
+Property Get name() As Object
+    Set name = textname
+End Property
+End Class";
+        }
+        public static string GetPreSet() {
+            return @$"Public Class C1
+Private textname As Object
+Private Function  getname() As Object
+        getname = textname
+End Function
+Public Property name As Object
+End Class";
+        }
+
+        public static string GetSrcSet2() {
+            return @$"Module C1
+    Dim p1 As Variant
+    Set p1 = New Variant
+Public Function call1() As Variant
+    Dim p2 As New Variant
+    Set p2 = New Variant
+End Function
+End Module";
+        }
+        public static string GetSrcSet3() {
+            return @$"Class C1
+    Private p1 As Variant
+Public Function call1() As Variant
+    Dim p2 As New Variant
+    Set p2 = New Variant
+
+    Set p1 = New Variant
+    Set call1 = New Variant
+End Function
+End Module";
+        }
     }
 }

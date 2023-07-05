@@ -80,5 +80,30 @@ namespace TestProject {
                 Assert.True(prelines[i] == actlines[i], $"{i}");
             }
         }
+
+        [Fact]
+        public void TestRename() {
+            var host = MefHostServices.Create(MefHostServices.DefaultAssemblies);
+            var workspace = new AdhocWorkspace(host);
+            var projectInfo = ProjectInfo.Create(ProjectId.CreateNewId(), VersionStamp.Create(), "MyProject", "MyProject", LanguageNames.VisualBasic).
+            WithMetadataReferences(new[] {
+                MetadataReference.CreateFromFile(typeof(object).Assembly.Location)
+            });
+            var project = workspace.AddProject(projectInfo);
+
+            var srcData = PropCode.GetSrcAsignSamePart();
+            var doc = workspace.AddDocument(
+                project.Id, "c1", SourceText.From(srcData));
+
+            var rewriteProp = new RewriteProperty();
+            var docRoot = rewriteProp.Rewrite(doc.GetSyntaxRootAsync().Result);
+            var rewriteText = docRoot.GetText().ToString();
+            var preData = PropCode.GetPreAsignSamePart();
+            var prelines = preData.Split("\r\n");
+            var actlines = rewriteText.Split("\r\n");
+            for (int i = 0; i < prelines.Length; i++) {
+                Assert.True(prelines[i] == actlines[i], $"{i}");
+            }
+        }
     }
 }

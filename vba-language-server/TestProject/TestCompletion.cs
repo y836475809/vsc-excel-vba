@@ -13,11 +13,11 @@ namespace TestProject {
             var class1Code = Helper.getCode(class1Name);
             var mod1Name = "test_module1.bas";
             var mod1Code = Helper.getCode(mod1Name);
-            var mc = new MyCodeAnalysis();
-            mc.setSetting(new RewriteSetting());
-            mc.AddDocument(class1Name, class1Code);
-            mc.AddDocument(mod1Name, mod1Code);
-            var items = await mc.GetCompletions(mod1Name, mod1Code, 11, 6);
+            var vbaca = new VBACodeAnalysis.VBACodeAnalysis();
+            vbaca.setSetting(new RewriteSetting());
+            vbaca.AddDocument(class1Name, class1Code);
+            vbaca.AddDocument(mod1Name, mod1Code);
+            var items = await vbaca.GetCompletions(mod1Name, mod1Code, 11, 6);
             var exp = new List<CompletionItem>() {
                 new CompletionItem(){
                     DisplayText = "Name",
@@ -51,12 +51,12 @@ namespace TestProject {
             var class1Code = Helper.getCode(class1Name);
             var mod1Name = "test_module1.bas";
             var mod1Code = Helper.getCode(mod1Name);
-            var mc = new MyCodeAnalysis();
-            mc.setSetting(new RewriteSetting());
-            mc.AddDocument(class1Name, class1Code);
-            mc.AddDocument(mod1Name, mod1Code);
+            var vbaca = new VBACodeAnalysis.VBACodeAnalysis();
+            vbaca.setSetting(new RewriteSetting());
+            vbaca.AddDocument(class1Name, class1Code);
+            vbaca.AddDocument(mod1Name, mod1Code);
 
-            var items1 = await mc.GetCompletions(mod1Name, mod1Code, 11,6);
+            var items1 = await vbaca.GetCompletions(mod1Name, mod1Code, 11,6);
             var exp = new List<CompletionItem>() {
                 new CompletionItem(){
                     DisplayText = "Name",
@@ -84,9 +84,9 @@ namespace TestProject {
 
 
             var class2Code = Helper.getCode("test_class2.cls");
-            mc.ChangeDocument(class1Name, class2Code);
-            mc.setSetting(new RewriteSetting());
-            var items2 = await mc.GetCompletions(mod1Name, mod1Code, 11,6);
+            vbaca.ChangeDocument(class1Name, class2Code);
+            vbaca.setSetting(new RewriteSetting());
+            var items2 = await vbaca.GetCompletions(mod1Name, mod1Code, 11,6);
             var exp2 = new List<CompletionItem>() {
                 new CompletionItem(){
                     DisplayText = "Name",
@@ -120,11 +120,11 @@ namespace TestProject {
             var class1Code = Helper.getCode(class1Name);
             var mod1Name = "test_module1.bas";
             var mod1Code = Helper.getCode(mod1Name);
-            var mc = new MyCodeAnalysis();
-            mc.setSetting(new RewriteSetting());
-            mc.AddDocument(class1Name, class1Code);
-            mc.AddDocument(mod1Name, mod1Code);
-            var items = await mc.GetCompletions(mod1Name, mod1Code, 11,6);
+            var vbaca = new VBACodeAnalysis.VBACodeAnalysis();
+            vbaca.setSetting(new RewriteSetting());
+            vbaca.AddDocument(class1Name, class1Code);
+            vbaca.AddDocument(mod1Name, mod1Code);
+            var items = await vbaca.GetCompletions(mod1Name, mod1Code, 11,6);
             var exp = new List<CompletionItem>() {
                 new CompletionItem(){
                     DisplayText = "Name",
@@ -150,8 +150,8 @@ namespace TestProject {
             };
             Assert.Equal(exp, items);
 
-            mc.DeleteDocument(class1Name);
-            var items2 = await mc.GetCompletions(mod1Name, mod1Code, 11,6);
+            vbaca.DeleteDocument(class1Name);
+            var items2 = await vbaca.GetCompletions(mod1Name, mod1Code, 11,6);
             Assert.Equal(new List<CompletionItem>() { }, items2);
         }
     }

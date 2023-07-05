@@ -5,13 +5,13 @@ using Xunit;
 namespace TestProject {
 	public class TestHoverField {
         private CompletionItem GetItem(string code, string search) {
-            var mc = new MyCodeAnalysis();
-            mc.setSetting(new RewriteSetting());
-            mc.AddDocument("m0", MakeModule());
-            mc.AddDocument("c1", MakeClass());
-            mc.AddDocument("m1", code);
+            var vbaca = new VBACodeAnalysis.VBACodeAnalysis();
+            vbaca.setSetting(new RewriteSetting());
+            vbaca.AddDocument("m0", MakeModule());
+            vbaca.AddDocument("c1", MakeClass());
+            vbaca.AddDocument("m1", code);
             var index = code.IndexOf(search);
-            return mc.GetHover("m1", "", index + 1).Result;
+            return vbaca.GetHover("m1", "", index + 1).Result;
         }
         private string MakeModule() {
             var code = @$"Public Module m0

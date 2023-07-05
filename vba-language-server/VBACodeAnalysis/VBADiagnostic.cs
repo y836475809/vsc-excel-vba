@@ -11,10 +11,10 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace VBACodeAnalysis {
-	public class MyDiagnostic {
+	public class VBADiagnostic {
         private RewriteSetting rewriteSetting;
 
-        public MyDiagnostic(RewriteSetting setting) {
+        public VBADiagnostic(RewriteSetting setting) {
             this.rewriteSetting = setting;
         }
 

@@ -16,18 +16,18 @@ using Microsoft.CodeAnalysis.VisualBasic;
 namespace VBACodeAnalysis {
     using lineCharaOffDict = Dictionary<int, (int, int)>;
 
-    public class MyCodeAnalysis {
+    public class VBACodeAnalysis {
         private AdhocWorkspace workspace;
         private Project project;
         private Dictionary<string, DocumentId> doc_id_dict;
         private RewriteSetting rewriteSetting;
         private Rewrite rewrite;
-        private MyDiagnostic myDiagnostic;
+        private VBADiagnostic vbaDiagnostic;
 
         public Dictionary<string, lineCharaOffDict> charaOffsetDict;
         public Dictionary<string, Dictionary<int, int>> lineMappingDict;
 
-        public MyCodeAnalysis() {
+        public VBACodeAnalysis() {
             var host = MefHostServices.Create(MefHostServices.DefaultAssemblies);
             workspace = new AdhocWorkspace(host);
 
@@ -45,7 +45,7 @@ namespace VBACodeAnalysis {
         public void setSetting(RewriteSetting rewriteSetting) {
             this.rewriteSetting = rewriteSetting;
             rewrite = new Rewrite(rewriteSetting);
-            myDiagnostic = new MyDiagnostic(rewriteSetting);
+            vbaDiagnostic = new VBADiagnostic(rewriteSetting);
         }
 
         public void AddDocument(string name, string text, bool applyChanges= true) {
@@ -497,7 +497,7 @@ namespace VBACodeAnalysis {
         public async Task<List<DiagnosticItem>> GetDiagnostics(string name) {
 			var docId = doc_id_dict[name];
 			var doc = workspace.CurrentSolution.GetDocument(docId);
-			return await myDiagnostic.GetDiagnostics(doc);
+			return await vbaDiagnostic.GetDiagnostics(doc);
          }
 
         public async Task<List<ReferenceItem>> GetReferences(string name, int line, int chara) {

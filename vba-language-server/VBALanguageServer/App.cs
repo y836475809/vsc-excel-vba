@@ -10,7 +10,7 @@ namespace VBALanguageServer {
 	class App {
 		private CodeAdapter codeAdapter;
 		private Server server;
-		private MyCodeAnalysis mc;
+		private VBACodeAnalysis.VBACodeAnalysis vbaca;
         private Logger logger;
 
         public App() {
@@ -25,9 +25,9 @@ namespace VBALanguageServer {
 
         private void Reset() {
             codeAdapter = new CodeAdapter();
-            mc = new MyCodeAnalysis();
+			vbaca = new VBACodeAnalysis.VBACodeAnalysis();
             var settings = LoadConfig();
-            mc.setSetting(settings.RewriteSetting);
+            vbaca.setSetting(settings.RewriteSetting);
         }
 
         public void Initialize() {  
@@ -42,30 +42,30 @@ namespace VBALanguageServer {
                 foreach (var FilePath in e.FilePaths) {
                     codeAdapter.SetCode(FilePath, Helper.getCode(FilePath));
                     var vbCode = codeAdapter.GetVbCodeInfo(FilePath).VbCode;
-                    mc.AddDocument(FilePath, vbCode, false);
+                    vbaca.AddDocument(FilePath, vbCode, false);
                 }
-                mc.ApplyChanges(e.FilePaths);
+                vbaca.ApplyChanges(e.FilePaths);
                 logger.Info("DocumentAdded");
             };
             server.DocumentDeleted += (object sender, DocumentDeletedEventArgs e) => {
                 foreach (var FilePath in e.FilePaths) {
-                    mc.DeleteDocument(FilePath);
+                    vbaca.DeleteDocument(FilePath);
                     codeAdapter.Delete(FilePath);
                 }
                 logger.Info("DocumentDeleted");
             };
             server.DocumentRenamed += (object sender, DocumentRenamedEventArgs e) => {
-                mc.DeleteDocument(e.OldFilePath);
+                vbaca.DeleteDocument(e.OldFilePath);
                 codeAdapter.Delete(e.OldFilePath);
                 codeAdapter.SetCode(e.NewFilePath, Helper.getCode(e.NewFilePath));
                 var vbCode = codeAdapter.GetVbCodeInfo(e.NewFilePath).VbCode;
-                mc.AddDocument(e.NewFilePath, vbCode);
+                vbaca.AddDocument(e.NewFilePath, vbCode);
                 logger.Info("DocumentRenamed");
             };
             server.DocumentChanged += (object sender, DocumentChangedEventArgs e) => {
                 codeAdapter.SetCode(e.FilePath, e.Text);
                 var vbCode = codeAdapter.GetVbCodeInfo(e.FilePath).VbCode;
-                mc.ChangeDocument(e.FilePath, vbCode);
+                vbaca.ChangeDocument(e.FilePath, vbCode);
                 logger.Info("DocumentChanged");
             };
             server.CompletionReq += (object sender, CompletionEventArgs e) => {
@@ -83,7 +83,7 @@ namespace VBALanguageServer {
                     logger.Info($"CompletionReq, line={line}: {Path.GetFileName(e.FilePath)}");
                     return;
                 }
-                var Items = mc.GetCompletions(e.FilePath, vbCode, line, e.Chara).Result;
+                var Items = vbaca.GetCompletions(e.FilePath, vbCode, line, e.Chara).Result;
                 e.Items = Items;
                 logger.Info("CompletionReq");
             };
@@ -103,9 +103,9 @@ namespace VBALanguageServer {
                     logger.Info($"DefinitionReq, line={line}: {Path.GetFileName(e.FilePath)}");
                     return;
                 }
-                var Items = mc.GetDefinitions(e.FilePath, vbCode, line, e.Chara).Result;
+                var Items = vbaca.GetDefinitions(e.FilePath, vbCode, line, e.Chara).Result;
                 Location adjustLocation(Location location, int lineOffset, int chaOffset) {
-					int toVBAoffset = mc.getoffset(e.FilePath, location.Line, location.Character);
+					int toVBAoffset = vbaca.getoffset(e.FilePath, location.Line, location.Character);
 					location.Line += lineOffset;
                     location.Positon += chaOffset - toVBAoffset;
 					location.Character += - toVBAoffset;
@@ -153,11 +153,11 @@ namespace VBALanguageServer {
                     logger.Info($"HoverReq, non: {Path.GetFileName(e.FilePath)}");
                     return;
                 }
-                var Items = mc.GetDefinitions(e.FilePath, vbCode, line, e.Chara).Result;
+                var Items = vbaca.GetDefinitions(e.FilePath, vbCode, line, e.Chara).Result;
                 foreach (var item in Items) {
                     var sp = item.Start.Positon;
                     var ep = item.End.Positon;
-                    var hoverItem = mc.GetHover(item.FilePath, e.Text, (int)((sp + ep) / 2)).Result;
+                    var hoverItem = vbaca.GetHover(item.FilePath, e.Text, (int)((sp + ep) / 2)).Result;
                     list.Add(hoverItem);
                 }
                 e.Items = list;
@@ -170,7 +170,7 @@ namespace VBALanguageServer {
                 }
                 var vbCodeInfo = codeAdapter.GetVbCodeInfo(e.FilePath);
                 var lineOffset = vbCodeInfo.LineOffset;
-                var items = mc.GetDiagnostics(e.FilePath).Result;
+                var items = vbaca.GetDiagnostics(e.FilePath).Result;
                 foreach (var item in items) {
                     item.StartLine += lineOffset;
                     item.EndLine += lineOffset;
@@ -188,7 +188,7 @@ namespace VBALanguageServer {
                 }
                 var vbCodeInfo = codeAdapter.GetVbCodeInfo(e.FilePath);
                 var line = e.Line - vbCodeInfo.LineOffset;
-                var items = mc.GetReferences(e.FilePath, line, e.Chara).Result;
+                var items = vbaca.GetReferences(e.FilePath, line, e.Chara).Result;
                 foreach (var item in items) {
 					if (codeAdapter.Has(item.FilePath)) {
                         var lineOffset = codeAdapter.GetVbCodeInfo(item.FilePath).LineOffset; 
@@ -215,18 +215,18 @@ namespace VBALanguageServer {
                     logger.Info($"SignatureHelpReq, line < 0: {Path.GetFileName(e.FilePath)}");
                     return;
                 }
-                var (procLine, procCharaPos, argPosition) = mc.GetSignaturePosition(e.FilePath, vbCode, line, e.Chara);
+                var (procLine, procCharaPos, argPosition) = vbaca.GetSignaturePosition(e.FilePath, vbCode, line, e.Chara);
                 if (procLine < 0) {
                     e.Items = items;
                     logger.Info($"SignatureHelpReq, procLine < 0: {Path.GetFileName(e.FilePath)}");
                     return;
                 }
 
-                var Items = mc.GetDefinitions(e.FilePath, vbCode, procLine, procCharaPos).Result;
+                var Items = vbaca.GetDefinitions(e.FilePath, vbCode, procLine, procCharaPos).Result;
                 foreach (var item in Items) {
                     var sp = item.Start.Positon;
                     var ep = item.End.Positon;
-                    var sigItem = mc.GetSignatureHelp(item.FilePath, (int)((sp + ep) / 2)).Result;
+                    var sigItem = vbaca.GetSignatureHelp(item.FilePath, (int)((sp + ep) / 2)).Result;
                     if(sigItem != null) {
                         sigItem.ActiveParameter = argPosition;
                         items.Add(sigItem);

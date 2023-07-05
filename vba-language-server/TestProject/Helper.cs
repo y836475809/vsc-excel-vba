@@ -38,9 +38,9 @@ namespace TestProject {
 
         public static List<DiagnosticItem> GetDiagnostics(string code, List<string> errorTypes) {
             var rewriteSetting = new RewriteSetting();
-            var myDiagnostic = new MyDiagnostic(rewriteSetting);
+            var vbaDiagnostic = new VBADiagnostic(rewriteSetting);
             var doc = MakeDoc(code);
-            var items = myDiagnostic.GetDiagnostics(doc).Result;
+            var items = vbaDiagnostic.GetDiagnostics(doc).Result;
             items.Sort((a, b) => {
                 if (a.StartLine != b.StartLine) {
                     return a.StartLine - b.StartLine;

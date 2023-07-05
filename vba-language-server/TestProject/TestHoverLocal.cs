@@ -5,11 +5,11 @@ using Xunit;
 namespace TestProject {
 	public class TestHoverLocal {
         private CompletionItem GetItem(string code, string search) {
-            var mc = new MyCodeAnalysis();
-            mc.setSetting(new RewriteSetting());
-            mc.AddDocument("m1", code);
+            var vbaca = new VBACodeAnalysis.VBACodeAnalysis();
+            vbaca.setSetting(new RewriteSetting());
+            vbaca.AddDocument("m1", code);
             var index = code.IndexOf(search);
-            return mc.GetHover("m1", "", index + 1).Result;
+            return vbaca.GetHover("m1", "", index + 1).Result;
         }
         private string MakeCode(string src) {
             var code = @$"Module Module1

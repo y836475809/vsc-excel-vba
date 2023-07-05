@@ -5,10 +5,10 @@ using Xunit;
 namespace TestProject {
     public class TestDiagFileIO {
         private List<DiagnosticItem> GetItems(string code) {
-            var mc = new MyCodeAnalysis();
-            mc.setSetting(new RewriteSetting());
-            mc.AddDocument("m1", code);
-            return mc.GetDiagnostics("m1").Result;
+            var vbaca = new VBACodeAnalysis.VBACodeAnalysis();
+            vbaca.setSetting(new RewriteSetting());
+            vbaca.AddDocument("m1", code);
+            return vbaca.GetDiagnostics("m1").Result;
         }
 
         private string MakeCode(string src) {

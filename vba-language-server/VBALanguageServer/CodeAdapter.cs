@@ -81,7 +81,7 @@ namespace VBALanguageServer {
                 posOffset = header.Length - pre.Length;
             }
             if (filePath.EndsWith(".bas")) {
-                var pre = $"Module {name}{rn}";
+                var pre = $"Public Module {name}{rn}";
                 var post = $"{rn}End Module";
                 code = $"{pre}{body}{post}";
                 lineOffset = headerLines.Length - 1;

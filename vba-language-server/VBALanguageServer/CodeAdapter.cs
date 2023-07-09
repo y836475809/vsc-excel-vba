@@ -8,14 +8,12 @@ namespace VBALanguageServer {
     public class VbCodeInfo {
         public string VbCode { get; set; }
         public int LineOffset { get; set; }
-        public int PositionOffset { get; set; }
 
         public VbCodeInfo() { }
 
-        public VbCodeInfo(string VbCode, int LineOffset, int PositionOffset) {
+        public VbCodeInfo(string VbCode, int LineOffset) {
             this.VbCode = VbCode;
             this.LineOffset = LineOffset;
-            this.PositionOffset = PositionOffset;
         }
     }
 
@@ -38,8 +36,7 @@ namespace VBALanguageServer {
             if(filePath.EndsWith(".d.vb")) {
                 vbCodeInfo = new VbCodeInfo {
                     VbCode = vbaCode,
-                    LineOffset = 0,
-                    PositionOffset = 0
+                    LineOffset = 0
                 };
                 return;
             }
@@ -66,32 +63,54 @@ namespace VBALanguageServer {
             }
             var rn = Environment.NewLine;
             var headerLines = vbaCode.Split(rn)[0..headerCount];
-            var header = string.Join(rn, headerLines);
             var bodyLines = vbaCode.Split(rn)[headerCount..];
             var body = string.Join(rn, bodyLines);
 
             var code = string.Empty;
             var lineOffset = 0;
-            var posOffset = 0;
             if (filePath.EndsWith(".cls")) {
-                var pre = $"Public Class {name}{rn}";
-                var post = $"{rn}End Class";
-                code = $"{pre}{body}{post}";
-                lineOffset = headerLines.Length - 1;
-                posOffset = header.Length - pre.Length;
+                var classLineOffset = 0;
+                var lineNum = GetClassAnnotationLineNum(vbaCode);         
+                if (lineNum > 0) {
+                    bodyLines[lineNum - headerLines.Length] = $"Public Class {name}";
+                    body = string.Join(rn, bodyLines);
+                    var post = $"{rn}End Class";
+                    code = $"{body}{post}";
+                } else {
+                    classLineOffset = 1;
+                    var pre = $"Public Class {name}{rn}";
+                    var post = $"{rn}End Class";
+                    code = $"{pre}{body}{post}";
+                }
+                lineOffset = headerLines.Length - classLineOffset;
             }
             if (filePath.EndsWith(".bas")) {
                 var pre = $"Public Module {name}{rn}";
                 var post = $"{rn}End Module";
                 code = $"{pre}{body}{post}";
                 lineOffset = headerLines.Length - 1;
-                posOffset = header.Length - pre.Length;
             }
             vbCodeInfo = new VbCodeInfo {
                 VbCode = code,
                 LineOffset = lineOffset,
-                PositionOffset = posOffset
             };
+        }
+
+        private int GetClassAnnotationLineNum(string vbaCode) {
+            var mc = Regex.Match(vbaCode, @"'\s*@class\s+", RegexOptions.IgnoreCase);
+            if (mc.Success) {
+                var index = mc.Groups[0].Index;
+                var code = vbaCode.Substring(0, index);
+                var len = code.Length;
+                var count = 0;
+                for (var i = 0; i < len; i++) {
+                    if (code[i] == '\n') {
+                        count++;
+                    }
+                }
+                return count;
+            }
+            return -1;
         }
 
         public void SetCode(string filePath, string vbaCode) {

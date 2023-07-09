@@ -77,7 +77,6 @@ namespace VBALanguageServer {
                
                 codeAdapter.parse(e.FilePath, e.Text, out VbCodeInfo vbCodeInfo);
                 var vbCode = vbCodeInfo.VbCode;
-                var posOffset = vbCodeInfo.PositionOffset;
                 var line = e.Line - vbCodeInfo.LineOffset;
                 if (line < 0) {
                     logger.Info($"CompletionReq, line={line}: {Path.GetFileName(e.FilePath)}");
@@ -96,7 +95,6 @@ namespace VBALanguageServer {
                 }
                 var vbCodeInfo = codeAdapter.GetVbCodeInfo(e.FilePath);
                 var vbCode = vbCodeInfo.VbCode;
-                var posOffset = vbCodeInfo.PositionOffset;
                 var line = e.Line - vbCodeInfo.LineOffset;
                 if (line < 0) {
                     e.Items = list;
@@ -104,10 +102,9 @@ namespace VBALanguageServer {
                     return;
                 }
                 var Items = vbaca.GetDefinitions(e.FilePath, vbCode, line, e.Chara).Result;
-                Location adjustLocation(Location location, int lineOffset, int chaOffset) {
+                Location adjustLocation(Location location, int lineOffset) {
 					int toVBAoffset = vbaca.getoffset(e.FilePath, location.Line, location.Character);
 					location.Line += lineOffset;
-                    location.Positon += chaOffset - toVBAoffset;
 					location.Character += - toVBAoffset;
 					if (location.Line < 0) {
                         location.Line = 0;
@@ -120,7 +117,6 @@ namespace VBALanguageServer {
                 foreach (var item in Items) {
                     var itemVbCodeInfo = codeAdapter.GetVbCodeInfo(item.FilePath);
                     var itemLineOffset = itemVbCodeInfo.LineOffset;
-                    var itemPosOffset = itemVbCodeInfo.PositionOffset;
                     if (item.IsKindClass()) {
                         item.Start.Positon = 0;
                         item.Start.Line = 0;
@@ -129,8 +125,8 @@ namespace VBALanguageServer {
                         item.End.Line = 0;
                         item.End.Character = 0;
                     } else {
-                        item.Start = adjustLocation(item.Start, itemLineOffset, itemPosOffset);
-                        item.End = adjustLocation(item.End, itemLineOffset, itemPosOffset);
+                        item.Start = adjustLocation(item.Start, itemLineOffset);
+                        item.End = adjustLocation(item.End, itemLineOffset);
                     }
                     list.Add(item);
                 }
@@ -146,7 +142,6 @@ namespace VBALanguageServer {
                 }
                 var vbCodeInfo = codeAdapter.GetVbCodeInfo(e.FilePath);
                 var vbCode = vbCodeInfo.VbCode;
-                var posOffset = vbCodeInfo.PositionOffset;
                 var line = e.Line - vbCodeInfo.LineOffset;
                 if (line < 0) {
                     e.Items = list;
@@ -208,7 +203,6 @@ namespace VBALanguageServer {
                 }
                 codeAdapter.parse(e.FilePath, e.Text, out VbCodeInfo vbCodeInfo);
                 var vbCode = vbCodeInfo.VbCode;
-                var posOffset = vbCodeInfo.PositionOffset;
                 var line = e.Line - vbCodeInfo.LineOffset;
                 if (line < 0) {
                     e.Items = items;

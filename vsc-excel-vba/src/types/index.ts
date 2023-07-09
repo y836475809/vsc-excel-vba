@@ -8,7 +8,6 @@ namespace VEV {
     };
 
     export type Location = {
-        positon: number;
         line: number;
         character: number;
     };

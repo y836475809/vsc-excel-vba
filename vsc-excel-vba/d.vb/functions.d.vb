@@ -92,4 +92,9 @@ Public Module ExcelVBAFunctions
 
     Public Sub Close(Filenumber As Object)
     End Sub
+
+    ' Scripting.Dictionary
+    ' Scripting.FileSystemObject
+    Public Function CreateObject(Name As String) As Object
+    End Function
 End Module

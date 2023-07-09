@@ -34,6 +34,7 @@ namespace VBACodeAnalysis {
             lineMappingDict = rewriteProp.lineMappingDict;
 
             docRoot = TypeStatement(docRoot);
+            docRoot = AnnotationAs(docRoot);
 
            var updatedDoc =  doc.WithSyntaxRoot(docRoot);
             nodes = docRoot.DescendantNodes();
@@ -157,6 +158,36 @@ namespace VBACodeAnalysis {
             }
 			return allChanges;
 		}
+
+        public SyntaxNode AnnotationAs(SyntaxNode root) {
+            var lookup = new Dictionary<SyntaxNode, SyntaxNode>();
+            var items = root.DescendantNodes().OfType<VariableDeclaratorSyntax>();
+            foreach (var item in items) {
+                var comments = item.Parent.GetLeadingTrivia().Where(x => x.IsKind(SyntaxKind.CommentTrivia));
+                if (!comments.Any()) {
+                    continue;
+                }
+                var value = comments.First().ToString();
+                var mc = Regex.Match(value, @"@as\s+(\S+)", RegexOptions.IgnoreCase);
+                if (!mc.Success) {
+                    continue;
+                }
+				if (!item.AsClause.ChildNodes().Any()) {
+                    continue;
+                }
+                var typeName = mc.Groups[1].Value;
+                var oldNode = item.AsClause.ChildNodes().First();
+                var newNode = SyntaxFactory.IdentifierName(typeName)
+                    .WithTrailingTrivia(oldNode.GetTrailingTrivia());
+                lookup.Add(oldNode, newNode);
+            }
+            if(lookup.Count == 0) {
+                return root;
+            }
+            var repNode = root.ReplaceNodes(lookup.Keys, (s, d) => lookup[s]);
+            var repRoot  = root.SyntaxTree.WithChangedText(repNode.GetText());
+            return repRoot.GetRootAsync().Result;
+        }
 
         public SyntaxNode TypeStatement(SyntaxNode root) {
 			// 'Type' ステートメントはサポートされなくなりました

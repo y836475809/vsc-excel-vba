@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { URI } from 'vscode-uri';
 import { VBALSRequest } from './vba-ls-request';
 
 export class VBAReferenceProvider implements vscode.ReferenceProvider {
@@ -15,7 +16,7 @@ export class VBAReferenceProvider implements vscode.ReferenceProvider {
 			const items = await this.request.references(document, position);
 			const locs = items.map(x => {
 				return new vscode.Location(
-					uri,
+					URI.file(x.filepath),
 					new vscode.Range(
 						x.start.line, x.start.character,
 						x.end.line, x.end.character

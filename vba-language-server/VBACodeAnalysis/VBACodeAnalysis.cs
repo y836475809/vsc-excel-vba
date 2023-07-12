@@ -152,33 +152,12 @@ namespace VBACodeAnalysis {
             var doc = workspace.CurrentSolution.GetDocument(docId);
             var position = doc.GetTextAsync().Result.Lines.GetPosition(new LinePosition(line, adjChara));
 
-            var completionService = CompletionService.GetService(doc);
-            var results = await completionService.GetCompletionsAsync(doc, position);
-            completions.AddRange(results.ItemsList.Where(x => {
-                return x.Tags.Contains("Keyword");
-            }).Select(x => {
-                var compItem = new CompletionItem();
-                compItem.DisplayText = x.DisplayText;
-                compItem.CompletionText = x.DisplayText;
-                compItem.Description = x.Properties.Values.ToString();
-                compItem.Kind = "Keyword";
-                return compItem;
-            }));
-			if (completions.Any()) {
-                completions.Add(new CompletionItem {
-                    DisplayText = "Variant",
-                    CompletionText = "Variant",
-                    Description = "Variant",
-                    Kind = "Keyword"
-                });
-            }
-
             var symbols = await Recommender.GetRecommendedSymbolsAtPositionAsync(doc, position);
             foreach (var symbol in symbols) {
-                var completionItem = new CompletionItem();
                 if (!IsCompletionItem(symbol)) {
                     continue;
                 }
+                var completionItem = new CompletionItem();
                 completionItem.DisplayText = symbol.MetadataName;
                 completionItem.CompletionText = symbol.ToDisplayString();
                 completionItem.Description = symbol.GetDocumentationCommentXml();
@@ -194,6 +173,29 @@ namespace VBACodeAnalysis {
                     completionItem.ReturnType = methodSymbol.ReturnType.ToDisplayString();
                 }
                 completions.Add(completionItem);
+            }
+
+            var completionService = CompletionService.GetService(doc);
+            var results = await completionService.GetCompletionsAsync(doc, position);
+            if (results.ItemsList.Any()) {
+                completions.AddRange(results.ItemsList.Where(x => {
+                    return x.Tags.Contains("Keyword")
+                        && !(completions.Exists(y => y.DisplayText == x.DisplayText));
+                }).Select(x => {
+					var compItem = new CompletionItem {
+						DisplayText = x.DisplayText,
+						CompletionText = x.DisplayText,
+						Description = x.Properties.Values.ToString(),
+						Kind = "Keyword"
+					};
+					return compItem;
+                }));
+                completions.Add(new CompletionItem {
+                    DisplayText = "Variant",
+                    CompletionText = "Variant",
+                    Description = "Variant",
+                    Kind = "Keyword"
+                });
             }
             return completions;
         }

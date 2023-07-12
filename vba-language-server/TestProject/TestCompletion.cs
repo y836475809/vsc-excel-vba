@@ -40,6 +40,13 @@ namespace TestProject {
                     ReturnType = "Void",
                     Kind = "Method",
                 },
+                new CompletionItem(){
+                    DisplayText = "Variant",
+                    CompletionText = "Variant",
+                    Description = "Variant",
+                    ReturnType = null,
+                    Kind = "Keyword",
+                },
             };
             Assert.Equal(exp, items);
         }
@@ -79,6 +86,13 @@ namespace TestProject {
                     ReturnType = "Void",
                     Kind = "Method",
                 },
+                new CompletionItem(){
+                    DisplayText = "Variant",
+                    CompletionText = "Variant",
+                    Description = "Variant",
+                    ReturnType = null,
+                    Kind = "Keyword",
+                },
             };
             Assert.Equal(exp, items1);
 
@@ -108,6 +122,13 @@ namespace TestProject {
                     Description = "<member name=\"M:Person.SayHello2(System.Object,System.Object)\">\r\n <summary>\r\n  テストメッセージ\r\n </summary>\r\n <param name='val1'></param>\r\n <param name='val2'></param>\r\n <returns></returns>\r\n</member>",
                     ReturnType = "Void",
                     Kind = "Method",
+                },
+                new CompletionItem(){
+                    DisplayText = "Variant",
+                    CompletionText = "Variant",
+                    Description = "Variant",
+                    ReturnType = null,
+                    Kind = "Keyword",
                 },
             };
             Assert.Equal(exp2, items2);
@@ -146,6 +167,13 @@ namespace TestProject {
                     Description = "<member name=\"M:Person.SayHello(System.Object,System.Object)\">\r\n <summary>\r\n  テストメッセージ\r\n </summary>\r\n <param name='val1'></param>\r\n <param name='val2'></param>\r\n <returns></returns>\r\n</member>",
                     ReturnType = "Void",
                     Kind = "Method",
+                },
+                new CompletionItem(){
+                    DisplayText = "Variant",
+                    CompletionText = "Variant",
+                    Description = "Variant",
+                    ReturnType = null,
+                    Kind = "Keyword",
                 },
             };
             Assert.Equal(exp, items);

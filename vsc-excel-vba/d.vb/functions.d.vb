@@ -97,4 +97,7 @@ Public Module ExcelVBAFunctions
     ' Scripting.FileSystemObject
     Public Function CreateObject(Name As String) As Object
     End Function
+
+    Public Function IIf(Expr As Boolean, TruePart As Object, FalsePart As Object) As Object
+    End Function
 End Module

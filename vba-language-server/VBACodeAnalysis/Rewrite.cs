@@ -22,6 +22,9 @@ namespace VBACodeAnalysis {
         }
 
         public SourceText RewriteStatement(Document doc) {
+            lineMappingDict = new Dictionary<int, int>();
+            locationDiffDict = new locDiffDict();
+
             var docRoot = doc.GetSyntaxRootAsync().Result;
             var nodes = docRoot.DescendantNodes();
 

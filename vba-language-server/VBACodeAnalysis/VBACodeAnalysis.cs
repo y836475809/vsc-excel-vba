@@ -136,7 +136,7 @@ namespace VBACodeAnalysis {
                 return 0;
             }
             var diffs = diffDict[line];
-            var sumDiff = diffs.Where(x => x.Chara < chara).Select(x => x.Diff).Sum();
+            var sumDiff = diffs.Where(x => x.Chara <= chara).Select(x => x.Diff).Sum();
             return sumDiff;
         }
 
@@ -146,10 +146,10 @@ namespace VBACodeAnalysis {
             if (!doc_id_dict.ContainsKey(name)) {
                 return completions;
             }
-            var adjChara = getoffset(name, line, chara) + chara;
+
             var docId = doc_id_dict[name];
             var doc = workspace.CurrentSolution.GetDocument(docId);
-            var position = doc.GetTextAsync().Result.Lines.GetPosition(new LinePosition(line, adjChara));
+            var position = doc.GetTextAsync().Result.Lines.GetPosition(new LinePosition(line, chara));
 
             var symbols = await Recommender.GetRecommendedSymbolsAtPositionAsync(doc, position);
             foreach (var symbol in symbols) {
@@ -206,18 +206,17 @@ namespace VBACodeAnalysis {
             }
             var docId = doc_id_dict[name];
             if (workspace.CurrentSolution.ContainsDocument(docId)) {
-                var adjChara = getoffset(name, line, chara) + chara;
                 var doc = workspace.CurrentSolution.GetDocument(docId);
                 var model = await doc.GetSemanticModelAsync();
                 var lines = doc.GetTextAsync().Result.Lines;
                 if(lines.Count <= line || line < 0) {
                     return items;
                 }
-                if (lines[line].End <= adjChara || adjChara < 0) {
+                if (lines[line].End <= chara || chara < 0) {
                     return items;
                 }
 
-                var position = lines.GetPosition(new LinePosition(line, adjChara));
+                var position = lines.GetPosition(new LinePosition(line, chara));
                 var symbol = await SymbolFinder.FindSymbolAtPositionAsync(model, position, workspace);
 
                 if (symbol == null) {
@@ -510,10 +509,10 @@ namespace VBACodeAnalysis {
             if (!workspace.CurrentSolution.ContainsDocument(docId)) {
                 return items;
             }
-            var adjChara = getoffset(name, line, chara) + chara;
+
             var doc = workspace.CurrentSolution.GetDocument(docId);
             var model = await doc.GetSemanticModelAsync();
-            var position = doc.GetTextAsync().Result.Lines.GetPosition(new LinePosition(line, adjChara));
+            var position = doc.GetTextAsync().Result.Lines.GetPosition(new LinePosition(line, chara));
             var symbol = await SymbolFinder.FindSymbolAtPositionAsync(model, position, workspace);
             if (symbol == null) {
                 return items;

@@ -82,7 +82,8 @@ namespace VBALanguageServer {
                     logger.Info($"CompletionReq, line={line}: {Path.GetFileName(e.FilePath)}");
                     return;
                 }
-                var Items = vbaca.GetCompletions(e.FilePath, vbCode, line, e.Chara).Result;
+                var adjChara = vbaca.getoffset(e.FilePath, line, e.Chara) + e.Chara;
+                var Items = vbaca.GetCompletions(e.FilePath, vbCode, line, adjChara).Result;
                 e.Items = Items;
                 logger.Info("CompletionReq");
             };
@@ -101,7 +102,8 @@ namespace VBALanguageServer {
                     logger.Info($"DefinitionReq, line={line}: {Path.GetFileName(e.FilePath)}");
                     return;
                 }
-                var Items = vbaca.GetDefinitions(e.FilePath, vbCode, line, e.Chara).Result;
+                var adjChara = vbaca.getoffset(e.FilePath, line, e.Chara) + e.Chara;
+                var Items = vbaca.GetDefinitions(e.FilePath, vbCode, line, adjChara).Result;
                 Location adjustLocation(Location location) {
 					int toVBAoffset = vbaca.getoffset(e.FilePath, location.Line, location.Character);
 					location.Character += - toVBAoffset;
@@ -146,7 +148,8 @@ namespace VBALanguageServer {
                     logger.Info($"HoverReq, non: {Path.GetFileName(e.FilePath)}");
                     return;
                 }
-                var Items = vbaca.GetDefinitions(e.FilePath, vbCode, line, e.Chara).Result;
+                var adjChara = vbaca.getoffset(e.FilePath, line, e.Chara) + e.Chara;
+                var Items = vbaca.GetDefinitions(e.FilePath, vbCode, line, adjChara).Result;
                 foreach (var item in Items) {
                     var sp = item.Start.Positon;
                     var ep = item.End.Positon;
@@ -175,7 +178,8 @@ namespace VBALanguageServer {
                     return;
                 }
                 var vbCodeInfo = codeAdapter.GetVbCodeInfo(e.FilePath);
-                var items = vbaca.GetReferences(e.FilePath, e.Line, e.Chara).Result;
+                var adjChara = vbaca.getoffset(e.FilePath, e.Line, e.Chara) + e.Chara;
+                var items = vbaca.GetReferences(e.FilePath, e.Line, adjChara).Result;
                 e.Items = items;
                 logger.Info("ReferencesReq");
             };
@@ -194,7 +198,8 @@ namespace VBALanguageServer {
                     logger.Info($"SignatureHelpReq, line < 0: {Path.GetFileName(e.FilePath)}");
                     return;
                 }
-                var (procLine, procCharaPos, argPosition) = vbaca.GetSignaturePosition(e.FilePath, vbCode, line, e.Chara);
+                var adjChara = vbaca.getoffset(e.FilePath, line, e.Chara) + e.Chara;
+                var (procLine, procCharaPos, argPosition) = vbaca.GetSignaturePosition(e.FilePath, vbCode, line, adjChara);
                 if (procLine < 0) {
                     e.Items = items;
                     logger.Info($"SignatureHelpReq, procLine < 0: {Path.GetFileName(e.FilePath)}");

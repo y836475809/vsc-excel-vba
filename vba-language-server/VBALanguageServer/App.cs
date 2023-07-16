@@ -77,7 +77,7 @@ namespace VBALanguageServer {
                
                 codeAdapter.parse(e.FilePath, e.Text, out VbCodeInfo vbCodeInfo);
                 var vbCode = vbCodeInfo.VbCode;
-                var line = e.Line - vbCodeInfo.LineOffset;
+                var line = e.Line;
                 if (line < 0) {
                     logger.Info($"CompletionReq, line={line}: {Path.GetFileName(e.FilePath)}");
                     return;
@@ -95,16 +95,15 @@ namespace VBALanguageServer {
                 }
                 var vbCodeInfo = codeAdapter.GetVbCodeInfo(e.FilePath);
                 var vbCode = vbCodeInfo.VbCode;
-                var line = e.Line - vbCodeInfo.LineOffset;
+                var line = e.Line;
                 if (line < 0) {
                     e.Items = list;
                     logger.Info($"DefinitionReq, line={line}: {Path.GetFileName(e.FilePath)}");
                     return;
                 }
                 var Items = vbaca.GetDefinitions(e.FilePath, vbCode, line, e.Chara).Result;
-                Location adjustLocation(Location location, int lineOffset) {
+                Location adjustLocation(Location location) {
 					int toVBAoffset = vbaca.getoffset(e.FilePath, location.Line, location.Character);
-					location.Line += lineOffset;
 					location.Character += - toVBAoffset;
 					if (location.Line < 0) {
                         location.Line = 0;
@@ -116,7 +115,6 @@ namespace VBALanguageServer {
                 }
                 foreach (var item in Items) {
                     var itemVbCodeInfo = codeAdapter.GetVbCodeInfo(item.FilePath);
-                    var itemLineOffset = itemVbCodeInfo.LineOffset;
                     if (item.IsKindClass()) {
                         item.Start.Positon = 0;
                         item.Start.Line = 0;
@@ -125,8 +123,8 @@ namespace VBALanguageServer {
                         item.End.Line = 0;
                         item.End.Character = 0;
                     } else {
-                        item.Start = adjustLocation(item.Start, itemLineOffset);
-                        item.End = adjustLocation(item.End, itemLineOffset);
+                        item.Start = adjustLocation(item.Start);
+                        item.End = adjustLocation(item.End);
                     }
                     list.Add(item);
                 }
@@ -142,7 +140,7 @@ namespace VBALanguageServer {
                 }
                 var vbCodeInfo = codeAdapter.GetVbCodeInfo(e.FilePath);
                 var vbCode = vbCodeInfo.VbCode;
-                var line = e.Line - vbCodeInfo.LineOffset;
+                var line = e.Line;
                 if (line < 0) {
                     e.Items = list;
                     logger.Info($"HoverReq, non: {Path.GetFileName(e.FilePath)}");
@@ -164,12 +162,7 @@ namespace VBALanguageServer {
                     return;
                 }
                 var vbCodeInfo = codeAdapter.GetVbCodeInfo(e.FilePath);
-                var lineOffset = vbCodeInfo.LineOffset;
                 var items = vbaca.GetDiagnostics(e.FilePath).Result;
-                foreach (var item in items) {
-                    item.StartLine += lineOffset;
-                    item.EndLine += lineOffset;
-                }
                 e.Items = items;
                 logger.Info("DiagnosticReq");
             };
@@ -182,15 +175,7 @@ namespace VBALanguageServer {
                     return;
                 }
                 var vbCodeInfo = codeAdapter.GetVbCodeInfo(e.FilePath);
-                var line = e.Line - vbCodeInfo.LineOffset;
-                var items = vbaca.GetReferences(e.FilePath, line, e.Chara).Result;
-                foreach (var item in items) {
-					if (codeAdapter.Has(item.FilePath)) {
-                        var lineOffset = codeAdapter.GetVbCodeInfo(item.FilePath).LineOffset; 
-                        item.Start.Line += lineOffset;
-                        item.End.Line += lineOffset;
-                    }
-                }
+                var items = vbaca.GetReferences(e.FilePath, e.Line, e.Chara).Result;
                 e.Items = items;
                 logger.Info("ReferencesReq");
             };
@@ -203,7 +188,7 @@ namespace VBALanguageServer {
                 }
                 codeAdapter.parse(e.FilePath, e.Text, out VbCodeInfo vbCodeInfo);
                 var vbCode = vbCodeInfo.VbCode;
-                var line = e.Line - vbCodeInfo.LineOffset;
+                var line = e.Line;
                 if (line < 0) {
                     e.Items = items;
                     logger.Info($"SignatureHelpReq, line < 0: {Path.GetFileName(e.FilePath)}");

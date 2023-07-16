@@ -1,49 +1,9 @@
-﻿using VBALanguageServer;
+﻿using System.Linq;
+using VBALanguageServer;
 using Xunit;
 
 namespace TestProject {
     public class TestVBACode {
-
-        [Fact]
-        public void TestModuleCodeAdapter() {
-            string code =
-@"
-Attribute VB_Name = ""m1""
-
-''' <summary>
-'''  モジュールbuf
-''' </summary>
-Private buf As String
-";
-            var cd = new CodeAdapter();
-            cd.parse("m1.bas", code, out VbCodeInfo vbCodeInfo);
-            Assert.Equal(1, vbCodeInfo.LineOffset);
-        }
-
-        [Fact]
-        public void TestClassCodeAdapter() {
-            string code =
-@"
-VERSION 1.0 CLASS
-BEGIN
-  MultiUse = -1  'True
-END
-Attribute VB_Name = ""Person""
-Attribute VB_GlobalNameSpace = False
-Attribute VB_Creatable = False
-Attribute VB_PredeclaredId = False
-Attribute VB_Exposed = False
-Option Explicit On
-''' <summary>
-'''  メンバ変数
-''' </summary> 
-Public Name As String
-";
-            var cd = new CodeAdapter();
-            cd.parse("m1.cls", code, out VbCodeInfo vbCodeInfo);
-            Assert.Equal(9, vbCodeInfo.LineOffset);
-        }
-
         private string MakeVBAAttr() {
             return @"VERSION 1.0 CLASS
 BEGIN
@@ -81,8 +41,8 @@ End Sub{postCode}";
             var vbacode = MakeClassCode(MakeVBAAttr(), "", value, "");
             var cd = new CodeAdapter();
             cd.parse("m1.cls", vbacode, out VbCodeInfo vbCodeInfo);
-            Assert.Equal(9, vbCodeInfo.LineOffset);
-            var pre = MakeClassCode("", "", "Public Class Test", "\r\nEnd Class");
+            var att = string.Concat(Enumerable.Repeat("\r\n", 9));
+            var pre = MakeClassCode(att, "", "Public Class Test", "\r\nEnd Class");
             Helper.AssertCode(pre, vbCodeInfo.VbCode);
         }
 
@@ -94,8 +54,8 @@ End Sub{postCode}";
             var code = MakeClassCode(MakeVBAAttr(), "", value, "");
             var cd = new CodeAdapter();
 			cd.parse("m1.cls", code, out VbCodeInfo vbCodeInfo);
-			Assert.Equal(8, vbCodeInfo.LineOffset);
-            var pre = MakeClassCode("Public Class Test", "\r\n", value, "\r\nEnd Class");
+            var att = string.Concat(Enumerable.Repeat("\r\n", 8));
+            var pre = MakeClassCode($"{att}Public Class Test", "\r\n", value, "\r\nEnd Class");
             Helper.AssertCode(pre, vbCodeInfo.VbCode);
 		}
 	}

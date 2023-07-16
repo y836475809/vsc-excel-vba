@@ -1,19 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
 namespace VBALanguageServer {
     public class VbCodeInfo {
         public string VbCode { get; set; }
-        public int LineOffset { get; set; }
 
         public VbCodeInfo() { }
 
-        public VbCodeInfo(string VbCode, int LineOffset) {
+        public VbCodeInfo(string VbCode) {
             this.VbCode = VbCode;
-            this.LineOffset = LineOffset;
         }
     }
 
@@ -35,8 +34,7 @@ namespace VBALanguageServer {
         public void parse(string filePath, string vbaCode, out VbCodeInfo vbCodeInfo) {
             if(filePath.EndsWith(".d.vb")) {
                 vbCodeInfo = new VbCodeInfo {
-                    VbCode = vbaCode,
-                    LineOffset = 0
+                    VbCode = vbaCode
                 };
                 return;
             }
@@ -67,7 +65,6 @@ namespace VBALanguageServer {
             var body = string.Join(rn, bodyLines);
 
             var code = string.Empty;
-            var lineOffset = 0;
             if (filePath.EndsWith(".cls")) {
                 var classLineOffset = 0;
                 var lineNum = GetClassAnnotationLineNum(vbaCode);         
@@ -82,17 +79,17 @@ namespace VBALanguageServer {
                     var post = $"{rn}End Class";
                     code = $"{pre}{body}{post}";
                 }
-                lineOffset = headerLines.Length - classLineOffset;
+                var lineOffset = headerLines.Length - classLineOffset;
+                var h = string.Concat(Enumerable.Repeat("\r\n", lineOffset));
+                code = $"{h}{code}";
             }
             if (filePath.EndsWith(".bas")) {
                 var pre = $"Public Module {name}{rn}";
                 var post = $"{rn}End Module";
                 code = $"{pre}{body}{post}";
-                lineOffset = headerLines.Length - 1;
             }
             vbCodeInfo = new VbCodeInfo {
-                VbCode = code,
-                LineOffset = lineOffset,
+                VbCode = code
             };
         }
 

@@ -8,8 +8,11 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Host.Mef;
 using Microsoft.CodeAnalysis.Text;
 using Xunit;
+using System.Linq;
 
 namespace TestProject {
+    using locDiffDiict = Dictionary<int, List<LocationDiff>>;
+
     class Helper {
         public static string getPath(string fileName, [CallerFilePath] string filePath = "") {
             return Path.Combine(Path.GetDirectoryName(filePath), "code", fileName);
@@ -56,6 +59,19 @@ namespace TestProject {
             Assert.Equal(preLines.Length, actLines.Length);
             for (int i = 0; i < preLines.Length; i++) {
                 Assert.True(preLines[i] == actLines[i], $"Fault {i}");
+            }
+        }
+
+        public static void AssertLocationDiffDict(locDiffDiict pre, locDiffDiict act) {
+            pre.All(x => act.Contains(x));
+            foreach (var item in pre) {
+                var preList = item.Value;
+                var actList = act[item.Key];
+                foreach (var (First, Second) in preList.Zip(actList)) {
+                    Assert.Equal(First.Line, Second.Line);
+                    Assert.Equal(First.Chara, Second.Chara);
+                    Assert.Equal(First.Diff, Second.Diff);
+                }
             }
         }
     }

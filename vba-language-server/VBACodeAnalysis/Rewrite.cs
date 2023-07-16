@@ -1,4 +1,4 @@
-﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.FindSymbols;
 using Microsoft.CodeAnalysis.Text;
 using Microsoft.CodeAnalysis.VisualBasic;
@@ -8,15 +8,17 @@ using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace VBACodeAnalysis {
+    using locDiffDict = Dictionary<int, List<LocationDiff>>;
+
     public class Rewrite {
         private RewriteSetting setting;
-        public Dictionary<int, (int, int)> charaOffsetDict;
         public Dictionary<int, int> lineMappingDict;
+        public locDiffDict locationDiffDict;
 
         public Rewrite(RewriteSetting setting) {
             this.setting = setting;
-            charaOffsetDict = new Dictionary<int, (int, int)>();
             lineMappingDict = new Dictionary<int, int>();
+            locationDiffDict = new locDiffDict();
         }
 
         public SourceText RewriteStatement(Document doc) {
@@ -30,16 +32,49 @@ namespace VBACodeAnalysis {
 
             var rewriteProp = new RewriteProperty();
             docRoot = rewriteProp.Rewrite(docRoot);
-            charaOffsetDict = rewriteProp.charaOffsetDict;
             lineMappingDict = rewriteProp.lineMappingDict;
 
-            docRoot = TypeStatement(docRoot);
+            var typeResult = TypeStatement(docRoot);
+            docRoot = typeResult.root;
+            ApplyLocationDict(ref locationDiffDict, typeResult.dict);
+
             docRoot = AnnotationAs(docRoot);
 
-           var updatedDoc =  doc.WithSyntaxRoot(docRoot);
-            nodes = docRoot.DescendantNodes();
-            var changes = VBAClassToFunction(updatedDoc, nodes);
-            return docRoot.GetText().WithChanges(changes);
+            var result = VBAClassToFunction(docRoot);
+            docRoot = result.root;
+            ApplyLocationDict(ref locationDiffDict, result.dict);
+
+            return docRoot.GetText();
+        }
+
+        public void ApplyLocationDict(ref locDiffDict srcDict, locDiffDict dict) {
+            foreach (var item in dict) {
+                if (srcDict.ContainsKey(item.Key)) {
+                    var mlist = srcDict[item.Key];
+                    mlist.Sort((a, b) => {
+                        return a.Chara - b.Chara;
+                    });
+                    foreach (var item2 in item.Value) {
+                        var sumDiff = 0;
+                        foreach (var item3 in mlist) {
+                            if (item3.Chara < item2.Chara) {
+                                sumDiff += item3.Diff;
+                            } else {
+                                break;
+                            }
+                        }
+                        item2.Chara -= sumDiff;
+                    }
+                    mlist.AddRange(item.Value);
+                } else {
+                    srcDict.Add(item.Key, item.Value);
+                }
+            }
+            foreach (var item in srcDict) {
+                item.Value.Sort((a, b) => {
+                    return a.Chara - b.Chara;
+                });
+            }
         }
 
         private List<TextChange> Prep(IEnumerable<SyntaxNode> nodes) {
@@ -54,15 +89,14 @@ namespace VBACodeAnalysis {
             return changeDict.Values.ToList();
         }
 
-        public List<TextChange> VBAClassToFunction(
-                    Document doc, IEnumerable<SyntaxNode> node) {
-            SemanticModel model = null;
+        public (SyntaxNode root, locDiffDict dict) VBAClassToFunction(SyntaxNode root) {
             var ns = setting.NameSpace;
             var rewriteDict = setting.getRewriteDict();
 
-            var allChanges = new List<TextChange>();
-            var set = new HashSet<string>();
+            var locDiffDict = new locDiffDict();
+            var lookup = new Dictionary<SyntaxNode, SyntaxNode>();
 
+            var node = root.DescendantNodes();
             var invExpStmts = node.OfType<InvocationExpressionSyntax>();
             foreach (var stmt in invExpStmts) {
                 var fiestToken = stmt.GetFirstToken();
@@ -70,50 +104,49 @@ namespace VBACodeAnalysis {
                 if (!rewriteDict.ContainsKey(text)) {
                     continue;
                 }
-                if (model == null) {
-                    model = doc.GetSemanticModelAsync().Result;
-                }
-                var pos = fiestToken.GetLocation().SourceSpan.Start + 1;
-                var symbol = SymbolFinder.FindSymbolAtPositionAsync(doc, pos).Result;
-                if (!IsClass(symbol, text)) {
-                    continue;
-                }
-                var sp = stmt.GetFirstToken().Span;
-                var key = $"{sp.Start}-{sp.End}";
-                if (!set.Contains(key)) {
-                    var rename = $"{ns}.{rewriteDict[text]}";
-                    allChanges.Add(new TextChange(stmt.GetFirstToken().Span, rename));
-                }
-                set.Add(key);
-            }
+                var oldName = stmt.ToString();
+                var newName = $"{ns}.{oldName}";
+                var newNode = SyntaxFactory.ParseExpression(newName)
+					.WithLeadingTrivia(stmt.GetLeadingTrivia())
+					.WithTrailingTrivia(stmt.GetTrailingTrivia());
+                lookup.Add(stmt, newNode);
 
+				var lp = stmt.GetLocation().GetLineSpan();
+                var slp = lp.StartLinePosition;
+                if (!locDiffDict.ContainsKey(slp.Line)) {
+                    locDiffDict.Add(slp.Line, new List<LocationDiff>());
+                }
+                if(!locDiffDict[slp.Line].Exists(x => x.Line == slp.Line && x.Chara == slp.Character)) {
+                    locDiffDict[slp.Line].Add(new LocationDiff(slp.Line, slp.Character, newName.Length - oldName.Length));
+                }
+            }
+            
+            var keys = rewriteDict.Keys.Select(x => x.ToLower());
             var forStmt = node.OfType<ForEachStatementSyntax>();
             foreach (var stmt in forStmt) {
-                var identTokens = stmt.ChildNodes().Where(x => {
-                    return rewriteDict.ContainsKey(x.ToString());
-                });
-                foreach (var ident in identTokens) {
-                    var sp = ident.Span;
-                    var key = $"{sp.Start}-{sp.End}";
-                    if (!set.Contains(key)) {
-                        var rename = $"{ns}.{rewriteDict[ident.ToString()]}";
-                        allChanges.Add(new TextChange(sp, rename));
-                    }
-                    set.Add(key);
-                }
-            }
-            return allChanges;
-        }
+                var fiestToken = stmt.Expression.GetFirstToken();
+                var fiestNode = stmt.FindNode(fiestToken.Span);
+                if (!keys.Contains(fiestNode.ToString().ToLower())) {
+                    continue;
+				}
 
-        private bool IsClass(ISymbol symbol, string name) {
-            if (symbol is INamedTypeSymbol namedType) {
-                if (namedType.TypeKind == TypeKind.Class) {
-                    if (namedType.Name == name) {
-                        return true;
-                    }
+                var text = fiestNode.ToString();
+                var newName = $"{ns}.{text}";
+                var newNode = SyntaxFactory.ParseExpression(newName)
+                    .WithLeadingTrivia(fiestNode.GetLeadingTrivia())
+                    .WithTrailingTrivia(fiestNode.GetTrailingTrivia());
+                lookup.Add(fiestNode, newNode);
+                var lp = fiestNode.GetLocation().GetLineSpan();
+                var slp = lp.StartLinePosition;
+                if (!locDiffDict.ContainsKey(slp.Line)) {
+                    locDiffDict.Add(slp.Line, new List<LocationDiff>());
+                }
+                if (!locDiffDict[slp.Line].Exists(x => x.Line == slp.Line && x.Chara == slp.Character)) {
+                    locDiffDict[slp.Line].Add(new LocationDiff(slp.Line, slp.Character, newName.Length - text.Length));
                 }
             }
-            return false;
+            var repNode = root.ReplaceNodes(lookup.Keys, (s, d) => lookup[s]);
+            return (repNode, locDiffDict);
         }
 
         private List<TextChange> SetStatement(IEnumerable<SyntaxNode> node) {
@@ -189,17 +222,16 @@ namespace VBACodeAnalysis {
             return repRoot.GetRootAsync().Result;
         }
 
-        public SyntaxNode TypeStatement(SyntaxNode root) {
-			// 'Type' ステートメントはサポートされなくなりました
-			// 'Structure' ステートメントを使用してください
-			var code = "BC30802";
+        public (SyntaxNode root, locDiffDict dict) TypeStatement(SyntaxNode root) {
+            var locDiffDict = new locDiffDict();
+            // 'Type' ステートメントはサポートされなくなりました
+            // 'Structure' ステートメントを使用してください
+            var code = "BC30802";
 			var diags = root.GetDiagnostics().Where(x => x.Id == code);
 			if (!diags.Any()) {
-				return root;
+				return (root, locDiffDict);
 			}
 
-			var typeCharaOffsetDict = new Dictionary<int, (int, int)>();
-            
             var typeTokens = root.DescendantTokens().Where(x => {
                 if (x.IsKind(SyntaxKind.EndKeyword) 
                     || x.IsKind(SyntaxKind.EmptyToken)
@@ -213,13 +245,31 @@ namespace VBACodeAnalysis {
 
             var lookup = new Dictionary<SyntaxToken, SyntaxToken>();
             foreach (var item in typeTokens) {
+                var value = item.ToFullString();
+                var mc1 = Regex.Match(
+                        value, @"\s+(type)\s+",
+                        RegexOptions.IgnoreCase);
+                var mc2 = Regex.Match(
+                        value, @"^(type)\s+",
+                        RegexOptions.IgnoreCase);
+                if (!mc1.Success && !mc2.Success) {
+					continue;
+				}
+                Match mc = null;
+                if (mc1.Success) {
+                    mc = mc1;
+                }
+                if (mc2.Success) {
+                    mc = mc2;
+                }
+                var pre = value.Substring(0, mc.Groups[1].Index);
+                var post = value.Substring(mc.Groups[1].Index + mc.Groups[1].Length);
+                var newValue = $"{pre}Structure{post}";
                 if (item.IsKind(SyntaxKind.EmptyToken)) {
-                    var rep = SyntaxFactory.Token(SyntaxKind.EmptyToken,
-                        Regex.Replace(item.ToFullString(), "type", "Structure", RegexOptions.IgnoreCase));
+                    var rep = SyntaxFactory.Token(SyntaxKind.EmptyToken, newValue);
                     lookup.Add(item, rep);
                 } else {
-                    var rep = SyntaxFactory.Token(item.Kind(),
-                        Regex.Replace(item.ToFullString(), "type", "Structure", RegexOptions.IgnoreCase));
+                    var rep = SyntaxFactory.Token(item.Kind(), newValue);
                     lookup.Add(item, rep);
                 }
                 var trivias = item.TrailingTrivia.Where(
@@ -230,13 +280,16 @@ namespace VBACodeAnalysis {
                     var diff = "Structure".Length - "type".Length;
                     var sp = lp.StartLinePosition;
                     var ep = lp.EndLinePosition;
-                    typeCharaOffsetDict[sp.Line] =
-                        (sp.Character + "type".Length, diff);
+                    if (!locDiffDict.ContainsKey(sp.Line)) {
+                        locDiffDict.Add(sp.Line, new List<LocationDiff>());
+                    }
+                    locDiffDict[sp.Line].Add(
+                        new LocationDiff(sp.Line, sp.Character + "type".Length, diff));
                 }
             }
 
             if (lookup.Count == 0) {
-                return root;
+                return (root, locDiffDict);
             }
 
             var lookupMenber = new Dictionary<SyntaxToken, SyntaxToken>();
@@ -262,7 +315,11 @@ namespace VBACodeAnalysis {
                         var menToken = trailingTrivia.First().GetLocation();
                         var lp = menToken.GetLineSpan();
                         var sp = lp.StartLinePosition;
-                        typeCharaOffsetDict[sp.Line] = (sp.Character, "Public ".Length);
+                        if (!locDiffDict.ContainsKey(sp.Line)) {
+                            locDiffDict.Add(sp.Line, new List<LocationDiff>());
+                        }
+                        locDiffDict[sp.Line].Add(
+                            new LocationDiff(sp.Line, sp.Character, "Public ".Length));
                     } else if (token.IsKind(SyntaxKind.PublicKeyword)
                             || token.IsKind(SyntaxKind.PrivateKeyword)) {
                             var rep = SyntaxFactory.Token(SyntaxKind.EmptyToken, $"{token} {token}")
@@ -271,26 +328,25 @@ namespace VBACodeAnalysis {
                             lookupMenber.Add(token, rep);
                         var lp = token.GetLocation().GetLineSpan();
                         var sp = lp.StartLinePosition;
-                        typeCharaOffsetDict[sp.Line] = (sp.Character, "Public ".Length);
+                        if (!locDiffDict.ContainsKey(sp.Line)) {
+                            locDiffDict.Add(sp.Line, new List<LocationDiff>());
+                        }
+                        locDiffDict[sp.Line].Add(
+                            new LocationDiff(sp.Line, sp.Character, "Public ".Length));
                     }
                 }
             }
             if(lookupMenber.Count == 0) {
-				foreach (var item in typeCharaOffsetDict) {
-                    charaOffsetDict[item.Key] = item.Value;
-                }
-                return repNode;
+                return (repNode, locDiffDict);
             }
 			try {
                 repNode = repNode.ReplaceTokens(lookupMenber.Keys, (s, d) => lookupMenber[s]);
             } catch (System.Exception) {
-                return root;
+                return (root, new locDiffDict());
 			}
 
-            updateCharaOffsetDict(typeCharaOffsetDict);
-
             var repTree = repNode.SyntaxTree.WithChangedText(repNode.GetText());
-            return repTree.GetRootAsync().Result;
+            return (repTree.GetRootAsync().Result, locDiffDict);
         }
 
         private void updateCharaOffsetDict(Dictionary<int, (int, int)> dict) {

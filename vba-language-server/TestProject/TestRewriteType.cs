@@ -16,18 +16,11 @@ X As Long
 End Module";
         }
 
-        //string rewriteType(string code) {
-        //    var doc = Helper.MakeDoc(code);
-        //    var rew = new Rewrite(new RewriteSetting());
-        //    var root = rew.TypeStatement(doc.GetSyntaxRootAsync().Result);
-        //    return root.ToString();
-        //}
-
-        (string, Dictionary<int, (int, int)>) rewriteType(string code) {
+        (string, Dictionary<int, List<LocationDiff>>) rewriteType(string code) {
             var doc = Helper.MakeDoc(code);
             var rew = new Rewrite(new RewriteSetting());
-            var root = rew.TypeStatement(doc.GetSyntaxRootAsync().Result);
-            return (root.ToString(), rew.charaOffsetDict);
+            var result = rew.TypeStatement(doc.GetSyntaxRootAsync().Result);
+            return (result.root.GetText().ToString(), result.dict);
         }
 
         [Fact]
@@ -40,16 +33,13 @@ End Module";
             var diff = "Structure".Length - "Type".Length;
             var menS = 1;
             var menL = "Public ".Length;
-            var predict = new Dictionary<int, (int, int)> {
-                {1, ("   ".Length + "Type".Length, diff)},
-                {4, ("    End ".Length + "Type".Length, diff)},
-                {2, (menS, menL)},
-                {3, (menS, menL)}
+            var predict = new Dictionary<int, List<LocationDiff>> {
+                {1, new List<LocationDiff>{ new LocationDiff(1, "   ".Length + "Type".Length, diff)} },
+                {4, new List<LocationDiff>{ new LocationDiff(4, "    End ".Length + "Type".Length, diff)} },
+                {2, new List<LocationDiff>{ new LocationDiff(2, menS, menL)} },
+                {3, new List<LocationDiff>{ new LocationDiff(3, menS, menL)} },
             };
-            predict.All(x => dict.Contains(x));
-            foreach (var item in predict) {
-                Assert.Equal(item.Value, dict[item.Key]);
-            }
+            Helper.AssertLocationDiffDict(predict, dict);
         }
 
         [Fact]
@@ -62,16 +52,13 @@ End Module";
             var diff = "Structure".Length - "Type".Length;
             var menS = 1;
             var menL = "Public ".Length;
-            var predict = new Dictionary<int, (int, int)> {
-                {1, ("  Public ".Length + "Type".Length, diff)},
-                {4, ("    End ".Length + "Type".Length, diff)},
-                {2, (menS, menL)},
-                {3, (menS, menL)}
+            var predict = new Dictionary<int, List<LocationDiff>> {
+                {1, new List<LocationDiff>{ new LocationDiff(1, "  Public ".Length + "Type".Length, diff)} },
+                {4, new List<LocationDiff>{ new LocationDiff(4, "    End ".Length + "Type".Length, diff)} },
+                {2, new List<LocationDiff>{ new LocationDiff(2, menS, menL)} },
+                {3, new List<LocationDiff>{ new LocationDiff(3, menS, menL)} },
             };
-            predict.All(x => dict.Contains(x));
-            foreach (var item in predict) {
-                Assert.Equal(item.Value, dict[item.Key]);
-            }
+            Helper.AssertLocationDiffDict(predict, dict);
         }
 
         [Fact]
@@ -101,7 +88,6 @@ End Module";
         [Fact]
         public void TestPublicTypePublicXPublicY() {
             var code = GetCode("Public", "Type", "Public", "Public");
-            //var act = rewriteType(code);
             (var act, var dict) = rewriteType(code);
             var pre = GetCode("Public", "Structure", "Public Public", "Public Public");
             Helper.AssertCode(pre, act);
@@ -109,16 +95,13 @@ End Module";
             var diff = "Structure".Length - "Type".Length;
             var menS = 0;
             var menL = "Public ".Length;
-            var predict = new Dictionary<int, (int, int)> {
-                {1, ("  Public ".Length + "Type".Length, diff)},
-                {4, ("    End ".Length + "Type".Length, diff)},
-                {2, (menS, menL)},
-                {3, (menS, menL)}
+            var predict = new Dictionary<int, List<LocationDiff>> {
+                {1, new List<LocationDiff>{ new LocationDiff(1, "  Public ".Length + "Type".Length, diff)} },
+                {4, new List<LocationDiff>{ new LocationDiff(4, "    End ".Length + "Type".Length, diff)} },
+                {2, new List<LocationDiff>{ new LocationDiff(2, menS, menL)} },
+                {3, new List<LocationDiff>{ new LocationDiff(3, menS, menL)} },
             };
-            predict.All(x => dict.Contains(x));
-            foreach (var item in predict) {
-                Assert.Equal(item.Value, dict[item.Key]);
-            }
+            Helper.AssertLocationDiffDict(predict, dict);
         }
 
         private string getError(string valSt, string valX, string ValY, string end) {
@@ -204,16 +187,13 @@ End Module";
             var diff = "Structure".Length - "Type".Length;
             var menS = 2;
             var menL = "Public ".Length;
-            var predict = new Dictionary<int, (int, int)> {
-                {1, ("Type".Length, diff)},
-                {7, ("End ".Length + "Type".Length, diff)},
-                {3, (menS, menL)},
-                {5, (menS, menL)}
+            var predict = new Dictionary<int, List<LocationDiff>> {
+                {1, new List<LocationDiff>{ new LocationDiff(1, "Type".Length, diff)} },
+                {7, new List<LocationDiff>{ new LocationDiff(7, "End ".Length + "Type".Length, diff)} },
+                {3, new List<LocationDiff>{ new LocationDiff(3, menS, menL)} },
+                {5, new List<LocationDiff>{ new LocationDiff(5, menS, menL)} },
             };
-            predict.All(x => dict.Contains(x));
-            foreach (var item in predict) {
-                Assert.Equal(item.Value, dict[item.Key]);
-            }
+            Helper.AssertLocationDiffDict(predict, dict);
         }
     }
 }

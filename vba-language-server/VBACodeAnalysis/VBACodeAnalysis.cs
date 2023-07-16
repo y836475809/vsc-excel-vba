@@ -14,7 +14,7 @@ using Microsoft.CodeAnalysis.Completion;
 using Microsoft.CodeAnalysis.VisualBasic;
 
 namespace VBACodeAnalysis {
-    using lineCharaOffDict = Dictionary<int, (int, int)>;
+    using locDiffDict = Dictionary<int, List<LocationDiff>>;
 
     public class VBACodeAnalysis {
         private AdhocWorkspace workspace;
@@ -24,8 +24,8 @@ namespace VBACodeAnalysis {
         private Rewrite rewrite;
         private VBADiagnostic vbaDiagnostic;
 
-        public Dictionary<string, lineCharaOffDict> charaOffsetDict;
         public Dictionary<string, Dictionary<int, int>> lineMappingDict;
+        public Dictionary<string, locDiffDict> locationDiffDict;
 
         public VBACodeAnalysis() {
             var host = MefHostServices.Create(MefHostServices.DefaultAssemblies);
@@ -38,8 +38,8 @@ namespace VBACodeAnalysis {
             project = workspace.AddProject(projectInfo);
 
             doc_id_dict = new Dictionary<string, DocumentId>();
-            charaOffsetDict = new Dictionary<string, lineCharaOffDict>();
             lineMappingDict = new Dictionary<string, Dictionary<int, int>>();
+            locationDiffDict = new Dictionary<string, locDiffDict>();
         }
 
         public void setSetting(RewriteSetting rewriteSetting) {
@@ -76,7 +76,7 @@ namespace VBACodeAnalysis {
                 var docId = doc_id_dict[name];
                 var doc = solution.GetDocument(docId);
                 var reSourceText = rewrite.RewriteStatement(doc);
-                charaOffsetDict[name] = rewrite.charaOffsetDict;
+                locationDiffDict[name] = rewrite.locationDiffDict;
                 lineMappingDict[name] = rewrite.lineMappingDict;
 
                 solution = solution.WithDocumentText(docId, reSourceText);
@@ -106,7 +106,7 @@ namespace VBACodeAnalysis {
             var doc = workspace.CurrentSolution.GetDocument(docId);
             doc = doc.WithText(SourceText.From(text));
             var reSourceText = rewrite.RewriteStatement(doc);
-            charaOffsetDict[name] = rewrite.charaOffsetDict;
+            locationDiffDict[name] = rewrite.locationDiffDict;
             lineMappingDict[name] = rewrite.lineMappingDict;
             workspace.TryApplyChanges(
                 workspace.CurrentSolution.WithDocumentText(docId, reSourceText));
@@ -128,17 +128,16 @@ namespace VBACodeAnalysis {
         }
 
         public int getoffset(string name, int line, int chara) {
-            if (!charaOffsetDict.ContainsKey(name)) {
+            if (!locationDiffDict.ContainsKey(name)) {
                 return 0;
             }
-            var offdict = charaOffsetDict[name];
-            if (offdict.ContainsKey(line)) {
-                var (s, offset) = offdict[line];
-                if(chara >= s) {
-                    return offset;
-                }
+            var diffDict = locationDiffDict[name];
+            if (!diffDict.ContainsKey(line)) {
+                return 0;
             }
-            return 0;
+            var diffs = diffDict[line];
+            var sumDiff = diffs.Where(x => x.Chara < chara).Select(x => x.Diff).Sum();
+            return sumDiff;
         }
 
         public async Task<List<CompletionItem>> GetCompletions(string name, string text, int line, int chara) {

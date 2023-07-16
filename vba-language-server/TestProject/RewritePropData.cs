@@ -53,7 +53,8 @@ Private Sub       letName2(arg1 As String)
 End Sub     
 Public Property Name1 As String
 Public Property Name2 As String
-End Class";
+End Class
+";
         }
 
         public static string GetSrcNotAs() {

@@ -9,27 +9,29 @@ using System.Text;
 using System.Text.RegularExpressions;
 
 namespace VBACodeAnalysis {
+    using locDiffDict = Dictionary<int, List<LocationDiff>>;
+
     public class RewriteProperty {
-        // 書き換えした場合、元コードと書き換え後でずれが生じるので下の対応で定義やホバー、補完位置の調整が必要
-        // line - (chara start, offset)
-        // どのラインのどの位置から追加しないといけないオフセット値の対応
-        public Dictionary<int, (int, int)> charaOffsetDict;
+        // line - (line start, offset)
+        // 書き換えで追加された文字を考慮するのが
+        // どのラインのどの位置から、どれだけの文字数を調整で追加するか
+        public locDiffDict locationDiffDict;
 
         // line - line
         // 追加したVB.net形式のprop文のライン位置と元の(VBA形式の) prop文のライン位置との対応
         public Dictionary<int, int> lineMappingDict;
 
 		private void Init() {
-            charaOffsetDict = new Dictionary<int, (int, int)>();
+            locationDiffDict = new locDiffDict();
             lineMappingDict = new Dictionary<int, int>();
         }
 
-        public SyntaxNode Rewrite(SyntaxNode docRoot) {
+        public (SyntaxNode root, locDiffDict dict) Rewrite(SyntaxNode docRoot) {
             Init();
 
             var (changes, lineGetLetDict) = GetPropStmtChanges(docRoot);
             if (!changes.Any()) {
-                return docRoot;
+                return (docRoot,  new locDiffDict());
             }
 
             docRoot = docRoot.SyntaxTree
@@ -39,11 +41,11 @@ namespace VBACodeAnalysis {
 
             var (PropNamePropStmtLineDict, lineRepStmtDict) = GetReplaceDict(docRoot, lineGetLetDict);
             if (!PropNamePropStmtLineDict.Any() || !lineRepStmtDict.Any()) {
-                return docRoot;
+                return (docRoot, new locDiffDict());
             }
            
             docRoot = ApplyReplace(docRoot, PropNamePropStmtLineDict, lineRepStmtDict);
-            return docRoot;
+            return (docRoot, locationDiffDict);
         }
 
         private (List<TextChange>, Dictionary<int, string>) GetPropStmtChanges(SyntaxNode docRoot) {
@@ -165,14 +167,22 @@ namespace VBACodeAnalysis {
                     if (modify.IsKind(SyntaxKind.PublicKeyword)) {
                         text = text.Replace("Public", "Private");
                     }
-                    var len = modify.Text.Length - "Private".Length;
-                    charaOffsetDict[lineNum] = ("Private".Length, len);
+                    var len = "Private".Length - modify.Text.Length;
+                    if (!locationDiffDict.ContainsKey(lineNum)) {
+                        locationDiffDict.Add(lineNum, new List<LocationDiff>());
+                    }
+                    locationDiffDict[lineNum].Add(
+                        new LocationDiff(lineNum, "Private".Length, len));
                 } else {
                     text = $"Private {text}";
                     var len = "Private".Length;
-                    charaOffsetDict[lineNum] = (len, len);
+                    if (!locationDiffDict.ContainsKey(lineNum)) {
+                        locationDiffDict.Add(lineNum, new List<LocationDiff>());
+                    }
+                    locationDiffDict[lineNum].Add(
+                        new LocationDiff(lineNum, len, len));
                 }
-                lineRepStmtDict.Add(lineNum, text);
+				lineRepStmtDict.Add(lineNum, text);
 
                 // prop文を書き換えたメソッド内でメソッド名=値としている箇所を
                 // get+メソッド名=値に書き換える
@@ -199,7 +209,11 @@ namespace VBACodeAnalysis {
 
                             lineRepStmtDict.Add(assigLineNum, Regex.Replace(newasg.ToFullString(), Environment.NewLine, ""));
                             var assigTrivia = assigStmt.GetLeadingTrivia().FirstOrDefault().ToString();
-                            charaOffsetDict[assigLineNum] = (assigTrivia.Length + repText.Length, funcName.Length - repText.Length);
+                            if (!locationDiffDict.ContainsKey(assigLineNum)) {
+                                locationDiffDict.Add(assigLineNum, new List<LocationDiff>());
+                            }
+                            locationDiffDict[assigLineNum].Add(
+                                new LocationDiff(assigLineNum, assigTrivia.Length + repText.Length, repText.Length - funcName.Length));
                         }
 					}
 				}

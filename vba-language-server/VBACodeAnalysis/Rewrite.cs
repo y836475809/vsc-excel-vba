@@ -34,7 +34,9 @@ namespace VBACodeAnalysis {
 			    .GetRootAsync().Result;
 
             var rewriteProp = new RewriteProperty();
-            docRoot = rewriteProp.Rewrite(docRoot);
+            var propResult = rewriteProp.Rewrite(docRoot);
+            docRoot = propResult.root;
+            ApplyLocationDict(ref locationDiffDict, propResult.dict);
             lineMappingDict = rewriteProp.lineMappingDict;
 
             var typeResult = TypeStatement(docRoot);

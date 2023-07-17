@@ -1,4 +1,4 @@
-using Microsoft.CodeAnalysis;
+﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.FindSymbols;
 using Microsoft.CodeAnalysis.Text;
 using Microsoft.CodeAnalysis.VisualBasic;
@@ -49,8 +49,11 @@ namespace VBACodeAnalysis {
             docRoot = result.root;
             MergeLocationDiffDict(ref locationDiffDict, result.dict);
 
+			var predefinedResult = Predefined(docRoot);
+            docRoot = predefinedResult.root;
+            MergeLocationDiffDict(ref locationDiffDict, predefinedResult.dict);
 
-            return docRoot.GetText();
+			return docRoot.GetText();
         }
 
         public void MergeLocationDiffDict(ref locDiffDict srcDict, locDiffDict inDict) {
@@ -361,10 +364,35 @@ namespace VBACodeAnalysis {
             return (repTree.GetRootAsync().Result, locDiffDict);
         }
 
-        private void updateCharaOffsetDict(Dictionary<int, (int, int)> dict) {
-            foreach (var item in dict) {
-                charaOffsetDict[item.Key] = item.Value;
+        public (SyntaxNode root, locDiffDict dict) Predefined(SyntaxNode root) {
+            var nm = this.setting.VBAPredefined.ModuleName;
+            var dict = new locDiffDict();
+            var lookup = new Dictionary<SyntaxToken, SyntaxToken>();
+            var items = root.DescendantNodes().OfType<PredefinedCastExpressionSyntax>();
+            foreach (var item in items) {
+                var fiestToken = item.GetFirstToken();
+                var oldNode = item.FindNode(fiestToken.Span);
+                var text = fiestToken.Text;      
+                var newName = $"{nm}.{text}";
+                var newToken = SyntaxFactory.Token(
+                    SyntaxKind.KeyKeyword, newName)
+                    .WithLeadingTrivia(oldNode.GetLeadingTrivia());
+                lookup.Add(fiestToken, newToken);
+
+                var ls = fiestToken.GetLocation().GetLineSpan();
+                var slp = ls.StartLinePosition;
+				if (!dict.ContainsKey(slp.Line)) {
+                    dict.Add(slp.Line, new List<LocationDiff>());
+                }
+                dict[slp.Line].Add(
+                    new LocationDiff(slp.Line, slp.Character, newName.Length-text.Length));
             }
+            if (lookup.Count == 0) {
+                return (root, new locDiffDict());
+            }
+            var repNode = root.ReplaceTokens(lookup.Keys, (s, d) => lookup[s]);
+            var tree = root.SyntaxTree.WithChangedText(repNode.GetText());
+            return (tree.GetRootAsync().Result, dict);
         }
 
         private List<TextChange> LocalDeclarationStatement(IEnumerable<SyntaxNode> node) {

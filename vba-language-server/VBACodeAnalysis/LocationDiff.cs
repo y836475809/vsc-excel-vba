@@ -10,5 +10,9 @@ namespace VBACodeAnalysis {
 			this.Chara = Chara;
 			this.Diff = Diff;
 		}
+
+		public LocationDiff Clone() {
+			return (LocationDiff)MemberwiseClone();
+		}
 	}
 }

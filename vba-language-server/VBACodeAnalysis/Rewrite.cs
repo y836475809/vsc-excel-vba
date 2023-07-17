@@ -36,43 +36,51 @@ namespace VBACodeAnalysis {
             var rewriteProp = new RewriteProperty();
             var propResult = rewriteProp.Rewrite(docRoot);
             docRoot = propResult.root;
-            ApplyLocationDict(ref locationDiffDict, propResult.dict);
+            MergeLocationDiffDict(ref locationDiffDict, propResult.dict);
             lineMappingDict = rewriteProp.lineMappingDict;
 
             var typeResult = TypeStatement(docRoot);
             docRoot = typeResult.root;
-            ApplyLocationDict(ref locationDiffDict, typeResult.dict);
+            MergeLocationDiffDict(ref locationDiffDict, typeResult.dict);
 
             docRoot = AnnotationAs(docRoot);
 
             var result = VBAClassToFunction(docRoot);
             docRoot = result.root;
-            ApplyLocationDict(ref locationDiffDict, result.dict);
+            MergeLocationDiffDict(ref locationDiffDict, result.dict);
+
 
             return docRoot.GetText();
         }
 
-        public void ApplyLocationDict(ref locDiffDict srcDict, locDiffDict dict) {
-            foreach (var item in dict) {
-                if (srcDict.ContainsKey(item.Key)) {
-                    var mlist = srcDict[item.Key];
-                    mlist.Sort((a, b) => {
+        public void MergeLocationDiffDict(ref locDiffDict srcDict, locDiffDict inDict) {
+            foreach (var inItem in inDict) {
+                if (srcDict.ContainsKey(inItem.Key)) {
+                    var srclist = srcDict[inItem.Key];
+                    srclist.Sort((a, b) => {
                         return a.Chara - b.Chara;
                     });
-                    foreach (var item2 in item.Value) {
+                    var cloneList = srclist.Select(x => x.Clone()).ToList();
+                    var diff = cloneList[0].Diff;
+                    for (int i = 1; i < cloneList.Count(); i++) {
+                        cloneList[i].Chara += diff;
+                        diff += cloneList[i].Diff;
+                    }
+
+                    foreach (var inLocDiff in inItem.Value) {
                         var sumDiff = 0;
-                        foreach (var item3 in mlist) {
-                            if (item3.Chara < item2.Chara) {
-                                sumDiff += item3.Diff;
+                        foreach (var clineLocDiff in cloneList) {
+                            if (clineLocDiff.Chara < inLocDiff.Chara) {
+                                sumDiff += clineLocDiff.Diff;
                             } else {
                                 break;
                             }
                         }
-                        item2.Chara -= sumDiff;
+                        inLocDiff.Chara -= sumDiff;
                     }
-                    mlist.AddRange(item.Value);
+                    srclist.AddRange(inItem.Value);
                 } else {
-                    srcDict.Add(item.Key, item.Value);
+                    srcDict.Add(inItem.Key, inItem.Value);
                 }
             }
             foreach (var item in srcDict) {

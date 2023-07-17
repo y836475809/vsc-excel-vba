@@ -1,12 +1,12 @@
 ﻿{
-	"App": {
-		"RewriteSetting": {
-			"namespace": "f",
-			"mapping": [
-				[ "Range", "Ran" ],
-				[ "Workbooks", "WorkBks" ],
-				[ "Worksheets", "Workshts" ],
-				[ "Cells", "Cls" ]
+	"rewrite": {
+		"vba_class_to_function": {
+			"module_name": "f",
+			"vba_classes": [
+				"range",
+				"workbooks",
+				"worksheets",
+				"cells"
 			]
 		}
 	}

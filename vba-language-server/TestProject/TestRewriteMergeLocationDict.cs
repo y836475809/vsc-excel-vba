@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using VBACodeAnalysis;
 using Xunit;
 
@@ -6,7 +6,7 @@ namespace TestProject {
 	public class TestRewriteMergeLocationDict {
 		private Rewrite MakeRewrite() {
 			var setting = new RewriteSetting();
-			setting.NameSpace = "f";
+			setting.VBAClassToFunction.ModuleName = "f";
 			return new Rewrite(setting);
 		}
 

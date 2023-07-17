@@ -1,10 +1,10 @@
 ﻿﻿using VBACodeAnalysis;
-using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Text.Json;
+using System.Reflection;
 
 namespace VBALanguageServer {
 	class App {
@@ -222,13 +222,15 @@ namespace VBALanguageServer {
 
             logger.Info("Initialized");
         }
+
         private Settings LoadConfig() {
-            var builder = new ConfigurationBuilder();
-            builder.AddJsonFile("app.json");
-            var config = builder.Build();
             var settings = new Settings();
-            config.GetSection("App").Bind(settings);
-            settings.convert();
+            var assembly = Assembly.GetEntryAssembly();
+            var jsonPath = Path.Join(Path.GetDirectoryName(assembly.Location), "app.json");
+            using (var sr = new StreamReader(jsonPath)) {
+                var jsonStr = sr.ReadToEnd();
+                settings.Parse(jsonStr);
+            }
             return settings;
         }
     }

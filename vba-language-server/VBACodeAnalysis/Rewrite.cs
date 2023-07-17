@@ -103,8 +103,8 @@ namespace VBACodeAnalysis {
         }
 
         public (SyntaxNode root, locDiffDict dict) VBAClassToFunction(SyntaxNode root) {
-            var ns = setting.NameSpace;
-            var rewriteDict = setting.getRewriteDict();
+            var mn = setting.VBAClassToFunction.ModuleName;
+            var vbaClasses = setting.VBAClassToFunction.VBAClasses;
 
             var locDiffDict = new locDiffDict();
             var lookup = new Dictionary<SyntaxNode, SyntaxNode>();
@@ -114,11 +114,11 @@ namespace VBACodeAnalysis {
             foreach (var stmt in invExpStmts) {
                 var fiestToken = stmt.GetFirstToken();
                 var text = fiestToken.Text;
-                if (!rewriteDict.ContainsKey(text)) {
+                if (!vbaClasses.Contains(text.ToLower())) {
                     continue;
                 }
                 var oldName = stmt.ToString();
-                var newName = $"{ns}.{oldName}";
+                var newName = $"{mn}.{oldName}";
                 var newNode = SyntaxFactory.ParseExpression(newName)
 					.WithLeadingTrivia(stmt.GetLeadingTrivia())
 					.WithTrailingTrivia(stmt.GetTrailingTrivia());
@@ -134,17 +134,16 @@ namespace VBACodeAnalysis {
                 }
             }
             
-            var keys = rewriteDict.Keys.Select(x => x.ToLower());
             var forStmt = node.OfType<ForEachStatementSyntax>();
             foreach (var stmt in forStmt) {
                 var fiestToken = stmt.Expression.GetFirstToken();
                 var fiestNode = stmt.FindNode(fiestToken.Span);
-                if (!keys.Contains(fiestNode.ToString().ToLower())) {
+                if (!vbaClasses.Contains(fiestNode.ToString().ToLower())) {
                     continue;
 				}
 
                 var text = fiestNode.ToString();
-                var newName = $"{ns}.{text}";
+                var newName = $"{mn}.{text}";
                 var newNode = SyntaxFactory.ParseExpression(newName)
                     .WithLeadingTrivia(fiestNode.GetLeadingTrivia())
                     .WithTrailingTrivia(fiestNode.GetTrailingTrivia());

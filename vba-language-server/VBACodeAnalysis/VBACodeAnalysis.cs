@@ -368,16 +368,7 @@ namespace VBACodeAnalysis {
                 } 
             }
             
-            if (symbol.ContainingType?.Name == rewriteSetting.NameSpace
-                    && rewriteSetting.getRestoreDict().ContainsKey(symbol.Name)) {
-                var rewName = $"{symbol.Name}(";
-                var resName = $"{rewriteSetting.getRestoreDict()[symbol.Name]}(";
-                item.DisplayText = symbol.ToDisplayString().Replace(
-                    rewName, resName);
-            } else {
-                item.DisplayText = symbol.ToDisplayString();
-            }
-
+            item.DisplayText = symbol.ToDisplayString();
             item.Description = symbol.GetDocumentationCommentXml();
             item.Kind = symbol.Kind.ToString();
             item.ReturnType = "";
@@ -417,22 +408,7 @@ namespace VBACodeAnalysis {
                 //var pp =  SymbolFinder.FindDeclarationsAsync(doc.Project, "Range", false).Result.ToList();
                 var symbol = await SymbolFinder.FindSymbolAtPositionAsync(model, position, workspace);
                 if (symbol != null) {
-                    //if (symbol.ContainingType?.Name == "Object") {
-                    //    continue;
-                    //}
-                    
-                    //if (symbol.ContainingType?.Name == "f" && symbol.Name == "Ran") {
-                    if (symbol.ContainingType?.Name == rewriteSetting.NameSpace
-                            && rewriteSetting.getRestoreDict().ContainsKey(symbol.Name)) {
-                        var rewName = $"{symbol.Name}(";
-                        var resName = $"{rewriteSetting.getRestoreDict()[symbol.Name]}(";
-                        //completionItem.DisplayText = symbol.ToDisplayString().Replace("Ran(", "Range(");
-                        completionItem.DisplayText = symbol.ToDisplayString().Replace(
-                            rewName, resName);
-                    } else {
-                        completionItem.DisplayText = symbol.ToDisplayString();
-                    }
-                    //completionItem.DisplayText = symbol.ToDisplayString();
+                     completionItem.DisplayText = symbol.ToDisplayString();
                     completionItem.CompletionText = symbol.MetadataName;
                     completionItem.Description = symbol.GetDocumentationCommentXml();
                     completionItem.Kind = symbol.Kind.ToString();

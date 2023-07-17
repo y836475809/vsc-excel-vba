@@ -22,10 +22,10 @@ namespace TestProject {
 			project = workspace.AddProject(projectInfo);
 
 			var setting = new RewriteSetting();
-			setting.NameSpace = "f";
-			setting.Mapping.Add(new List<string> { "Cells", "Cls" });
-			setting.Mapping.Add(new List<string> { "Range", "Ran" });
-			setting.convert();
+			var settingVBA = setting.VBAClassToFunction;
+			settingVBA.ModuleName = "f";
+			settingVBA.VBAClasses.Add("cells");
+			settingVBA.VBAClasses.Add("range");
 			rewrite = new Rewrite(setting);
 		}
 

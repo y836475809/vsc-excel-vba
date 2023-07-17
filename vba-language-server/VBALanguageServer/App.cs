@@ -26,7 +26,7 @@ namespace VBALanguageServer {
         private void Reset() {
             codeAdapter = new CodeAdapter();
 			vbaca = new VBACodeAnalysis.VBACodeAnalysis();
-            var settings = LoadConfig();
+            var settings = LoadSettings();
             vbaca.setSetting(settings.RewriteSetting);
         }
 
@@ -223,10 +223,10 @@ namespace VBALanguageServer {
             logger.Info("Initialized");
         }
 
-        private Settings LoadConfig() {
+        private Settings LoadSettings() {
             var settings = new Settings();
             var assembly = Assembly.GetEntryAssembly();
-            var jsonPath = Path.Join(Path.GetDirectoryName(assembly.Location), "app.json");
+            var jsonPath = Path.Join(Path.GetDirectoryName(assembly.Location), "settings.json");
             using (var sr = new StreamReader(jsonPath)) {
                 var jsonStr = sr.ReadToEnd();
                 settings.Parse(jsonStr);

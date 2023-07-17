@@ -38,9 +38,6 @@ namespace VBACodeAnalysis {
                 if (codes.Contains(x.Id)) {
                     return false;
                 }
-                if(IsRewriteFunction(x, node)) {
-                    return false;
-				}
 
                 if (x.Id == "BC30451") {
                     //  BC30451 宣言されていません。アクセスできない保護レベルになっています
@@ -113,29 +110,6 @@ namespace VBACodeAnalysis {
 
             items.AddRange(AddItems);
             return items;
-        }
-
-        private bool IsRewriteFunction(Diagnostic x, SyntaxNode node) {
-            if (x.Id != "BC30068") {
-                return false;
-            }
-            var targetNode = node.FindNode(x.Location.SourceSpan);
-			if (targetNode == null) {
-                return false;
-			}
-            var tokens = targetNode.DescendantTokens().ToList();
-            if (tokens.Count < 4) {
-                return false;
-            }
-            var ns = rewriteSetting.NameSpace;
-            if (tokens.First().ToString() != ns) {
-                return false;
-            }
-            var dict = rewriteSetting.getRestoreDict();
-            if (dict.ContainsKey(tokens[2].ToString()) && tokens[3].ToString() == "(") {
-                return true;
-            }
-            return false;
         }
 
 		private void AddMultiArgMethodDiag(SyntaxNode node, ref List<DiagnosticItem> dls) {

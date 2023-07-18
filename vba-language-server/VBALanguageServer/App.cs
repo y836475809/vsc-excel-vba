@@ -104,8 +104,8 @@ namespace VBALanguageServer {
                 }
                 var adjChara = vbaca.getoffset(e.FilePath, line, e.Chara) + e.Chara;
                 var Items = vbaca.GetDefinitions(e.FilePath, vbCode, line, adjChara).Result;
-                Location adjustLocation(Location location) {
-					int toVBAoffset = vbaca.getoffset(e.FilePath, location.Line, location.Character);
+                Location adjustLocation(string defFilePath, Location location) {
+					int toVBAoffset = vbaca.getoffset(defFilePath, location.Line, location.Character);
 					location.Character += - toVBAoffset;
 					if (location.Line < 0) {
                         location.Line = 0;
@@ -125,8 +125,8 @@ namespace VBALanguageServer {
                         item.End.Line = 0;
                         item.End.Character = 0;
                     } else {
-                        item.Start = adjustLocation(item.Start);
-                        item.End = adjustLocation(item.End);
+                        item.Start = adjustLocation(item.FilePath,  item.Start);
+                        item.End = adjustLocation(item.FilePath, item.End);
                     }
                     list.Add(item);
                 }

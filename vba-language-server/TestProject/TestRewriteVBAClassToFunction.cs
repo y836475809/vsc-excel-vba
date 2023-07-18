@@ -116,5 +116,49 @@ End Module";
 			};
 			Helper.AssertLocationDiffDict(predict, dict);
 		}
+
+		[Fact]
+		public void TestClassForEachArgs() {
+			Setup();
+			var cellsClass = $@"Public Class Cells
+End Class";
+			var rangeClass = $@"Public Class Range
+End Class";
+			var srcCode = $@"Module Module1
+Sub Main()
+Dim v As Vatiant
+For Each v In Range
+Next
+For Each v In Range(Cells(1,1), Cells(2,2))
+Next
+End Sub
+End Module";
+			var preCode = $@"Module Module1
+Sub Main()
+Dim v As Vatiant
+For Each v In f.Range
+Next
+For Each v In f.Range(f.Cells(1,1), f.Cells(2,2))
+Next
+End Sub
+End Module";
+			AddDoc("cells", cellsClass);
+			AddDoc("range", rangeClass);
+			var doc = AddDoc("srcCode", srcCode);
+			var docRoot = doc.GetSyntaxRootAsync().Result;
+			var (root, dict) = rewrite.VBAClassToFunction(docRoot);
+			var actCode = root.GetText().ToString();
+			Helper.AssertCode(preCode, actCode);
+
+			var predict = new Dictionary<int, List<LocationDiff>> {
+				{3, new List<LocationDiff>{ new LocationDiff(3, 14, 2)} },
+				{5, new List<LocationDiff>{ 
+					new LocationDiff(5, 14, 2) ,
+					new LocationDiff(5, 20, 2) ,
+					new LocationDiff(5, 32, 2) ,
+				} },
+			};
+			Helper.AssertLocationDiffDict(predict, dict);
+		}
 	}
 }

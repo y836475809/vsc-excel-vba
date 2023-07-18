@@ -115,19 +115,27 @@ namespace VBACodeAnalysis {
             var node = root.DescendantNodes();
             var invExpStmts = node.OfType<InvocationExpressionSyntax>();
             foreach (var stmt in invExpStmts) {
-                var fiestToken = stmt.GetFirstToken();
-                var text = fiestToken.Text;
+                var firstToken = stmt.GetFirstToken();
+                var text = firstToken.Text;
                 if (!vbaClasses.Contains(text.ToLower())) {
                     continue;
                 }
-                var oldName = stmt.ToString();
+                var childNodes = stmt.ChildNodes();
+                if (!childNodes.Any()) {
+                    continue;
+                }
+                var firstNode = childNodes.First();
+                var oldName = firstNode.ToString();
                 var newName = $"{mn}.{oldName}";
                 var newNode = SyntaxFactory.ParseExpression(newName)
-					.WithLeadingTrivia(stmt.GetLeadingTrivia())
-					.WithTrailingTrivia(stmt.GetTrailingTrivia());
-                lookup.Add(stmt, newNode);
+					.WithLeadingTrivia(firstNode.GetLeadingTrivia())
+					.WithTrailingTrivia(firstNode.GetTrailingTrivia());
+                if (lookup.ContainsKey(firstNode)) {
+                    continue;
+                }
+                lookup.Add(firstNode, newNode);
 
-				var lp = stmt.GetLocation().GetLineSpan();
+                var lp = firstNode.GetLocation().GetLineSpan();
                 var slp = lp.StartLinePosition;
                 if (!locDiffDict.ContainsKey(slp.Line)) {
                     locDiffDict.Add(slp.Line, new List<LocationDiff>());
@@ -139,19 +147,22 @@ namespace VBACodeAnalysis {
             
             var forStmt = node.OfType<ForEachStatementSyntax>();
             foreach (var stmt in forStmt) {
-                var fiestToken = stmt.Expression.GetFirstToken();
-                var fiestNode = stmt.FindNode(fiestToken.Span);
-                if (!vbaClasses.Contains(fiestNode.ToString().ToLower())) {
+                var firstToken = stmt.Expression.GetFirstToken();
+                var firstNode = stmt.FindNode(firstToken.Span);
+                if (!vbaClasses.Contains(firstToken.ToString().ToLower())) {
                     continue;
 				}
 
-                var text = fiestNode.ToString();
+                var text = firstNode.ToString();
                 var newName = $"{mn}.{text}";
                 var newNode = SyntaxFactory.ParseExpression(newName)
-                    .WithLeadingTrivia(fiestNode.GetLeadingTrivia())
-                    .WithTrailingTrivia(fiestNode.GetTrailingTrivia());
-                lookup.Add(fiestNode, newNode);
-                var lp = fiestNode.GetLocation().GetLineSpan();
+                    .WithLeadingTrivia(firstNode.GetLeadingTrivia())
+                    .WithTrailingTrivia(firstNode.GetTrailingTrivia());
+                if (lookup.ContainsKey(firstNode)) {
+                    continue;
+                }
+                lookup.Add(firstNode, newNode);
+                var lp = firstNode.GetLocation().GetLineSpan();
                 var slp = lp.StartLinePosition;
                 if (!locDiffDict.ContainsKey(slp.Line)) {
                     locDiffDict.Add(slp.Line, new List<LocationDiff>());

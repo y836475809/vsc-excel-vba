@@ -148,6 +148,10 @@ namespace VBACodeAnalysis {
             var forStmt = node.OfType<ForEachStatementSyntax>();
             foreach (var stmt in forStmt) {
                 var firstToken = stmt.Expression.GetFirstToken();
+				if (firstToken.IsKind(SyntaxKind.None)){
+                    continue;
+                }
+
                 var firstNode = stmt.FindNode(firstToken.Span);
                 if (!vbaClasses.Contains(firstToken.ToString().ToLower())) {
                     continue;

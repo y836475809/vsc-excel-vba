@@ -160,5 +160,23 @@ End Module";
 			};
 			Helper.AssertLocationDiffDict(predict, dict);
 		}
+
+		[Fact]
+		public void TestClassForEachNone() {
+			Setup();
+			var srcCode = $@"Module Module1
+Sub Main()
+Dim v As Vatiant
+For Each v In class ' class: none token
+Next
+End Sub
+End Module";
+			var doc = AddDoc("srcCode", srcCode);
+			var docRoot = doc.GetSyntaxRootAsync().Result;
+			var (root, dict) = rewrite.VBAClassToFunction(docRoot);
+			var actCode = root.GetText().ToString();
+			Helper.AssertCode(srcCode, actCode);
+			Assert.Empty(dict);
+		}
 	}
 }

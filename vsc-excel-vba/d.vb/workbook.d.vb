@@ -11,4 +11,10 @@ Public Class Workbook
 
     Public Sub Activate()
     End Sub
+
+    Public Sub Close(
+        Optional SaveChanges As Boolean = True, 
+        Optional FileName As String = "", 
+        Optional RouteWorkbook As Boolean = False)
+    End Sub
 End Class

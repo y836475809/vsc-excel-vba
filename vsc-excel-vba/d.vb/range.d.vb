@@ -52,6 +52,25 @@ Public Class Range : Implements IEnumerable
         Optional Criteria2 As String = "",
         Optional VisibleDropDown As Boolean = True) As Range
     End Function
+    
+    ' Type XlAutoFillType
+    Public Sub AutoFill(
+        Destination As Range, 
+        Optional Type As Long)
+    End Sub
+
+    Public Sub Copy(Optional Destination As Range = Nothing)
+    End Sub
+    
+    Public Sub Cut(Optional Destination As Range = Nothing)
+    End Sub
+    
+    ' Shift XlDeleteShiftDirection
+    Public Sub Delete(Optional Shift As Long = 0)
+    End Sub
+
+    Public Sub Parse(Optional ParseLine As String = "", Optional Destination As Range = Nothing)
+    End Sub  
 
     Public Function Find(What As Object, 
         Optional After As Object, 

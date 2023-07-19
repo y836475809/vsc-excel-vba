@@ -93,4 +93,38 @@ Public Module ExcelVBAEnum
     Public Const xlExtractData = 2
     Public Const xlNormalLoad = 0
     Public Const xlRepairFile = 1
+
+    Public Enum XlAutoFillType
+        xlFillCopy = 1
+        xlFillDays = 5
+        xlFillDefault = 0
+        xlFillFormats = 3
+        xlFillMonths = 7
+        xlFillSeries = 2
+        xlFillValues = 4
+        xlFillWeekdays = 6
+        xlFillYears = 8
+        xlGrowthTrend = 10
+        xlLinearTrend = 9
+        xlFlashFill = 11
+    End Enum
+    Public Const xlFillCopy = 1
+    Public Const xlFillDays = 5
+    Public Const xlFillDefault = 0
+    Public Const xlFillFormats = 3
+    Public Const xlFillMonths = 7
+    Public Const xlFillSeries = 2
+    Public Const xlFillValues = 4
+    Public Const xlFillWeekdays = 6
+    Public Const xlFillYears = 8
+    Public Const xlGrowthTrend = 10
+    Public Const xlLinearTrend = 9
+    Public Const xlFlashFill = 11
+
+    Public Enum XlDeleteShiftDirection
+        xlShiftToLeft = -4159
+        xlShiftUp = -4162
+    End Enum
+    Public Const xlShiftToLeft = -4159
+    Public Const xlShiftUp = -4162   
 End Module

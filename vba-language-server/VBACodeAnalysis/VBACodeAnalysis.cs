@@ -177,24 +177,27 @@ namespace VBACodeAnalysis {
             var completionService = CompletionService.GetService(doc);
             var results = await completionService.GetCompletionsAsync(doc, position);
             if (results.ItemsList.Any()) {
-                completions.AddRange(results.ItemsList.Where(x => {
+                var items = results.ItemsList.Where(x => {
                     return x.Tags.Contains("Keyword")
                         && !(completions.Exists(y => y.DisplayText == x.DisplayText));
                 }).Select(x => {
-					var compItem = new CompletionItem {
-						DisplayText = x.DisplayText,
-						CompletionText = x.DisplayText,
-						Description = x.Properties.Values.ToString(),
-						Kind = "Keyword"
-					};
-					return compItem;
-                }));
-                completions.Add(new CompletionItem {
-                    DisplayText = "Variant",
-                    CompletionText = "Variant",
-                    Description = "Variant",
-                    Kind = "Keyword"
+                    var compItem = new CompletionItem {
+                        DisplayText = x.DisplayText,
+                        CompletionText = x.DisplayText,
+                        Description = x.Properties.Values.ToString(),
+                        Kind = "Keyword"
+                    };
+                    return compItem;
                 });
+                if (items.Any()) {
+                    completions.AddRange(items);
+                    completions.Add(new CompletionItem {
+                        DisplayText = "Variant",
+                        CompletionText = "Variant",
+                        Description = "Variant",
+                        Kind = "Keyword"
+                    });
+                }
             }
             return completions;
         }

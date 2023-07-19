@@ -1,4 +1,4 @@
-﻿﻿using VBACodeAnalysis;
+using VBACodeAnalysis;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -104,17 +104,6 @@ namespace VBALanguageServer {
                 }
                 var adjChara = vbaca.getoffset(e.FilePath, line, e.Chara) + e.Chara;
                 var Items = vbaca.GetDefinitions(e.FilePath, vbCode, line, adjChara).Result;
-                Location adjustLocation(string defFilePath, Location location) {
-					int toVBAoffset = vbaca.getoffset(defFilePath, location.Line, location.Character);
-					location.Character += - toVBAoffset;
-					if (location.Line < 0) {
-                        location.Line = 0;
-                    }
-                    if (location.Positon < 0) {
-                        location.Positon = 0;
-                    }
-                    return new Location(location.Positon, location.Line, location.Character);
-                }
                 foreach (var item in Items) {
                     var itemVbCodeInfo = codeAdapter.GetVbCodeInfo(item.FilePath);
                     if (item.IsKindClass()) {
@@ -180,6 +169,11 @@ namespace VBALanguageServer {
                 var vbCodeInfo = codeAdapter.GetVbCodeInfo(e.FilePath);
                 var adjChara = vbaca.getoffset(e.FilePath, e.Line, e.Chara) + e.Chara;
                 var items = vbaca.GetReferences(e.FilePath, e.Line, adjChara).Result;
+                foreach (var item in items) {
+                    var itemVbCodeInfo = codeAdapter.GetVbCodeInfo(item.FilePath);
+                    item.Start = adjustLocation(item.FilePath, item.Start);
+                    item.End = adjustLocation(item.FilePath, item.End);
+                }
                 e.Items = items;
                 logger.Info("ReferencesReq");
             };
@@ -232,6 +226,18 @@ namespace VBALanguageServer {
                 settings.Parse(jsonStr);
             }
             return settings;
+        }
+
+        private Location adjustLocation(string defFilePath, Location location) {
+            int toVBAoffset = vbaca.getoffset(defFilePath, location.Line, location.Character);
+            location.Character -= toVBAoffset;
+            if (location.Line < 0) {
+                location.Line = 0;
+            }
+            if (location.Positon < 0) {
+                location.Positon = 0;
+            }
+            return new Location(location.Positon, location.Line, location.Character);
         }
     }
 }

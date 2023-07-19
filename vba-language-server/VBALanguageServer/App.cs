@@ -1,4 +1,4 @@
-using VBACodeAnalysis;
+﻿﻿using VBACodeAnalysis;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -155,6 +155,12 @@ namespace VBALanguageServer {
                 }
                 var vbCodeInfo = codeAdapter.GetVbCodeInfo(e.FilePath);
                 var items = vbaca.GetDiagnostics(e.FilePath).Result;
+                foreach (var item in items) {
+                    var itemVbCodeInfo = codeAdapter.GetVbCodeInfo(e.FilePath);
+                    int toVBAoffset = vbaca.getoffset(e.FilePath, item.StartLine, item.StartChara);
+                    item.StartChara -= toVBAoffset;
+                    item.EndChara -= toVBAoffset;
+                }
                 e.Items = items;
                 logger.Info("DiagnosticReq");
             };

@@ -142,8 +142,11 @@ namespace VBACodeAnalysis {
 
             var docId = doc_id_dict[name];
             var doc = workspace.CurrentSolution.GetDocument(docId);
-            var position = doc.GetTextAsync().Result.Lines.GetPosition(new LinePosition(line, chara));
 
+            var position = GetPosition(doc, line, chara);
+            if(position < 0) {
+                return completions;
+            }
             var symbols = await Recommender.GetRecommendedSymbolsAtPositionAsync(doc, position);
             foreach (var symbol in symbols) {
                 if (!IsCompletionItem(symbol)) {
@@ -204,17 +207,13 @@ namespace VBACodeAnalysis {
             if (workspace.CurrentSolution.ContainsDocument(docId)) {
                 var doc = workspace.CurrentSolution.GetDocument(docId);
                 var model = await doc.GetSemanticModelAsync();
-                var lines = doc.GetTextAsync().Result.Lines;
-                if(lines.Count <= line || line < 0) {
-                    return items;
-                }
-                if (lines[line].End <= chara || chara < 0) {
+
+                var position = GetPosition(doc, line, chara);
+                if (position < 0) {
                     return items;
                 }
 
-                var position = lines.GetPosition(new LinePosition(line, chara));
                 var symbol = await SymbolFinder.FindSymbolAtPositionAsync(model, position, workspace);
-
                 if (symbol == null) {
                     return items;
                 }
@@ -281,7 +280,11 @@ namespace VBACodeAnalysis {
             }
 
             var doc = workspace.CurrentSolution.GetDocument(docId);
-            var position = doc.GetTextAsync().Result.Lines.GetPosition(new LinePosition(line, chara));
+            var position = GetPosition(doc, line, chara);
+            if (position < 0) {
+                return (procLine, procChara, -1);
+            }
+
             var rootNode = doc.GetSyntaxRootAsync().Result;
             var currentToken = rootNode.FindToken(position);
             var currentNode = rootNode.FindNode(currentToken.Span);
@@ -388,15 +391,11 @@ namespace VBACodeAnalysis {
                 var doc = workspace.CurrentSolution.GetDocument(docId);
                 var model = await doc.GetSemanticModelAsync();
 
-                var lines = doc.GetTextAsync().Result.Lines;
-                if (lines.Count <= line || line < 0) {
-                    return completionItem;
-                }
-                if (lines[line].End <= chara || chara < 0) {
+                var position = GetPosition(doc, line, chara);
+                if (position < 0) {
                     return completionItem;
                 }
 
-                var position = lines.GetPosition(new LinePosition(line, chara));
                 var symbol = await SymbolFinder.FindSymbolAtPositionAsync(model, position, workspace);
                 if (symbol != null) {
                      completionItem.DisplayText = symbol.ToDisplayString();
@@ -478,8 +477,13 @@ namespace VBACodeAnalysis {
             }
 
             var doc = workspace.CurrentSolution.GetDocument(docId);
+
+            var position = GetPosition(doc, line, chara);
+            if (position < 0) {
+                return items;
+            }
+
             var model = await doc.GetSemanticModelAsync();
-            var position = doc.GetTextAsync().Result.Lines.GetPosition(new LinePosition(line, chara));
             var symbol = await SymbolFinder.FindSymbolAtPositionAsync(model, position, workspace);
             if (symbol == null) {
                 return items;
@@ -507,6 +511,18 @@ namespace VBACodeAnalysis {
                 }
             }
             return items;
+        }
+
+        private int GetPosition(Document doc, int line, int chara) {
+            var lines = doc.GetTextAsync().Result.Lines;
+            if (lines.Count <= line || line < 0) {
+                return -1;
+            }
+            if (lines[line].End <= chara || chara < 0) {
+                return -1;
+            }
+            var position = lines.GetPosition(new LinePosition(line, chara));
+            return position;
         }
     }
 }

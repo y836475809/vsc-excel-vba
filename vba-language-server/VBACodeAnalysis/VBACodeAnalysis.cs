@@ -378,7 +378,7 @@ namespace VBACodeAnalysis {
             return items;
         }
 
-        public async Task<CompletionItem> GetHover(string name, string text, int position) {
+        public async Task<CompletionItem> GetHover(string name, int line, int chara) {
             var completionItem = new CompletionItem();
             if (!doc_id_dict.ContainsKey(name)) {
                 return completionItem;
@@ -387,6 +387,16 @@ namespace VBACodeAnalysis {
             if (workspace.CurrentSolution.ContainsDocument(docId)) {
                 var doc = workspace.CurrentSolution.GetDocument(docId);
                 var model = await doc.GetSemanticModelAsync();
+
+                var lines = doc.GetTextAsync().Result.Lines;
+                if (lines.Count <= line || line < 0) {
+                    return completionItem;
+                }
+                if (lines[line].End <= chara || chara < 0) {
+                    return completionItem;
+                }
+
+                var position = lines.GetPosition(new LinePosition(line, chara));
                 var symbol = await SymbolFinder.FindSymbolAtPositionAsync(model, position, workspace);
                 if (symbol != null) {
                      completionItem.DisplayText = symbol.ToDisplayString();

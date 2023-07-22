@@ -125,9 +125,8 @@ namespace VBALanguageServer {
                 logger.Info("DefinitionReq");
             };
             server.HoverReq += (object sender, CompletionEventArgs e) => {
-                var list = new List<CompletionItem>();
+                e.Items = new List<CompletionItem>();
                 if (!codeAdapter.Has(e.FilePath)) {
-                    e.Items = list;
                     logger.Info($"HoverReq, non: {Path.GetFileName(e.FilePath)}");
                     return;
                 }
@@ -135,19 +134,12 @@ namespace VBALanguageServer {
                 var vbCode = vbCodeInfo.VbCode;
                 var line = e.Line;
                 if (line < 0) {
-                    e.Items = list;
                     logger.Info($"HoverReq, non: {Path.GetFileName(e.FilePath)}");
                     return;
                 }
                 var adjChara = vbaca.GetCharaDiff(e.FilePath, line, e.Chara) + e.Chara;
-                var Items = vbaca.GetDefinitions(e.FilePath, vbCode, line, adjChara).Result;
-                foreach (var item in Items) {
-                    var sp = item.Start.Positon;
-                    var ep = item.End.Positon;
-                    var hoverItem = vbaca.GetHover(item.FilePath, e.Text, (int)((sp + ep) / 2)).Result;
-                    list.Add(hoverItem);
-                }
-                e.Items = list;
+                var item = vbaca.GetHover(e.FilePath, line, adjChara).Result;
+                e.Items.Add(item);
                 logger.Info("HoverReq");
             };
             server.DiagnosticReq += (object sender, DiagnosticEventArgs e) => {

@@ -4,14 +4,14 @@ using Xunit;
 
 namespace TestProject {
 	public class TestHoverField {
-        private CompletionItem GetItem(string code, string search) {
+        private CompletionItem GetItem(string code, int chara) {
             var vbaca = new VBACodeAnalysis.VBACodeAnalysis();
             vbaca.setSetting(new RewriteSetting());
             vbaca.AddDocument("m0", MakeModule());
             vbaca.AddDocument("c1", MakeClass());
             vbaca.AddDocument("m1", code);
-            var index = code.IndexOf(search);
-            return vbaca.GetHover("m1", "", index + 1).Result;
+            var srcLine = 4;
+            return vbaca.GetHover("m1", srcLine, chara).Result;
         }
         private string MakeModule() {
             var code = @$"Public Module m0
@@ -41,7 +41,7 @@ End Module";
         [Fact]
         public void TestModuleConstNum() {
             var code = MakeCode("local_num=pub_const_num+1");
-            var item = GetItem(code, "pub_const_num+1");
+            var item = GetItem(code, "local_num=".Length + 1);
             Assert.Equal(
                 "Public Const pub_const_num As Integer = 10",
                 item.DisplayText);
@@ -50,7 +50,7 @@ End Module";
         [Fact]
         public void TestModuleNum() {
             var code = MakeCode("local_num=pub_num+1");
-            var item = GetItem(code, "pub_num+1");
+            var item = GetItem(code, "local_num=".Length + 1);
             Assert.Equal(
                 "Public pub_num As Long",
                 item.DisplayText);
@@ -59,7 +59,7 @@ End Module";
         [Fact]
         public void TestClassConstNum() {
             var code = MakeCode("local_num=c.pub_const_num+1");
-            var item = GetItem(code, "pub_const_num+1");
+            var item = GetItem(code, "local_num=c.".Length + 1);
             Assert.Equal(
                 "Public Const pub_const_num As Integer = 10",
                 item.DisplayText);
@@ -68,7 +68,7 @@ End Module";
         [Fact]
         public void TestClassNum() {
             var code = MakeCode("local_num=c.pub_num+1");
-            var item = GetItem(code, "pub_num+1");
+            var item = GetItem(code, "local_num=c.".Length + 1);
             Assert.Equal(
                 "Public pub_num As Long",
                 item.DisplayText);

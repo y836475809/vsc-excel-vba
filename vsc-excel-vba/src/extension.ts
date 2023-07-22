@@ -14,6 +14,7 @@ import { VBACompletionItemProvider } from "./vba-completionitem-provider";
 import { VBAReferenceProvider } from "./vba-reference-provider";
 import { VBALSRequest } from './vba-ls-request';
 import { VBACreateFile } from "./vba-create-file";
+import { SheetTreeDataProvider } from "./sheet-treedata-provider";
 
 let outputChannel: vscode.OutputChannel;
 let logger: Logger;
@@ -22,6 +23,7 @@ let vbaLSRequest: VBALSRequest;
 let vbaLSLaunch: VBALSLaunch;
 let statusBarItem: vscode.StatusBarItem;
 let disposables: vscode.Disposable[] = [];
+let sheetTDProvider: SheetTreeDataProvider;
 
 function dispose() {
 	disposables.forEach(x=>x.dispose());
@@ -35,6 +37,9 @@ const registerProvider = (srcDir: string, enableLSP: boolean) => {
 
 	disposables.push(vscode.languages.registerDocumentSymbolProvider(
 		docSelector, new VBADocumentSymbolProvider()));
+
+	sheetTDProvider = new SheetTreeDataProvider("sheetView");
+	disposables.push(sheetTDProvider);
 
 	if(enableLSP){
 		vbaLSRequest.srcDir = srcDir;
@@ -174,7 +179,12 @@ export async function activate(context: vscode.ExtensionContext) {
 	}));
 	context.subscriptions.push(vscode.commands.registerCommand("vsc-excel-vba.openSheet", async (args) => {	
 		const xlsmFileName = project.projectData.excelfilename;
-		await vbaCommand.openSheet(xlsmFileName, args.fsPath);
+		await vbaCommand.openSheet(xlsmFileName, args.sheetName);
+	}));
+	context.subscriptions.push(vscode.commands.registerCommand("vsc-excel-vba.getSheetNames", async (args) => {	
+		const xlsmFileName = project.projectData.excelfilename;
+		const sheetNames = await vbaCommand.getSheetNames(xlsmFileName);
+		sheetTDProvider.refresh(sheetNames);
 	}));
 	context.subscriptions.push(vscode.commands.registerCommand("vsc-excel-vba.newClassFile", async (uri: vscode.Uri) => {	
 		const vbacf = new VBACreateFile();

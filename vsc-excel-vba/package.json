@@ -129,6 +129,16 @@
       {
         "command": "vsc-excel-vba.newModuleFile",
         "title": "New VBA module file"
+      },
+      {
+        "command": "vsc-excel-vba.getSheetNames",
+        "title": "Show sheets",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "vsc-excel-vba.openSheet",
+        "title": "Open sheet",
+        "icon": "$(go-to-file)"
       }
     ],
     "keybindings": [
@@ -148,6 +158,14 @@
         "language": "vb"
       }
     ],
+    "views": {
+      "explorer": [
+        {
+          "id": "sheetView",
+          "name": "Excel sheets"
+        }
+      ]
+    },
     "menus": {
       "commandPalette": [
         {
@@ -215,11 +233,6 @@
           "group": "vevGroup"
         },
         {
-          "when": "resourceExtname == .csv",
-          "command": "vsc-excel-vba.openSheet",
-          "group": "vevGroup"
-        },
-        {
           "when": "explorerResourceIsFolder",
           "command": "vsc-excel-vba.newClassFile",
           "group": "vevGroup"
@@ -255,6 +268,20 @@
           "command": "vsc-excel-vba.setBreakpoints",
           "when": "resourceExtname == .bas || resourceExtname == .cls",
           "group": "vevGroup@5"
+        }
+      ],
+      "view/title": [
+        {
+            "command": "vsc-excel-vba.getSheetNames",
+            "when": "view == sheetView",
+            "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "vsc-excel-vba.openSheet",
+          "when": "view == sheetView",
+          "group": "inline"
         }
       ]
     }

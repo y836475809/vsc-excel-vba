@@ -207,12 +207,18 @@ export class VBACommands {
         });
     }
 
-    async openSheet(xlsmFileName: string, fsPath: string){
+    async openSheet(xlsmFileName: string, sheetName: string){
         await this.tryCatch("openSheet", async () => {
             this.xlsmFileName = xlsmFileName;
-            const sheetName = path.parse(fsPath).name;
             await this.run("open-sheet.ps1", [sheetName]);
         });
+    }
+
+    async getSheetNames(xlsmFileName: string): Promise<string[]> {
+        this.xlsmFileName = xlsmFileName;
+        const ret = await this.run("get-sheet-names.ps1", []);
+        const sheetNames: string[] = JSON.parse(ret.data);
+        return sheetNames;
     }
 
     private async run(scriptFileName: string, args: string[]): Promise<VBAResponse> {

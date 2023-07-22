@@ -4,7 +4,7 @@ using Xunit;
 
 namespace TestProject {
 	public class TestHoverLocal {
-        private CompletionItem GetItem(string code, int chara) {
+        private List<CompletionItem> GetItem(string code, int chara) {
             var vbaca = new VBACodeAnalysis.VBACodeAnalysis();
             vbaca.setSetting(new RewriteSetting());
             vbaca.AddDocument("m1", code);
@@ -32,73 +32,81 @@ End Module";
         [Fact]
         public void TestPrivateConstNum() {
             var code = MakeCode("local_num=pri_const_num+1");
-            var item = GetItem(code, "local_num=".Length + 1);
+            var items = GetItem(code, "local_num=".Length + 1);
+            Assert.Single(items);
             Assert.Equal(
                 "Private Const pri_const_num As Integer = 10",
-                item.DisplayText);
+                items[0].DisplayText);
         }
 
         [Fact]
         public void TestPublicConstNum() {
             var code = MakeCode("local_num=pub_const_num+1");
-            var item = GetItem(code, "local_num=".Length + 1);
+            var items = GetItem(code, "local_num=".Length + 1);
+            Assert.Single(items);
             Assert.Equal(
                 "Public Const pub_const_num As Integer = 10",
-                item.DisplayText);
+                items[0].DisplayText);
         }
 
         [Fact]
         public void TestNonAccConstNum() {
             var code = MakeCode("local_num=const_num+1");
-            var item = GetItem(code, "local_num=".Length + 1);
+            var items = GetItem(code, "local_num=".Length + 1);
+            Assert.Single(items);
             Assert.Equal(
                 "Private Const const_num As Integer = 10",
-                item.DisplayText);
+                items[0].DisplayText);
         }
 
         [Fact]
         public void TestPublicConstStr() {
             var code = MakeCode(@"local_str=pub_const_str & ""a""");
-            var item = GetItem(code, "local_str=".Length + 1);
+            var items = GetItem(code, "local_str=".Length + 1);
+            Assert.Single(items);
             Assert.Equal(
                 @"Public Const pub_const_str As String = """"",
-                item.DisplayText);
+                items[0].DisplayText);
         }
 
         [Fact]
         public void TestPrivateNon() {
             var code = MakeCode("local_num=pri_non+1");
-            var item = GetItem(code, "local_num=".Length + 1);
+            var items = GetItem(code, "local_num=".Length + 1);
+            Assert.Single(items);
             Assert.Equal(
                 "Private pri_non As Variant",
-                item.DisplayText);
+                items[0].DisplayText);
         }
 
         [Fact]
         public void TestAccNom() {
             var code = MakeCode("local_num=acc_non+1");
-            var item = GetItem(code, "ocal_num=".Length + 1);
+            var items = GetItem(code, "ocal_num=".Length + 1);
+            Assert.Single(items);
             Assert.Equal(
                 "Private acc_non As Long",
-                item.DisplayText);
+                items[0].DisplayText);
         }
 
         [Fact]
         public void TestLocalNum() {
             var code = MakeCode("local_num=pri_num+1");
-            var item = GetItem(code, 1);
+            var items = GetItem(code, 1);
+            Assert.Single(items);
             Assert.Equal(
                 "Local local_num As Long",
-                item.DisplayText);
+                items[0].DisplayText);
         }
 
         [Fact]
         public void TestLocalConstNum() {
             var code = MakeCode("local_const_num=pri_num+1");
-            var item = GetItem(code, 1);
+            var items = GetItem(code, 1);
+            Assert.Single(items);
             Assert.Equal(
                 "Local Const local_const_num As Integer = 10",
-                item.DisplayText);
+                items[0].DisplayText);
         }
 
     }

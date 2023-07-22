@@ -381,10 +381,10 @@ namespace VBACodeAnalysis {
             return items;
         }
 
-        public async Task<CompletionItem> GetHover(string name, int line, int chara) {
-            var completionItem = new CompletionItem();
+        public async Task<List<CompletionItem>> GetHover(string name, int line, int chara) {
+            var items = new List<CompletionItem>();
             if (!doc_id_dict.ContainsKey(name)) {
-                return completionItem;
+                return items;
             }
             var docId = doc_id_dict[name];
             if (workspace.CurrentSolution.ContainsDocument(docId)) {
@@ -393,12 +393,13 @@ namespace VBACodeAnalysis {
 
                 var position = GetPosition(doc, line, chara);
                 if (position < 0) {
-                    return completionItem;
+                    return items;
                 }
 
                 var symbol = await SymbolFinder.FindSymbolAtPositionAsync(model, position, workspace);
                 if (symbol != null) {
-                     completionItem.DisplayText = symbol.ToDisplayString();
+                    var completionItem = new CompletionItem();
+                    completionItem.DisplayText = symbol.ToDisplayString();
                     completionItem.CompletionText = symbol.MetadataName;
                     completionItem.Description = symbol.GetDocumentationCommentXml();
                     completionItem.Kind = symbol.Kind.ToString();
@@ -437,9 +438,10 @@ namespace VBACodeAnalysis {
                         completionItem.CompletionText = typeName;
                         completionItem.Kind = typeName;
                     }
+                    items.Add(completionItem);
                 }
             }
-            return completionItem;
+            return items;
         }
 
         private string ConvKind(string TypeName) {

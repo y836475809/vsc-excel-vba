@@ -138,8 +138,7 @@ namespace VBALanguageServer {
                     return;
                 }
                 var adjChara = vbaca.GetCharaDiff(e.FilePath, line, e.Chara) + e.Chara;
-                var item = vbaca.GetHover(e.FilePath, line, adjChara).Result;
-                e.Items.Add(item);
+                e.Items = vbaca.GetHover(e.FilePath, line, adjChara).Result;
                 logger.Info("HoverReq");
             };
             server.DiagnosticReq += (object sender, DiagnosticEventArgs e) => {

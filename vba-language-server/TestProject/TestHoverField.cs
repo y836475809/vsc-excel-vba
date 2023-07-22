@@ -4,7 +4,7 @@ using Xunit;
 
 namespace TestProject {
 	public class TestHoverField {
-        private CompletionItem GetItem(string code, int chara) {
+        private List<CompletionItem> GetItem(string code, int chara) {
             var vbaca = new VBACodeAnalysis.VBACodeAnalysis();
             vbaca.setSetting(new RewriteSetting());
             vbaca.AddDocument("m0", MakeModule());
@@ -41,37 +41,41 @@ End Module";
         [Fact]
         public void TestModuleConstNum() {
             var code = MakeCode("local_num=pub_const_num+1");
-            var item = GetItem(code, "local_num=".Length + 1);
+            var items = GetItem(code, "local_num=".Length + 1);
+            Assert.Single(items);
             Assert.Equal(
                 "Public Const pub_const_num As Integer = 10",
-                item.DisplayText);
+                items[0].DisplayText);
         }
 
         [Fact]
         public void TestModuleNum() {
             var code = MakeCode("local_num=pub_num+1");
-            var item = GetItem(code, "local_num=".Length + 1);
+            var items = GetItem(code, "local_num=".Length + 1);
+            Assert.Single(items);
             Assert.Equal(
                 "Public pub_num As Long",
-                item.DisplayText);
+                items[0].DisplayText);
         }
 
         [Fact]
         public void TestClassConstNum() {
             var code = MakeCode("local_num=c.pub_const_num+1");
-            var item = GetItem(code, "local_num=c.".Length + 1);
+            var items = GetItem(code, "local_num=c.".Length + 1);
+            Assert.Single(items);
             Assert.Equal(
                 "Public Const pub_const_num As Integer = 10",
-                item.DisplayText);
+                items[0].DisplayText);
         }
 
         [Fact]
         public void TestClassNum() {
             var code = MakeCode("local_num=c.pub_num+1");
-            var item = GetItem(code, "local_num=c.".Length + 1);
+            var items = GetItem(code, "local_num=c.".Length + 1);
+            Assert.Single(items);
             Assert.Equal(
                 "Public pub_num As Long",
-                item.DisplayText);
+                items[0].DisplayText);
         }
     }
 }

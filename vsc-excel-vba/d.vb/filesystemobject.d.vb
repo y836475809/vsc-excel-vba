@@ -110,7 +110,7 @@ Public Class Folder
     End Sub
 End Class
 
-Namespace Scripting
+Public Module Scripting
 
 Public Class FileSystemObject
     Public ReadOnly Property Drives As Collection
@@ -188,4 +188,4 @@ Public Class FileSystemObject
     End Function
 End Class
 
-End Namespace
+End Module

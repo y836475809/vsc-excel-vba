@@ -16,7 +16,7 @@ export class VBAHoverProvider implements vscode.HoverProvider {
 				return undefined;
 			}
 			const item = items[0];
-			const description = item.description.replace(/\r/g, "");
+			const description = item.description === null?"":item.description.replace(/\r/g, "");
 			const content = new vscode.MarkdownString(
 				[
 					'```vb',

@@ -214,8 +214,8 @@ namespace VBALanguageServer {
                 foreach (var item in Items) {
                     var sp = item.Start.Positon;
                     var ep = item.End.Positon;
-                    var sigItem = vbaca.GetSignatureHelp(item.FilePath, (int)((sp + ep) / 2)).Result;
-                    if(sigItem != null) {
+                    var sigItems = vbaca.GetSignatureHelp(item.FilePath, (int)((sp + ep) / 2)).Result;
+                    foreach (var sigItem in sigItems) {
                         sigItem.ActiveParameter = argPosition;
                         items.Add(sigItem);
                     }

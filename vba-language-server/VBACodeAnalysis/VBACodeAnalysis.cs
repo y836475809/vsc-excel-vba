@@ -345,38 +345,43 @@ namespace VBACodeAnalysis {
             return (procLine, procChara, argPosition);
         }
 
-        public async Task<SignatureHelpItem> GetSignatureHelp(string name, int position) {
+        public async Task<List<SignatureHelpItem>> GetSignatureHelp(string name, int position) {
+            var items = new List<SignatureHelpItem>();
+
             if (!doc_id_dict.ContainsKey(name)) {
-                return null;
+                return items;
             }
             var docId = doc_id_dict[name];
             if (!workspace.CurrentSolution.ContainsDocument(docId)) {
-                return null;
+                return items;
             }
+
             var doc = workspace.CurrentSolution.GetDocument(docId);
             var model = await doc.GetSemanticModelAsync();
             var symbol = await SymbolFinder.FindSymbolAtPositionAsync(model, position, workspace);
             if (symbol == null) {
                 return null;
             }
-
-            var item = new SignatureHelpItem();
-            if (symbol is IMethodSymbol methodSymb) {
-				foreach (var param in methodSymb.Parameters) {
-                    item.Args.Add(new ArgumentItem(
-                        param.Name, param.Type.ToDisplayString()));
-                } 
+            
+            if (symbol.Kind == SymbolKind.Method) {
+                var menbers = symbol.ContainingType.GetMembers(symbol.Name);
+                foreach (var menber in menbers) {
+                    var item = new SignatureHelpItem();
+                    var methodSymbol = menber as IMethodSymbol;
+                    foreach (var param in methodSymbol.Parameters) {
+                        item.Args.Add(new ArgumentItem(
+                            param.Name, param.Type.ToDisplayString()));
+                    }
+                    item.DisplayText = methodSymbol.ToDisplayString();
+                    item.Description = methodSymbol.GetDocumentationCommentXml();
+                    item.Kind = methodSymbol.Kind.ToString();
+                    item.ReturnType = methodSymbol.ReturnType.ToDisplayString();
+                    items.Add(item);
+                }
             }
             
-            item.DisplayText = symbol.ToDisplayString();
-            item.Description = symbol.GetDocumentationCommentXml();
-            item.Kind = symbol.Kind.ToString();
-            item.ReturnType = "";
-            if (symbol.Kind == SymbolKind.Method) {
-                var methodSymbol = symbol as IMethodSymbol;
-                item.ReturnType = methodSymbol.ReturnType.ToDisplayString();
-            }
             if (symbol.Kind == SymbolKind.Local) {
+                var item = new SignatureHelpItem();
                 var localSymbol = symbol as ILocalSymbol;
                 var kind = localSymbol.Type.Name;
                 var kindLower = kind.ToLower();
@@ -391,8 +396,10 @@ namespace VBACodeAnalysis {
                 }
                 item.DisplayText = kind;
                 item.Kind = kind;
+                items.Add(item);
             }
-            return item;
+
+            return items;
         }
 
         public async Task<CompletionItem> GetHover(string name, string text, int position) {

@@ -82,6 +82,8 @@ namespace VBALanguageServer {
                     logger.Info($"CompletionReq, line={line}: {Path.GetFileName(e.FilePath)}");
                     return;
                 }
+
+                vbaca.ChangeDocument(e.FilePath, vbCode);
                 var adjChara = vbaca.getoffset(e.FilePath, line, e.Chara) + e.Chara;
                 var Items = vbaca.GetCompletions(e.FilePath, vbCode, line, adjChara).Result;
                 e.Items = Items;
@@ -198,6 +200,8 @@ namespace VBALanguageServer {
                     logger.Info($"SignatureHelpReq, line < 0: {Path.GetFileName(e.FilePath)}");
                     return;
                 }
+
+                vbaca.ChangeDocument(e.FilePath, vbCode);
                 var adjChara = vbaca.getoffset(e.FilePath, line, e.Chara) + e.Chara;
                 var (procLine, procCharaPos, argPosition) = vbaca.GetSignaturePosition(e.FilePath, vbCode, line, adjChara);
                 if (procLine < 0) {

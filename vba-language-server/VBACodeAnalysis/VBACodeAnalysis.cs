@@ -141,7 +141,6 @@ namespace VBACodeAnalysis {
         }
 
         public async Task<List<CompletionItem>> GetCompletions(string name, string text, int line, int chara) {
-			ChangeDocument(name, text);
 			var completions = new List<CompletionItem>();
             if (!doc_id_dict.ContainsKey(name)) {
                 return completions;
@@ -286,8 +285,6 @@ namespace VBACodeAnalysis {
             if (!workspace.CurrentSolution.ContainsDocument(docId)) {
                 return (procLine, procChara, -1);
             }
-
-			ChangeDocument(name, text);
 
             var doc = workspace.CurrentSolution.GetDocument(docId);
             var position = doc.GetTextAsync().Result.Lines.GetPosition(new LinePosition(line, chara));

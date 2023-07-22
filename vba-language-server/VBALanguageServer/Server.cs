@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Text;
@@ -53,7 +52,6 @@ namespace VBALanguageServer {
                 {
                     var json_str = reader.ReadToEnd();
                     cmd = JsonSerializer.Deserialize<Command>(json_str);
-                    //Console.WriteLine(json_str);
                 }
 
                 // レスポンス取得
@@ -102,7 +100,6 @@ namespace VBALanguageServer {
                             DiagnosticReq?.Invoke(this, args_diagnostic);
                             Response(response, args_diagnostic.Items);
                             break;
-                        //case "Exit":
                         case "Shutdown":
                             if (!ignoreShutdown) {
                                 run = false;
@@ -134,7 +131,7 @@ namespace VBALanguageServer {
                             break;
                     }
                 } catch (Exception e) {
-                    response.StatusDescription = e.Message;
+                    response.StatusDescription = e.Message + ": " + e.StackTrace;
                     Response(response, 500); ;
 				}
                 if (run) {

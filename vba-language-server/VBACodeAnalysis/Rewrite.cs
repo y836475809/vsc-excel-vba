@@ -1,5 +1,4 @@
 ﻿using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.FindSymbols;
 using Microsoft.CodeAnalysis.Text;
 using Microsoft.CodeAnalysis.VisualBasic;
 using Microsoft.CodeAnalysis.VisualBasic.Syntax;
@@ -408,42 +407,6 @@ namespace VBACodeAnalysis {
             var repNode = root.ReplaceTokens(lookup.Keys, (s, d) => lookup[s]);
             var tree = root.SyntaxTree.WithChangedText(repNode.GetText());
             return (tree.GetRootAsync().Result, dict);
-        }
-
-        private List<TextChange> LocalDeclarationStatement(IEnumerable<SyntaxNode> node) {
-            var allChanges = new List<TextChange>();
-            var forStmt = node.OfType<LocalDeclarationStatementSyntax>();
-            const string code = "BC30804";
-            foreach (var stmt in forStmt) {
-                var ds = stmt.GetDiagnostics().Where(x => {
-                    return x.Id == code;
-                });
-                var changes = ds.Select(x => {
-                    return new TextChange(x.Location.SourceSpan, "Object ");
-                });
-                if (changes.Count() > 0) {
-                    allChanges = allChanges.Concat(changes).ToList();
-                }
-            }
-            return allChanges;
-        }
-
-        private List<TextChange> FieldDeclarationStatement(IEnumerable<SyntaxNode> node) {
-            var allChanges = new List<TextChange>();
-            var forStmt = node.OfType<FieldDeclarationSyntax>();
-            const string code = "BC30804";
-            foreach (var stmt in forStmt) {
-                var ds = stmt.GetDiagnostics().Where(x => {
-                    return x.Id == code;
-                });
-                var changes = ds.Select(x => {
-                    return new TextChange(x.Location.SourceSpan, "Object ");
-                });
-                if (changes.Count() > 0) {
-                    allChanges = allChanges.Concat(changes).ToList();
-                }
-            }
-            return allChanges;
         }
 
         private List<TextChange> AsClauseStatement(IEnumerable<SyntaxNode> node) {

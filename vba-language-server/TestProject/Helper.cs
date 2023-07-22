@@ -40,8 +40,7 @@ namespace TestProject {
         }
 
         public static List<DiagnosticItem> GetDiagnostics(string code, List<string> errorTypes) {
-            var rewriteSetting = new RewriteSetting();
-            var vbaDiagnostic = new VBADiagnostic(rewriteSetting);
+            var vbaDiagnostic = new VBADiagnostic();
             var doc = MakeDoc(code);
             var items = vbaDiagnostic.GetDiagnostics(doc).Result;
             items.Sort((a, b) => {

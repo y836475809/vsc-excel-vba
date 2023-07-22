@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
+﻿
 namespace VBACodeAnalysis {
 	public class ReferenceItem {
 		public string FilePath { get; set; }

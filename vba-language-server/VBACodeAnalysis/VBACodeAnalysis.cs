@@ -5,11 +5,8 @@ using Microsoft.CodeAnalysis.Recommendations;
 using Microsoft.CodeAnalysis.Text;
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
-using System.Xml.Linq;
 using System.Linq;
-using Microsoft.CodeAnalysis.VisualBasic.Syntax;
 using Microsoft.CodeAnalysis.Completion;
 using Microsoft.CodeAnalysis.VisualBasic;
 
@@ -20,7 +17,6 @@ namespace VBACodeAnalysis {
         private AdhocWorkspace workspace;
         private Project project;
         private Dictionary<string, DocumentId> doc_id_dict;
-        private RewriteSetting rewriteSetting;
         private Rewrite rewrite;
         private VBADiagnostic vbaDiagnostic;
 
@@ -43,9 +39,8 @@ namespace VBACodeAnalysis {
         }
 
         public void setSetting(RewriteSetting rewriteSetting) {
-            this.rewriteSetting = rewriteSetting;
             rewrite = new Rewrite(rewriteSetting);
-            vbaDiagnostic = new VBADiagnostic(rewriteSetting);
+            vbaDiagnostic = new VBADiagnostic();
         }
 
         public void AddDocument(string name, string text, bool applyChanges= true) {
@@ -119,7 +114,6 @@ namespace VBACodeAnalysis {
             };
             var name = symbol.ContainingType?.Name;
             if(name != null) {
-                //Console.WriteLine($"name={name}");
                 if (names.Contains(name)) {
                     return false;
                 }
@@ -127,7 +121,7 @@ namespace VBACodeAnalysis {
             return true;
         }
 
-        public int getoffset(string name, int line, int chara) {
+        public int GetCharaDiff(string name, int line, int chara) {
             if (!locationDiffDict.ContainsKey(name)) {
                 return 0;
             }
@@ -360,42 +354,24 @@ namespace VBACodeAnalysis {
             var model = await doc.GetSemanticModelAsync();
             var symbol = await SymbolFinder.FindSymbolAtPositionAsync(model, position, workspace);
             if (symbol == null) {
-                return null;
+                return items;
             }
-            
-            if (symbol.Kind == SymbolKind.Method) {
-                var menbers = symbol.ContainingType.GetMembers(symbol.Name);
-                foreach (var menber in menbers) {
-                    var item = new SignatureHelpItem();
-                    var methodSymbol = menber as IMethodSymbol;
-                    foreach (var param in methodSymbol.Parameters) {
-                        item.Args.Add(new ArgumentItem(
-                            param.Name, param.Type.ToDisplayString()));
-                    }
-                    item.DisplayText = methodSymbol.ToDisplayString();
-                    item.Description = methodSymbol.GetDocumentationCommentXml();
-                    item.Kind = methodSymbol.Kind.ToString();
-                    item.ReturnType = methodSymbol.ReturnType.ToDisplayString();
-                    items.Add(item);
-                }
+            if (symbol.Kind != SymbolKind.Method) {
+                return items;
             }
-            
-            if (symbol.Kind == SymbolKind.Local) {
+
+            var menbers = symbol.ContainingType.GetMembers(symbol.Name);
+            foreach (var menber in menbers) {
                 var item = new SignatureHelpItem();
-                var localSymbol = symbol as ILocalSymbol;
-                var kind = localSymbol.Type.Name;
-                var kindLower = kind.ToLower();
-                if (kindLower == "int64") {
-                    kind = "Long";
+                var methodSymbol = menber as IMethodSymbol;
+                foreach (var param in methodSymbol.Parameters) {
+                    item.Args.Add(new ArgumentItem(
+                        param.Name, param.Type.ToDisplayString()));
                 }
-                if (kindLower == "int32") {
-                    kind = "Integer";
-                }
-                if (kindLower == "datetime") {
-                    kind = "Date";
-                }
-                item.DisplayText = kind;
-                item.Kind = kind;
+                item.DisplayText = methodSymbol.ToDisplayString();
+                item.Description = methodSymbol.GetDocumentationCommentXml();
+                item.Kind = methodSymbol.Kind.ToString();
+                item.ReturnType = methodSymbol.ReturnType.ToDisplayString();
                 items.Add(item);
             }
 
@@ -403,7 +379,6 @@ namespace VBACodeAnalysis {
         }
 
         public async Task<CompletionItem> GetHover(string name, string text, int position) {
-            //var items = new List<CompletionItem>();
             var completionItem = new CompletionItem();
             if (!doc_id_dict.ContainsKey(name)) {
                 return completionItem;
@@ -412,7 +387,6 @@ namespace VBACodeAnalysis {
             if (workspace.CurrentSolution.ContainsDocument(docId)) {
                 var doc = workspace.CurrentSolution.GetDocument(docId);
                 var model = await doc.GetSemanticModelAsync();
-                //var pp =  SymbolFinder.FindDeclarationsAsync(doc.Project, "Range", false).Result.ToList();
                 var symbol = await SymbolFinder.FindSymbolAtPositionAsync(model, position, workspace);
                 if (symbol != null) {
                      completionItem.DisplayText = symbol.ToDisplayString();

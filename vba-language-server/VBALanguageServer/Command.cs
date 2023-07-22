@@ -1,7 +1,6 @@
 ﻿using VBACodeAnalysis;
 using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace VBALanguageServer {
     class Command {
@@ -14,39 +13,6 @@ namespace VBALanguageServer {
 
         public string text { get; set; }
     }
-
-    //public class AddDocuments {
-    //    public List<string> FilePaths { get; set; }
-    //}
-
-    //public class ChangeDocument {
-    //    public string FilePath { get; set; }
-    //    public string Text { get; set; }
-    //}
-
-    //public class Completion {
-    //    public string FilePath { get; set; }
-    //    public int Position { get; set; }
-    //    public string Text { get; set; }
-    //}
-
-    //class ResponseCompletion {
-    //    public string FilePath { get; set; }
-
-    //    public int Position { get; set; }
-    //}
-
-    //public class Document {
-    //    public string FilePath { get; set; }
-    //    public string Text { get; set; }
-
-    //    public Document(string FilePath, string Text) {
-    //        this.FilePath = FilePath;
-    //        this.Text = Text;
-    //    }
-
-    //}
-
 
     public class DocumentAddedEventArgs : EventArgs {
         public List<string> FilePaths { get; set; }
@@ -98,12 +64,6 @@ namespace VBALanguageServer {
             this.Chara = Chara;
         }
     }
-
-    //public class DefinitionItem {
-    //    public string FilePath { get; set; }
-    //    public int Start { get; set; }
-    //    public int End { get; set; }
-    //}
 
     public class DefinitionEventArgs : EventArgs {
         public string FilePath { get; set; }

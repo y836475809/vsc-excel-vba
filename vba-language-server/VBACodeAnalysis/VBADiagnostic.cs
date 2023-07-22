@@ -1,34 +1,19 @@
 ﻿using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.FindSymbols;
-using Microsoft.CodeAnalysis.Text;
 using Microsoft.CodeAnalysis.VisualBasic;
 using Microsoft.CodeAnalysis.VisualBasic.Syntax;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace VBACodeAnalysis {
 	public class VBADiagnostic {
-        private RewriteSetting rewriteSetting;
-
-        public VBADiagnostic(RewriteSetting setting) {
-            this.rewriteSetting = setting;
-        }
-
-        public void SetSetting(RewriteSetting setting) {
-            this.rewriteSetting = setting;
-        }
-
         public async Task<List<DiagnosticItem>> GetDiagnostics(Document doc) {
             var codes = new string[] {
                 "BC35000",  // ランタイム ライブラリ関数 が定義されていないため、
                                    // 要求された操作を実行できません。
                 "BC30627", // 'Option' ステートメントは、宣言または 'Imports' ステートメントの前に記述しなければなりません
-                //"BC30431", //  'End Property' の前には、対応する 'Property' を指定しなければなりません
-                //"BC36759", // 自動実装プロパティはパラメーターを持つことができません
             };
             var AddItems = new List<DiagnosticItem>();
             var node = doc.GetSyntaxRootAsync().Result;

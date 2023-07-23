@@ -453,8 +453,19 @@ namespace VBACodeAnalysis {
                         if(methodSymbol.MethodKind == MethodKind.Constructor) {
                             completionItem.DisplayText = $"Class {methodSymbol.ContainingType.Name}";
                             completionItem.Kind = TypeKind.Class.ToString();
+						} else {
+                            completionItem.DisplayText = string.Join("", methodSymbol.ToDisplayParts().Select(x => {
+                                return ConvKind(x.ToString());
+                            }));
                         }
-                        completionItem.ReturnType = methodSymbol.ReturnType.ToDisplayString();
+                        completionItem.ReturnType = ConvKind(methodSymbol.ReturnType.Name);
+
+                        var menbersNum = symbol.ContainingType.GetMembers(symbol.Name).Length;
+                        if(menbersNum > 1) {
+                            completionItem.DisplayText =
+                                $"{completionItem.DisplayText} (+{menbersNum - 1} overloads)";
+                        }
+                    }
                     }
                     if (symbol is INamedTypeSymbol namedType) {
                         if (namedType.TypeKind == TypeKind.Class) {

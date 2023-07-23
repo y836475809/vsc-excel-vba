@@ -1,4 +1,4 @@
-﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.FindSymbols;
 using Microsoft.CodeAnalysis.Host.Mef;
 using Microsoft.CodeAnalysis.Recommendations;
@@ -266,7 +266,7 @@ namespace VBACodeAnalysis {
             return true;
         }
 
-        public (int, int, int) GetSignaturePosition(string name, string text, int line, int chara) {
+        public (int, int, int) GetSignaturePosition(string name, int line, int chara) {
             var procLine = -1;
             var procChara = -1;
             var argPosition = 0;
@@ -342,7 +342,7 @@ namespace VBACodeAnalysis {
             return (procLine, procChara, argPosition);
         }
 
-        public async Task<List<SignatureHelpItem>> GetSignatureHelp(string name, int position) {
+        public async Task<List<SignatureHelpItem>> GetSignatureHelp(string name, int line, int chara) {
             var items = new List<SignatureHelpItem>();
 
             if (!doc_id_dict.ContainsKey(name)) {
@@ -354,6 +354,12 @@ namespace VBACodeAnalysis {
             }
 
             var doc = workspace.CurrentSolution.GetDocument(docId);
+
+            var position = GetPosition(doc, line, chara);
+            if (position < 0) {
+                return items;
+            }
+
             var model = await doc.GetSemanticModelAsync();
             var symbol = await SymbolFinder.FindSymbolAtPositionAsync(model, position, workspace);
             if (symbol == null) {

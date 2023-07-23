@@ -194,22 +194,16 @@ namespace VBALanguageServer {
 
                 vbaca.ChangeDocument(e.FilePath, vbCode);
                 var adjChara = vbaca.GetCharaDiff(e.FilePath, line, e.Chara) + e.Chara;
-                var (procLine, procCharaPos, argPosition) = vbaca.GetSignaturePosition(e.FilePath, vbCode, line, adjChara);
+                var (procLine, procCharaPos, argPosition) = vbaca.GetSignaturePosition(e.FilePath, line, adjChara);
                 if (procLine < 0) {
                     e.Items = items;
                     logger.Info($"SignatureHelpReq, procLine < 0: {Path.GetFileName(e.FilePath)}");
                     return;
                 }
 
-                var Items = vbaca.GetDefinitions(e.FilePath, vbCode, procLine, procCharaPos).Result;
-                foreach (var item in Items) {
-                    var sp = item.Start.Positon;
-                    var ep = item.End.Positon;
-                    var sigItems = vbaca.GetSignatureHelp(item.FilePath, (int)((sp + ep) / 2)).Result;
-                    foreach (var sigItem in sigItems) {
-                        sigItem.ActiveParameter = argPosition;
-                        items.Add(sigItem);
-                    }
+                items = vbaca.GetSignatureHelp(e.FilePath, procLine, procCharaPos).Result;
+                foreach (var item in items) {
+                    item.ActiveParameter = argPosition;
                 }
                 e.Items = items;
                 logger.Info("SignatureHelpReq");

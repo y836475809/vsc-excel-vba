@@ -385,6 +385,43 @@ namespace VBACodeAnalysis {
                     items.Add(item);
                 }
             }
+            if (symbol is ILocalSymbol localSymbol) {
+                items = GetPropSignatureHelpItems(
+                    localSymbol.Type.Name, localSymbol.Type.GetMembers());
+            }
+            if (symbol is IFieldSymbol filedSymbol) {
+                items = GetPropSignatureHelpItems(
+                    filedSymbol.Type.Name, filedSymbol.Type.GetMembers());
+            }
+            return items;
+        }
+
+        private List<SignatureHelpItem> GetPropSignatureHelpItems(string symbolTypeName, IEnumerable<ISymbol> members) {
+            var items = new List<SignatureHelpItem>();
+
+            var menberSymbols = members.Where(x => {
+                return (x.Kind == SymbolKind.Property) && (x as IPropertySymbol).IsDefault();
+            });
+            foreach (var symbol in menberSymbols) {
+                var item = new SignatureHelpItem();
+                var propSymbol = symbol as IPropertySymbol;
+                foreach (var param in propSymbol.Parameters) {
+                    item.Args.Add(new ArgumentItem(
+                        param.Name, ConvKind(param.Type.Name)));
+                }
+                var displayText = string.Join("", propSymbol.ToDisplayParts().Select(x => {
+                    return ConvKind(x.ToString());
+                }));
+                var index = displayText.IndexOf("(");
+                if (index >= 0) {
+                    displayText = $"{symbolTypeName}{displayText[index..]}";
+                }
+                item.DisplayText = displayText;
+                item.Description = propSymbol.GetDocumentationCommentXml();
+                item.Kind = propSymbol.Kind.ToString();
+                item.ReturnType = ConvKind(propSymbol.GetMethod.ReturnType.Name);
+                items.Add(item);
+            }
             return items;
         }
 

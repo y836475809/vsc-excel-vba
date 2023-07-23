@@ -73,5 +73,21 @@ namespace TestProject {
                 }
             }
         }
+
+        public static void AssertSignatureHelp(List<SignatureHelpItem> pre, List<SignatureHelpItem> act) {
+            Assert.Equal(pre.Count, act.Count);
+            foreach (var (First, Second) in pre.Zip(act)) {
+                Assert.Equal(First.ActiveParameter, Second.ActiveParameter);
+                Assert.Equal(First.DisplayText, Second.DisplayText);
+                Assert.Equal(First.Description, Second.Description);
+                Assert.Equal(First.ReturnType, Second.ReturnType);
+
+                Assert.Equal(First.Args.Count, Second.Args.Count);
+                foreach (var (FirstArg, SecondArg) in First.Args.Zip(Second.Args)) { 
+                    Assert.Equal(FirstArg.Name, SecondArg.Name);
+                    Assert.Equal(FirstArg.AsType, SecondArg.AsType);
+                }
+            }
+        }
     }
 }

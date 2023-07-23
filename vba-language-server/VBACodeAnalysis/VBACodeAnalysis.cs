@@ -365,25 +365,26 @@ namespace VBACodeAnalysis {
             if (symbol == null) {
                 return items;
             }
-            if (symbol.Kind != SymbolKind.Method) {
-                return items;
-            }
 
-            var menbers = symbol.ContainingType.GetMembers(symbol.Name);
-            foreach (var menber in menbers) {
-                var item = new SignatureHelpItem();
-                var methodSymbol = menber as IMethodSymbol;
-                foreach (var param in methodSymbol.Parameters) {
-                    item.Args.Add(new ArgumentItem(
-                        param.Name, param.Type.ToDisplayString()));
+            if (symbol.Kind == SymbolKind.Method) {
+                var menbers = symbol.ContainingType.GetMembers(symbol.Name);
+                foreach (var menber in menbers) {
+                    var item = new SignatureHelpItem();
+                    var methodSymbol = menber as IMethodSymbol;
+                    foreach (var param in methodSymbol.Parameters) {
+                        item.Args.Add(new ArgumentItem(
+                            param.Name, ConvKind(param.Type.Name)));
+                    }
+                    var displayText = string.Join("", methodSymbol.ToDisplayParts().Select(x => {
+                        return ConvKind(x.ToString());
+                    }));
+                    item.DisplayText = displayText;
+                    item.Description = methodSymbol.GetDocumentationCommentXml();
+                    item.Kind = methodSymbol.Kind.ToString();
+                    item.ReturnType = ConvKind(methodSymbol.ReturnType.Name);
+                    items.Add(item);
                 }
-                item.DisplayText = methodSymbol.ToDisplayString();
-                item.Description = methodSymbol.GetDocumentationCommentXml();
-                item.Kind = methodSymbol.Kind.ToString();
-                item.ReturnType = methodSymbol.ReturnType.ToDisplayString();
-                items.Add(item);
             }
-
             return items;
         }
 

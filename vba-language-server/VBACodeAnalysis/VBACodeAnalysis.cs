@@ -431,87 +431,102 @@ namespace VBACodeAnalysis {
                 return items;
             }
             var docId = doc_id_dict[name];
-            if (workspace.CurrentSolution.ContainsDocument(docId)) {
-                var doc = workspace.CurrentSolution.GetDocument(docId);
-                var model = await doc.GetSemanticModelAsync();
+            if (!workspace.CurrentSolution.ContainsDocument(docId)) {
+                return items;
+            }
 
-                var position = GetPosition(doc, line, chara);
-                if (position < 0) {
-                    return items;
+            var doc = workspace.CurrentSolution.GetDocument(docId);
+            var model = await doc.GetSemanticModelAsync();
+
+            var position = GetPosition(doc, line, chara);
+            if (position < 0) {
+                return items;
+            }
+
+            var symbol = await SymbolFinder.FindSymbolAtPositionAsync(model, position, workspace);
+            if (symbol == null) {
+                return items;
+            }
+			var item = new CompletionItem {
+				DisplayText = symbol.ToDisplayString(),
+				CompletionText = symbol.MetadataName,
+				Description = symbol.GetDocumentationCommentXml(),
+				Kind = symbol.Kind.ToString(),
+				ReturnType = ""
+			};
+			if (symbol.Kind == SymbolKind.Method) {
+                var methodSymbol = symbol as IMethodSymbol;
+                if(methodSymbol.MethodKind == MethodKind.Constructor) {
+                    item.DisplayText = $"Class {methodSymbol.ContainingType.Name}";
+                    item.Kind = TypeKind.Class.ToString();
+				} else {
+                    item.DisplayText = string.Join("", methodSymbol.ToDisplayParts().Select(x => {
+                        return ConvKind(x.ToString());
+                    }));
                 }
+                item.ReturnType = ConvKind(methodSymbol.ReturnType.Name);
 
-                var symbol = await SymbolFinder.FindSymbolAtPositionAsync(model, position, workspace);
-                if (symbol != null) {
-					var item = new CompletionItem {
-						DisplayText = symbol.ToDisplayString(),
-						CompletionText = symbol.MetadataName,
-						Description = symbol.GetDocumentationCommentXml(),
-						Kind = symbol.Kind.ToString(),
-						ReturnType = ""
-					};
-					if (symbol.Kind == SymbolKind.Method) {
-                        var methodSymbol = symbol as IMethodSymbol;
-                        if(methodSymbol.MethodKind == MethodKind.Constructor) {
-                            item.DisplayText = $"Class {methodSymbol.ContainingType.Name}";
-                            item.Kind = TypeKind.Class.ToString();
-						} else {
-                            item.DisplayText = string.Join("", methodSymbol.ToDisplayParts().Select(x => {
-                                return ConvKind(x.ToString());
-                            }));
-                        }
-                        item.ReturnType = ConvKind(methodSymbol.ReturnType.Name);
-
-                        var menbersNum = symbol.ContainingType.GetMembers(symbol.Name).Length;
-                        if(menbersNum > 1) {
-                            item.DisplayText = $"{item.DisplayText} (+{menbersNum - 1} overloads)";
-                        }
-                    }
-                    if (symbol is IPropertySymbol propSymbol) {
-                        item.DisplayText = string.Join("", propSymbol.ToDisplayParts().Select(x => {
-                            return ConvKind(x.ToString());
-                        }));
-                        item.ReturnType = ConvKind(propSymbol.Type.Name);
-                    }
-                    if (symbol is INamedTypeSymbol namedType) {
-                        if (namedType.TypeKind == TypeKind.Class) {
-                            item.DisplayText = $"Class {symbol.MetadataName}";
-                            item.Kind = TypeKind.Class.ToString();
-						}
-                    }
-                    if (symbol is IFieldSymbol fieldSymbol) {
-                        var typeName = ConvKind(fieldSymbol.Type.Name);
-                        var accessibility = fieldSymbol.DeclaredAccessibility.ToString();
-                        var dispText = $"{accessibility} {fieldSymbol.Name} As {typeName}";
-                        if (fieldSymbol.IsConst) {
-                            var constValue = fieldSymbol.ConstantValue;
-                            if (typeName.ToLower() == "string") {
-                                constValue = @$"""{constValue}""";
-                            }
-                            dispText = $"{accessibility} Const {fieldSymbol.Name} As {typeName} = {constValue}";
-						}
-                        item.DisplayText = dispText;
-                        item.CompletionText = typeName;
-                        item.Kind = typeName;
-                    }
-                    if (symbol is ILocalSymbol localSymbol) {
-                        var typeName = ConvKind(localSymbol.Type.Name);
-                        var accessibility = "Local";
-                        var dispText = $"{accessibility} {localSymbol.Name} As {typeName}";
-                        if (localSymbol.IsConst) {
-                            var constValue = localSymbol.ConstantValue;
-                            if (typeName.ToLower() == "string") {
-                                constValue = @$"""{constValue}""";
-                            }
-                            dispText = $"{accessibility} Const {localSymbol.Name} As {typeName} = {constValue}";
-                        }
-                        item.DisplayText = dispText;
-                        item.CompletionText = typeName;
-                        item.Kind = typeName;
-                    }
-                    items.Add(item);
+                var menbersNum = symbol.ContainingType.GetMembers(symbol.Name).Length;
+                if(menbersNum > 1) {
+                    item.DisplayText = $"{item.DisplayText} (+{menbersNum - 1} overloads)";
                 }
             }
+            if (symbol is IPropertySymbol propSymbol) {
+                item.DisplayText = string.Join("", propSymbol.ToDisplayParts().Select(x => {
+                    return ConvKind(x.ToString());
+                }));
+                item.ReturnType = ConvKind(propSymbol.Type.Name);
+            }
+            if (symbol is INamedTypeSymbol namedType) {
+                if (namedType.TypeKind == TypeKind.Class) {
+                    item.DisplayText = $"Class {symbol.MetadataName}";
+                    item.Kind = TypeKind.Class.ToString();
+				}
+            }
+            if (symbol is IFieldSymbol fieldSymbol) {
+                SetVariableItem(symbol, ref item);
+            }
+            if (symbol is ILocalSymbol localSymbol) {
+                SetVariableItem(symbol, ref item);
+            }
+
+            items.Add(item);
             return items;
+        }
+
+        private void SetVariableItem(ISymbol symbol, ref CompletionItem item) {
+            string symbolName = "";
+            string typeName = "";
+            string accessibility = "";
+            bool isConst = false;
+            object constValue = null;
+            if (symbol is IFieldSymbol fieldSymbol) {
+                symbolName = fieldSymbol.Name;
+                typeName = ConvKind(fieldSymbol.Type.Name);
+                accessibility = fieldSymbol.DeclaredAccessibility.ToString();
+                isConst = fieldSymbol.IsConst;
+                constValue = fieldSymbol.ConstantValue;
+            }
+            if (symbol is ILocalSymbol localSymbol) {
+                symbolName = localSymbol.Name;
+                typeName = ConvKind(localSymbol.Type.Name);
+                accessibility = "Local";
+                isConst = localSymbol.IsConst;
+                constValue = localSymbol.ConstantValue;
+            }
+            var dispText = $"{accessibility} {symbolName} As {typeName}";
+            if (isConst) {
+                if (typeName.ToLower() == "string") {
+                    constValue = @$"""{constValue}""";
+                }
+                dispText = $"{accessibility} Const {symbolName} As {typeName} = {constValue}";
+            }
+
+            item.DisplayText = dispText;
+            item.CompletionText = typeName;
+            item.Description = symbol.GetDocumentationCommentXml();
+            item.Kind = symbol.Kind.ToString();
+            item.ReturnType = typeName;
         }
 
         private string ConvKind(string TypeName) {

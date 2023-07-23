@@ -125,5 +125,54 @@ End Module";
 			};
 			Helper.AssertSignatureHelp(pre, act);
 		}
+
+		[Fact]
+		public void TestProp() {
+			var class1Name = "test_class1.cls";
+			var class1Code = GetClassCode();
+			var class2Name = "test_class2.cls";
+			var class2Code = @"Public Class UseSigTest
+Public ReadOnly Property SigTest As SigTest
+End Class";
+			var mod1Name = "test_module1.bas";
+			var mod1Code = @"Public Module
+Public Sub Main()
+Dim test As New UseSigTest
+test.SigTest(
+End Sub
+End Module";
+			var vbaca = new VBACodeAnalysis.VBACodeAnalysis();
+			vbaca.setSetting(new RewriteSetting());
+			vbaca.AddDocument(class1Name, class1Code);
+			vbaca.AddDocument(class2Name, class2Code);
+			vbaca.AddDocument(mod1Name, mod1Code);
+			var code = "test.SigTest(";
+			var (procLine, procChara, argPosition) = vbaca.GetSignaturePosition(mod1Name, 3, code.Length);
+			var act = vbaca.GetSignatureHelp(mod1Name, procLine, procChara).Result;
+			foreach (var item in act) {
+				item.ActiveParameter = argPosition;
+			}
+			var pre = new List<SignatureHelpItem>() {
+				new SignatureHelpItem {
+					ActiveParameter = 0,
+					DisplayText = "SigTest(Index As Long) As Variant",
+					Description = "",
+					ReturnType = "Variant",
+					Args = new List<ArgumentItem> {
+						new ArgumentItem("Index", "Long")
+					}
+				},
+				new SignatureHelpItem {
+					ActiveParameter = 0,
+					DisplayText = "SigTest(Key As String) As Variant",
+					Description = "",
+					ReturnType = "Variant",
+					Args = new List<ArgumentItem> {
+						new ArgumentItem("Key", "String"),
+					}
+				}
+			};
+			Helper.AssertSignatureHelp(pre, act);
+		}
 	}
 }

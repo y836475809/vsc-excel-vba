@@ -1,4 +1,4 @@
-using Microsoft.CodeAnalysis;
+﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.FindSymbols;
 using Microsoft.CodeAnalysis.Host.Mef;
 using Microsoft.CodeAnalysis.Recommendations;
@@ -392,6 +392,10 @@ namespace VBACodeAnalysis {
             if (symbol is IFieldSymbol filedSymbol) {
                 items = GetPropSignatureHelpItems(
                     filedSymbol.Type.Name, filedSymbol.Type.GetMembers());
+            }
+            if (symbol is IPropertySymbol propSymbol) {
+                items = GetPropSignatureHelpItems(
+                    propSymbol.Type.Name, propSymbol.Type.GetMembers());
             }
             return items;
         }

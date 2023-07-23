@@ -16,11 +16,6 @@ Public Class Range : Implements IEnumerable
         Set(Value As Range) : End Set
     End Property
 
-    Default Public Property Item(RowIndex As Long, Optional ColumIndex As Long = 0) As Range
-        Get : End Get
-        Set(Value As Range) : End Set
-    End Property
-
     Public Sub Activate()
     End Sub
 

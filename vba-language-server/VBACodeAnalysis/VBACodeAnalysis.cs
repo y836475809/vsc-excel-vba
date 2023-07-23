@@ -1,4 +1,4 @@
-using Microsoft.CodeAnalysis;
+﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.FindSymbols;
 using Microsoft.CodeAnalysis.Host.Mef;
 using Microsoft.CodeAnalysis.Recommendations;
@@ -466,6 +466,11 @@ namespace VBACodeAnalysis {
                                 $"{completionItem.DisplayText} (+{menbersNum - 1} overloads)";
                         }
                     }
+                    if (symbol is IPropertySymbol propSymbol) {
+                        completionItem.DisplayText = string.Join("", propSymbol.ToDisplayParts().Select(x => {
+                            return ConvKind(x.ToString());
+                        }));
+                        completionItem.ReturnType = ConvKind(propSymbol.Type.Name);
                     }
                     if (symbol is INamedTypeSymbol namedType) {
                         if (namedType.TypeKind == TypeKind.Class) {

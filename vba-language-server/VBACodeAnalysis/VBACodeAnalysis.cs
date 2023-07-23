@@ -1,4 +1,4 @@
-﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.FindSymbols;
 using Microsoft.CodeAnalysis.Host.Mef;
 using Microsoft.CodeAnalysis.Recommendations;
@@ -442,40 +442,40 @@ namespace VBACodeAnalysis {
 
                 var symbol = await SymbolFinder.FindSymbolAtPositionAsync(model, position, workspace);
                 if (symbol != null) {
-                    var completionItem = new CompletionItem();
-                    completionItem.DisplayText = symbol.ToDisplayString();
-                    completionItem.CompletionText = symbol.MetadataName;
-                    completionItem.Description = symbol.GetDocumentationCommentXml();
-                    completionItem.Kind = symbol.Kind.ToString();
-                    completionItem.ReturnType = "";
-                    if (symbol.Kind == SymbolKind.Method) {
+					var item = new CompletionItem {
+						DisplayText = symbol.ToDisplayString(),
+						CompletionText = symbol.MetadataName,
+						Description = symbol.GetDocumentationCommentXml(),
+						Kind = symbol.Kind.ToString(),
+						ReturnType = ""
+					};
+					if (symbol.Kind == SymbolKind.Method) {
                         var methodSymbol = symbol as IMethodSymbol;
                         if(methodSymbol.MethodKind == MethodKind.Constructor) {
-                            completionItem.DisplayText = $"Class {methodSymbol.ContainingType.Name}";
-                            completionItem.Kind = TypeKind.Class.ToString();
+                            item.DisplayText = $"Class {methodSymbol.ContainingType.Name}";
+                            item.Kind = TypeKind.Class.ToString();
 						} else {
-                            completionItem.DisplayText = string.Join("", methodSymbol.ToDisplayParts().Select(x => {
+                            item.DisplayText = string.Join("", methodSymbol.ToDisplayParts().Select(x => {
                                 return ConvKind(x.ToString());
                             }));
                         }
-                        completionItem.ReturnType = ConvKind(methodSymbol.ReturnType.Name);
+                        item.ReturnType = ConvKind(methodSymbol.ReturnType.Name);
 
                         var menbersNum = symbol.ContainingType.GetMembers(symbol.Name).Length;
                         if(menbersNum > 1) {
-                            completionItem.DisplayText =
-                                $"{completionItem.DisplayText} (+{menbersNum - 1} overloads)";
+                            item.DisplayText = $"{item.DisplayText} (+{menbersNum - 1} overloads)";
                         }
                     }
                     if (symbol is IPropertySymbol propSymbol) {
-                        completionItem.DisplayText = string.Join("", propSymbol.ToDisplayParts().Select(x => {
+                        item.DisplayText = string.Join("", propSymbol.ToDisplayParts().Select(x => {
                             return ConvKind(x.ToString());
                         }));
-                        completionItem.ReturnType = ConvKind(propSymbol.Type.Name);
+                        item.ReturnType = ConvKind(propSymbol.Type.Name);
                     }
                     if (symbol is INamedTypeSymbol namedType) {
                         if (namedType.TypeKind == TypeKind.Class) {
-                            completionItem.DisplayText = $"Class {symbol.MetadataName}";
-							completionItem.Kind = TypeKind.Class.ToString();
+                            item.DisplayText = $"Class {symbol.MetadataName}";
+                            item.Kind = TypeKind.Class.ToString();
 						}
                     }
                     if (symbol is IFieldSymbol fieldSymbol) {
@@ -489,9 +489,9 @@ namespace VBACodeAnalysis {
                             }
                             dispText = $"{accessibility} Const {fieldSymbol.Name} As {typeName} = {constValue}";
 						}
-                        completionItem.DisplayText = dispText;
-                        completionItem.CompletionText = typeName;
-                        completionItem.Kind = typeName;
+                        item.DisplayText = dispText;
+                        item.CompletionText = typeName;
+                        item.Kind = typeName;
                     }
                     if (symbol is ILocalSymbol localSymbol) {
                         var typeName = ConvKind(localSymbol.Type.Name);
@@ -504,11 +504,11 @@ namespace VBACodeAnalysis {
                             }
                             dispText = $"{accessibility} Const {localSymbol.Name} As {typeName} = {constValue}";
                         }
-                        completionItem.DisplayText = dispText;
-                        completionItem.CompletionText = typeName;
-                        completionItem.Kind = typeName;
+                        item.DisplayText = dispText;
+                        item.CompletionText = typeName;
+                        item.Kind = typeName;
                     }
-                    items.Add(completionItem);
+                    items.Add(item);
                 }
             }
             return items;

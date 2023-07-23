@@ -406,7 +406,17 @@ namespace VBACodeAnalysis {
                     completionItem.ReturnType = "";
                     if (symbol.Kind == SymbolKind.Method) {
                         var methodSymbol = symbol as IMethodSymbol;
+                        if(methodSymbol.MethodKind == MethodKind.Constructor) {
+                            completionItem.DisplayText = $"Class {methodSymbol.ContainingType.Name}";
+                            completionItem.Kind = TypeKind.Class.ToString();
+                        }
                         completionItem.ReturnType = methodSymbol.ReturnType.ToDisplayString();
+                    }
+                    if (symbol is INamedTypeSymbol namedType) {
+                        if (namedType.TypeKind == TypeKind.Class) {
+                            completionItem.DisplayText = $"Class {symbol.MetadataName}";
+							completionItem.Kind = TypeKind.Class.ToString();
+						}
                     }
                     if (symbol is IFieldSymbol fieldSymbol) {
                         var typeName = ConvKind(fieldSymbol.Type.Name);

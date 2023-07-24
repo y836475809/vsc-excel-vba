@@ -29,7 +29,6 @@ export class SheetTreeDataProvider implements vscode.TreeDataProvider<SheetTreeI
     dispose() {
         this.sheets = [];
         this._onDidChangeTreeData.fire();
-        this.treeview.dispose();
     }
 
     refresh(sheets: string[]): void {

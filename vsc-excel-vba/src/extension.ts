@@ -30,35 +30,34 @@ function dispose() {
 	disposables = [];
 }
 
-const registerProvider = (srcDir: string, enableLSP: boolean) => {
+const registerProviderSideBar = () => {
 	const docSelector = { language: "vb" };
-
-	dispose();
 
 	disposables.push(vscode.languages.registerDocumentSymbolProvider(
 		docSelector, new VBADocumentSymbolProvider()));
 
 	sheetTDProvider = new SheetTreeDataProvider("sheetView");
 	disposables.push(sheetTDProvider);
+};
 
-	if(enableLSP){
-		vbaLSRequest.srcDir = srcDir;
+const registerProviderVBALS = (srcDir: string) => {
+	const docSelector = { language: "vb" };
+	vbaLSRequest.srcDir = srcDir;
 
-		disposables.push(vscode.languages.registerSignatureHelpProvider(
-			docSelector, new VBASignatureHelpProvider(vbaLSRequest), '(', ','));
+	disposables.push(vscode.languages.registerSignatureHelpProvider(
+		docSelector, new VBASignatureHelpProvider(vbaLSRequest), '(', ','));
 
-		disposables.push(vscode.languages.registerDefinitionProvider(
-			docSelector, new VBADefinitionProvider(vbaLSRequest)));
+	disposables.push(vscode.languages.registerDefinitionProvider(
+		docSelector, new VBADefinitionProvider(vbaLSRequest)));
 
-		disposables.push(vscode.languages.registerHoverProvider(
-			docSelector, new VBAHoverProvider(vbaLSRequest)));
+	disposables.push(vscode.languages.registerHoverProvider(
+		docSelector, new VBAHoverProvider(vbaLSRequest)));
 
-		disposables.push(vscode.languages.registerCompletionItemProvider(
-			docSelector, new VBACompletionItemProvider(vbaLSRequest), "."));
-		
-		disposables.push(vscode.languages.registerReferenceProvider(
-			docSelector, new VBAReferenceProvider(vbaLSRequest)));
-	}
+	disposables.push(vscode.languages.registerCompletionItemProvider(
+		docSelector, new VBACompletionItemProvider(vbaLSRequest), "."));
+	
+	disposables.push(vscode.languages.registerReferenceProvider(
+		docSelector, new VBAReferenceProvider(vbaLSRequest)));
 };
 
 // This method is called when your extension is activated
@@ -151,9 +150,10 @@ export async function activate(context: vscode.ExtensionContext) {
 		await vbaCommand.exceue(project, "setBreakpoints");
 	}));
 	context.subscriptions.push(vscode.commands.registerCommand("vsc-excel-vba.test.registerProvider", async () => {
+		dispose();
 		const wfs = vscode.workspace.workspaceFolders!;
 		const srcDir = wfs[0].uri.fsPath;
-		registerProvider(srcDir, true);
+		registerProviderVBALS(srcDir);
 	}));
 
 	context.subscriptions.push(vscode.commands.registerCommand("vsc-excel-vba.createProject", async (args) => {
@@ -199,7 +199,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		report("Load Project");
 		await project.readProject();
 
-		registerProvider(project.srcDir, false);
+		registerProviderSideBar();
 
 		report("Loaded project successfully");
 	};
@@ -220,7 +220,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		report("Register FileEvent");
 		fileEvents.registerFileEvent();
 
-		registerProvider(project.srcDir, true);
+		registerProviderVBALS(project.srcDir);
 		
 		report("Add VBA define");
 		await vbaLSRequest.addVBADefines(

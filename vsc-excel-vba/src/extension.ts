@@ -72,12 +72,10 @@ export async function activate(context: vscode.ExtensionContext) {
 	});
 
 	const config = vscode.workspace.getConfiguration();
-	let loadDefinitionFiles = await config.get("vsc-excel-vba.loadDefinitionFiles");
 	let enableLSP = await config.get("vsc-excel-vba.enableLSP") as boolean;
 	let vbaLanguageServerPort = await config.get("vsc-excel-vba.VBALanguageServerPort") as number;
 	let enableAutoLaunchVBALanguageServer = await config.get("vsc-excel-vba.enableAutoLaunchVBALanguageServer") as boolean;
 	let vbaLanguageServerPath = await config.get("vsc-excel-vba.VBALanguageServerPath") as string;
-	let enableVBACompileAfterImport = await config.get("vsc-excel-vba.enableVBACompileAfterImport") as boolean;
 
 	vbaLSRequest = new VBALSRequest(vbaLanguageServerPort);
 	fileEvents = new FileEvents(vbaLSRequest);
@@ -96,12 +94,10 @@ export async function activate(context: vscode.ExtensionContext) {
 			return;
 		}
 		const config = vscode.workspace.getConfiguration();
-		loadDefinitionFiles = await config.get("vsc-excel-vba.loadDefinitionFiles");
 		enableLSP = await config.get("vsc-excel-vba.enableLSP") as boolean;
 		vbaLanguageServerPort = await config.get("vsc-excel-vba.VBALanguageServerPort") as number;
 		enableAutoLaunchVBALanguageServer = await config.get("vsc-excel-vba.enableAutoLaunchVBALanguageServer") as boolean;
 		vbaLanguageServerPath = await config.get("vsc-excel-vba.VBALanguageServerPath") as string;
-		enableVBACompileAfterImport = await config.get("vsc-excel-vba.enableVBACompileAfterImport") as boolean;
 	});
 
 	context.subscriptions.push(vscode.commands.registerCommand("vsc-excel-vba.toggle", async () => {
@@ -119,11 +115,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		await vbaCommand.exceue(project, "gotoVSCode");
 	}));
 	context.subscriptions.push(vscode.commands.registerCommand("vsc-excel-vba.import", async () => {
-		if(enableVBACompileAfterImport){
-			await vbaCommand.exceue(project, "importAndCompile");
-		}else{
-			await vbaCommand.exceue(project, "import");
-		}
+		await vbaCommand.exceue(project, "importAndCompile");
 	}));
 	context.subscriptions.push(vscode.commands.registerCommand("vsc-excel-vba.export", async () => {
 		if(await vscode.window.showInformationMessage(
@@ -223,8 +215,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		registerProviderVBALS(project.srcDir);
 		
 		report("Add VBA define");
-		await vbaLSRequest.addVBADefines(
-			loadDefinitionFiles?project.getDefinitionFileUris(context):[]);
+		await vbaLSRequest.addVBADefines(project.getDefinitionFileUris(context));
 
 		report("Add source");
 		await vbaLSRequest.addDocuments(await project.getSrcFileUris());

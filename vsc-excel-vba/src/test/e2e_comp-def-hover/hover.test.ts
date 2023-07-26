@@ -32,7 +32,7 @@ suite("Extension E2E Roslyn Test Suite", () => {
 		const targetPos = fixtureFile.getPosition("m1.bas", target, target.length-3);
 		const expContens = [
 			"```vb",
-			"Class1",
+			"Class Class1",
 			"```",
 			"```xml",
 			"",

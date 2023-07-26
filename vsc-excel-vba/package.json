@@ -23,11 +23,6 @@
     "configuration": {
       "title": "vsc-excel-vba",
       "properties": {
-        "vsc-excel-vba.loadDefinitionFiles": {
-          "type": "boolean",
-          "default": true,
-          "description": "load d.vb files"
-        },
         "vsc-excel-vba.enableLSP": {
           "type": "boolean",
           "default": true,
@@ -47,11 +42,6 @@
           "type": "boolean",
           "default": true,
           "description": "Enable/disable auto launch VBA language server"
-        },
-        "vsc-excel-vba.enableVBACompileAfterImport": {
-          "type": "boolean",
-          "default": true,
-          "description": "Enable/disable run VBA compile after import"
         }
       }
     },

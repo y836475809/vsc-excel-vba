@@ -48,13 +48,14 @@ async function deleteFile(uri: vscode.Uri){
 }
 
 const vbClassCode = [
+	"\r\n".repeat(7),
 	"Public Class Class1", 
 	"Public class_value As String",
 	"End Class"	
 ];
 
 const vbModuleCode = [
-	"Module Module1", 
+	"Public Module Module1", 
 	"Private module_value As String",
 	"End Module"
 ];
@@ -166,7 +167,7 @@ suite("Extension E2E Roslyn Test Suite", () => {
 			], [
 				helper.getDocPath("m1.bas"), 
 				[
-					"Module Module1", 
+					"Public Module Module1", 
 					"aPrivate module_value As String",
 					"End Module"
 				].join("\r\n")
@@ -213,7 +214,7 @@ suite("Extension E2E Roslyn Test Suite", () => {
 			], [
 				helper.getDocPath("m1.bas"), 
 				[
-					"Module ReModule1", 
+					"Public Module ReModule1", 
 					"Private module_value As String",
 					"End Module"
 				].join("\r\n")
@@ -258,6 +259,7 @@ suite("Extension E2E Roslyn Test Suite", () => {
 			[
 				helper.getDocPath("c1.cls"), 
 				[
+					"\r\n".repeat(7),
 					"Public Class ReClass1", 
 					"Public class_value As String",
 					"End Class"	

@@ -29,6 +29,18 @@ Public Module ExcelVBAFunctions
     Public Function CDbl(Expression As String) As Double
     End Function
 
+    Public Function CByte(Expression As String) As Byte
+    End Function
+
+    Public Function CInt(Expression As String) As Integer
+    End Function
+
+    Public Function CLng(Expression As String) As Long
+    End Function
+
+    Public Function CBool(Expression As String) As Boolean
+    End Function
+
     Public Function Join(Sourcearray() As String, Optional delimiter As String = " ") As String
     End Function
 
@@ -62,6 +74,9 @@ Public Module ExcelVBAFunctions
     End Function
 
     Public Function Left(Str As String, length As Long) As String
+    End Function
+
+    Public Function Right(Str As String, length As Long) As String
     End Function
 
     Public Function LBound(Ary As Object, Optional dimension As Long = 1) As Long
@@ -99,5 +114,11 @@ Public Module ExcelVBAFunctions
     End Function
 
     Public Function IIf(Expr As Boolean, TruePart As Object, FalsePart As Object) As Object
+    End Function
+
+    Public Function IsNumeric(Expression As String) As Boolean
+    End Function
+
+    Public Function Array(ParamArray args As Object()) As Object
     End Function
 End Module

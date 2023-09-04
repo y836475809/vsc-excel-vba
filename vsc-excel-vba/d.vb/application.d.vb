@@ -2,6 +2,10 @@ Public Class Application
 	Public Shared Property UserName As String
 	Public Shared Property DisplayAlerts As Boolean
 	Public Shared Property ScreenUpdating As Boolean
+	Public Shared Property EnableEvents As Boolean
+	Public Shared Property Calculation As Long
+	Public Shared Property Interactive As Boolean
+	Public Shared Property Cursor As Long
 
     Public Shared Property ThisWorkbook As Workbook
 

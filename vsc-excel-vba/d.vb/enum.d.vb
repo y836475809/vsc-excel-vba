@@ -127,4 +127,24 @@ Public Module ExcelVBAEnum
     End Enum
     Public Const xlShiftToLeft = -4159
     Public Const xlShiftUp = -4162   
+
+    Public Enum XlCalculation
+        xlCalculationAutomatic = -4105
+        xlCalculationManual = -4135
+        xlCalculationSemiautomatic = 2
+    End Enum
+    Public Const xlCalculationAutomatic = -4105
+    Public Const xlCalculationManual = -4135
+    Public Const xlCalculationSemiautomatic = 2
+
+    Public Enum XlMousePointer
+        xlDefault = -4143
+        xlIBeam = 3
+        xlNorthwestArrow = 1
+        xlWait = 2
+    End Enum
+    Public Const xlDefault = -4143
+    Public Const xlIBeam = 3
+    Public Const xlNorthwestArrow = 1
+    Public Const xlWait = 2
 End Module

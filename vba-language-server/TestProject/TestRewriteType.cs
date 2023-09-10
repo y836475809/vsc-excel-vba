@@ -157,7 +157,7 @@ End Module", act);
  Structure Point
  Public X As Long
  Public Y As Long
-Public a End Structure
+Public a End Type
 End Module", act);
         }
 
@@ -192,6 +192,85 @@ End Module";
                 {7, new List<LocationDiff>{ new LocationDiff(7, "End ".Length + "Type".Length, diff)} },
                 {3, new List<LocationDiff>{ new LocationDiff(3, menS, menL)} },
                 {5, new List<LocationDiff>{ new LocationDiff(5, menS, menL)} },
+            };
+            Helper.AssertLocationDiffDict(predict, dict);
+        }
+
+
+        [Fact]
+        public void TestPublicTypeComment() {
+            var code = @$"Public Module Module1
+' Type Point1
+' Type Point2
+ Type   Point
+' test1
+  X As Long
+
+  Y    As Long
+  
+End Type
+End Module";
+            (var act, var dict) = rewriteType(code);
+            var pre = @$"Public Module Module1
+' Type Point1
+' Type Point2
+ Structure   Point
+' test1
+  Public X As Long
+
+  Public Y    As Long
+  
+End Structure
+End Module";
+            Helper.AssertCode(pre, act);
+
+            var diff = "Structure".Length - "Type".Length;
+            var menS = 2;
+            var menL = "Public ".Length;
+            var predict = new Dictionary<int, List<LocationDiff>> {
+                {3, new List<LocationDiff>{ new LocationDiff(3, " Type".Length, diff)} },
+                {9, new List<LocationDiff>{ new LocationDiff(9, "End ".Length + "Type".Length, diff)} },
+                {5, new List<LocationDiff>{ new LocationDiff(5, menS, menL)} },
+                {7, new List<LocationDiff>{ new LocationDiff(7, menS, menL)} },
+            };
+            Helper.AssertLocationDiffDict(predict, dict);
+        }
+
+        [Fact]
+        public void TestPublicTypeComment2() {
+            var code = @$"Public Module Module1
+' Type Point1
+' Type Point2
+ Public  Type   Point
+' test1
+  X As Long
+
+  Y    As Long
+  
+End Type
+End Module";
+            (var act, var dict) = rewriteType(code);
+            var pre = @$"Public Module Module1
+' Type Point1
+' Type Point2
+ Public  Structure   Point
+' test1
+  Public X As Long
+
+  Public Y    As Long
+  
+End Structure
+End Module";
+            Helper.AssertCode(pre, act);
+
+            var diff = "Structure".Length - "Type".Length;
+            var menS = 2;
+            var menL = "Public ".Length;
+            var predict = new Dictionary<int, List<LocationDiff>> {
+                {3, new List<LocationDiff>{ new LocationDiff(3, " Public  Type".Length, diff)} },
+                {9, new List<LocationDiff>{ new LocationDiff(9, "End ".Length + "Type".Length, diff)} },
+                {5, new List<LocationDiff>{ new LocationDiff(5, menS, menL)} },
+                {7, new List<LocationDiff>{ new LocationDiff(7, menS, menL)} },
             };
             Helper.AssertLocationDiffDict(predict, dict);
         }

@@ -1,7 +1,8 @@
-﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
 using Microsoft.CodeAnalysis.VisualBasic;
 using Microsoft.CodeAnalysis.VisualBasic.Syntax;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -260,70 +261,39 @@ namespace VBACodeAnalysis {
 			if (!diags.Any()) {
 				return (root, locDiffDict);
 			}
-
-            var typeTokens = root.DescendantTokens().Where(x => {
-                if (x.IsKind(SyntaxKind.EndKeyword) 
-                    || x.IsKind(SyntaxKind.EmptyToken)
-                    || x.IsKind(SyntaxKind.PublicKeyword)
-                    || x.IsKind(SyntaxKind.PrivateKeyword)) {
-                    var trivias = x.TrailingTrivia.Select(y => y.ToString().ToLower().Trim());
-                    return trivias.Any(x => x.Contains("type"));
-                }
-                return false;
-            });
-
-            var lookup = new Dictionary<SyntaxToken, SyntaxToken>();
-            foreach (var item in typeTokens) {
-                var value = item.ToFullString();
-                var mc1 = Regex.Match(
-                        value, @"\s+(type)\s+",
-                        RegexOptions.IgnoreCase);
-                var mc2 = Regex.Match(
-                        value, @"^(type)\s+",
-                        RegexOptions.IgnoreCase);
-                if (!mc1.Success && !mc2.Success) {
-					continue;
+            var typeTokens = root.DescendantTrivia().Where(x => {
+				if (x.IsKind(SyntaxKind.SkippedTokensTrivia)) {
+					return x.ToString().ToLower(). StartsWith("type");
 				}
-                Match mc = null;
-                if (mc1.Success) {
-                    mc = mc1;
-                }
-                if (mc2.Success) {
-                    mc = mc2;
-                }
-                var pre = value.Substring(0, mc.Groups[1].Index);
-                var post = value.Substring(mc.Groups[1].Index + mc.Groups[1].Length);
-                var newValue = $"{pre}Structure{post}";
-                if (item.IsKind(SyntaxKind.EmptyToken)) {
-                    var rep = SyntaxFactory.Token(SyntaxKind.EmptyToken, newValue);
-                    lookup.Add(item, rep);
+				return false;
+			});
+
+            foreach (var item in typeTokens) {
+                var sp = item.GetLocation().GetLineSpan().StartLinePosition;
+                var diff = "Structure".Length - "type".Length;
+                if (!locDiffDict.ContainsKey(sp.Line)) {
+					locDiffDict.Add(sp.Line, new List<LocationDiff>());
+				}
+				locDiffDict[sp.Line].Add(
+					new LocationDiff(sp.Line, sp.Character + "type".Length, diff));
+			}
+
+            var repText = root.SyntaxTree.GetText().ToString();
+            foreach (var item in typeTokens.Reverse()) {
+                var sp = item.Span;
+                var pre = repText.Substring(0, sp.Start);
+                var post = repText.Substring(sp.End);
+                if (item.ToString().Trim().Length > "type".Length) {
+                    // Type Point
+                    var re = new Regex("type", RegexOptions.IgnoreCase);
+                    var st = re.Replace(item.ToString(), "Structure", 1);
+                    repText = $"{pre}{st}{post}";
                 } else {
-                    var rep = SyntaxFactory.Token(item.Kind(), newValue);
-                    lookup.Add(item, rep);
-                }
-                var trivias = item.TrailingTrivia.Where(
-                    x => x.ToString().ToLower().Trim().IndexOf("type") >= 0);
-				if (trivias.Any()) {
-                    var lp = trivias.First().GetLocation().GetLineSpan();
-                    var ltrivia = item.LeadingTrivia.ToFullString();
-                    var diff = "Structure".Length - "type".Length;
-                    var sp = lp.StartLinePosition;
-                    var ep = lp.EndLinePosition;
-                    if (!locDiffDict.ContainsKey(sp.Line)) {
-                        locDiffDict.Add(sp.Line, new List<LocationDiff>());
-                    }
-                    locDiffDict[sp.Line].Add(
-                        new LocationDiff(sp.Line, sp.Character + "type".Length, diff));
+                    repText = $"{pre}{"Structure"}{post}";
                 }
             }
-
-            if (lookup.Count == 0) {
-                return (root, locDiffDict);
-            }
-
             var lookupMenber = new Dictionary<SyntaxToken, SyntaxToken>();
-            var repNode = root.ReplaceTokens(lookup.Keys, (s, d) => lookup[s]);
-            repNode = root.SyntaxTree.WithChangedText(repNode.GetText()).GetRootAsync().Result;
+            var repNode = root.SyntaxTree.WithChangedText(SourceText.From(repText)).GetRootAsync().Result;
             var stNodes = repNode.DescendantNodes().OfType<StructureBlockSyntax>();
             foreach (var st in stNodes) {
                 foreach (var menber in st.Members) {

@@ -139,11 +139,11 @@ export class VBACommands {
     }
 
     async import(srcDir: string){
-        await this.run("import.ps1", [`"${srcDir}"`]);
+        await this.run("import.ps1", [`'${srcDir}'`]);
     }
 
     async export(distDir: string){
-        await this.run("export.ps1", [`"${distDir}"`]);
+        await this.run("export.ps1", [`'${distDir}'`]);
     }
 
     async compile(){

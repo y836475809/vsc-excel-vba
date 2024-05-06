@@ -1,0 +1,58 @@
+{
+    // IntelliSense を使用して利用可能な属性を学べます。
+    // 既存の属性の説明をホバーして表示します。
+    // 詳細情報は次を確認してください: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug val",
+            "type": "antlr-debug",
+            "request": "launch",
+            "input": "./VBAAntlr/code/val.vb",
+            "grammar": "./VBAAntlr/VBA.g4",
+            "startRule": "startRule",
+            "printParseTree": true,
+            "visualParseTree": true
+        },
+        {
+            "name": "Debug type",
+            "type": "antlr-debug",
+            "request": "launch",
+            "input": "./VBAAntlr/code/type.vb",
+            "grammar": "./VBAAntlr/VBA.g4",
+            "startRule": "startRule",
+            "printParseTree": true,
+            "visualParseTree": true
+        },
+        {
+            "name": "Debug porp",
+            "type": "antlr-debug",
+            "request": "launch",
+            "input": "./VBAAntlr/code/input_porp.vb",
+            "grammar": "./VBAAntlr/VBA.g4",
+            "startRule": "startRule",
+            "printParseTree": true,
+            "visualParseTree": true
+        },
+        {
+            "name": "Debug macro if",
+            "type": "antlr-debug",
+            "request": "launch",
+            "input": "./VBAAntlr/code/input_macro_if.vb",
+            "grammar": "./VBAAntlr/VBA.g4",
+            "startRule": "startRule",
+            "printParseTree": true,
+            "visualParseTree": true
+        },
+        {
+            "name": "Debug io",
+            "type": "antlr-debug",
+            "request": "launch",
+            "input": "./VBAAntlr/code/input_io.vb",
+            "grammar": "./VBAAntlr/VBA.g4",
+            "startRule": "startIORule",
+            "printParseTree": true,
+            "visualParseTree": true
+        },
+    ]
+}

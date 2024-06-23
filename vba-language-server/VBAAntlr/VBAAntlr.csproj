@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>AntlrTemplate</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Antlr4 Include="VBA.g4">
+      <Package>VBAAntlr</Package>
+    </Antlr4>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Antlr4.Runtime.Standard" Version="4.11.1" />
+    <PackageReference Include="Antlr4BuildTasks" Version="12.8.0" />
+  </ItemGroup>
+
+</Project>

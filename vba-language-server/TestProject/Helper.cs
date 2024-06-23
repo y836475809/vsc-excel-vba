@@ -11,7 +11,10 @@ using Xunit;
 using System.Linq;
 
 namespace TestProject {
-    using locDiffDiict = Dictionary<int, List<LocationDiff>>;
+	using ChangeDict = Dictionary<int, List<ChangeVBA>>;
+	using ColumnShiftDict = Dictionary<int, List<ColumnShift>>;
+	using LineReMapDict = Dictionary<int, int>;
+	using locDiffDiict = Dictionary<int, List<LocationDiff>>;
 
     class Helper {
         public static string getPath(string fileName, [CallerFilePath] string filePath = "") {
@@ -89,5 +92,26 @@ namespace TestProject {
                 }
             }
         }
-    }
+
+		public static void AssertColumnShiftDict(ColumnShiftDict pre, ColumnShiftDict act) {
+			Assert.True(pre.Keys.All(x => act.Keys.Contains(x)));
+			foreach (var item in pre) {
+				var preList = item.Value;
+				var actList = act[item.Key];
+				foreach (var (First, Second) in preList.Zip(actList)) {
+				    Assert.Equal(First.LineIndex, Second.LineIndex);
+					Assert.Equal(First.StartCol, Second.StartCol);
+					Assert.Equal(First.ShiftCol, Second.ShiftCol);
+				}
+			}
+		}
+		public static void AssertDict<T1, T2>(Dictionary<T1, T2> pre, Dictionary<T1, T2> act) {
+			Assert.True(pre.Keys.All(x => act.Keys.Contains(x)));
+			foreach (var item in pre) {
+				var preValue = item.Value;
+				var actValue = act[item.Key];
+				Assert.Equal(preValue, actValue);
+			}
+		}
+	}
 }

@@ -12,4 +12,8 @@
     <PackageReference Include="Microsoft.CodeAnalysis.VisualBasic.Workspaces" Version="4.4.0" />
   </ItemGroup>
 
+	<ItemGroup>
+		<ProjectReference Include="..\VBAAntlr\VBAAntlr.csproj" />
+	</ItemGroup>
+
 </Project>

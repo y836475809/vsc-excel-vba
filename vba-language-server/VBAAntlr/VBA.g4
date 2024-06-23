@@ -4,50 +4,33 @@ options {
     caseInsensitive = true;
 }
 
-// startRule
-//     : (typeStmt
-//     | propertyGetStmt | propertyLetStmt | propertySetStmt 
-//     | .
-//     )*
-//     EOF
-//     ;
-// startRule
-//     : typeStmt
-//     | propertyGetStmt | propertyLetStmt | propertySetStmt 
-//     | endOfLine*
-//     EOF
-//     ;
-
 startRule
-    : (WS? endOfLine* module endOfLine* WS?)* EOF
-    ;
-module
-    : comment
-    | typeStmt
+    : (typeStmt 
     | propertyGetStmt | propertyLetStmt | propertySetStmt 
-    | variableStmt
-    | subStmt | constStmt
-    | functionStmt
-    | declareStmt
-    | macroConstStmt | macroIfBlockStmt | macroElseIfBlockStmt | macroElseBlockStmt 
-    | macroEndBlockStmt
+    | .)*?
+    EOF
     ;
-startIORule
-    : (WS? endOfLine* ioModule endOfLine* WS?)* EOF
+startFileIoRule
+    : (fileIoModule 
+    | .)*?
+    EOF
     ;
-ioModule
-    : comment
-    | openStmt | printStmt | writeStmt | closeStmt
+// fileIoModule
+//     : comment
+//     | openStmt | printStmt | writeStmt | closeStmt
+//     ;
+fileIoModule
+    : openStmt
     ;
 openStmt
-    : OPEN WS ambiguousIdentifier WS FOR WS OpenMode 
+    : OPEN WS identifier WS FOR WS OpenMode 
        (WS ACCESS WS AccessMode)?
        (WS LockMode)?
        WS AS WS fileNumber
-       (WS 'LEN' WS? EQ WS? ambiguousIdentifier)?
+       (WS 'LEN' WS? EQ WS? identifier)?
     ;
 OPEN
-    : 'WRIOPENTE'
+    : 'OPEN'
     ;
 FOR
     : 'FOR'
@@ -56,10 +39,10 @@ ACCESS
     : 'ACCESS'
     ;
 printStmt
-    : 'PRINT' WS fileNumber WS? (',' | ';') (WS? ambiguousIdentifier)?
+    : 'PRINT' WS fileNumber WS? (',' | ';') (WS? identifier)?
     ;
 writeStmt
-    : 'WRITE' WS fileNumber (WS? (',' | ';') WS? ambiguousIdentifier?)+
+    : 'WRITE' WS fileNumber (WS? (',' | ';') WS? identifier?)+
     ;
 closeStmt
     : 'CLOSE' (WS fileNumber (WS? ',' WS? fileNumber)*)?
@@ -80,161 +63,53 @@ LockMode
     | ('LOCK' WS 'READ' WS 'WRITE')
     ;
 fileNumber
-    : '#'? ambiguousIdentifier
+    : '#'? identifier
     ;
-variableStmt
-    : (DIM | STATIC | visibility) WS (WITHEVENTS WS)? variableListStmt endOfStatement?
-    ;
-// variableStmt
-//     : (DIM | STATIC | visibility) WS (WITHEVENTS WS)? .+?
-//     ;
-constStmt
-    : (visibility WS)? CONST WS constSubStmt (WS? ',' WS? constSubStmt)*
-    ;
-constSubStmt
-    : ambiguousIdentifier (WS asTypeClause)? WS? EQ WS? ambiguousIdentifier
-    ;
-variableListStmt
-    : variableSubStmt (WS? ',' WS? variableSubStmt)*
-    ;
-variableSubStmt
-    : ambiguousIdentifier 
-    (WS? LPAREN WS? variableAryStmt? RPAREN WS?)?
-    (WS asTypeClause)?
-    ;
-variableAryStmt
-    : AryStmt (WS? ',' WS? AryStmt)*
-    | AryToStmt (WS? ',' WS? AryToStmt)*
-    ;
-AryToStmt
-    : DIGIT+ WS 'TO' WS DIGIT+
-    ;
-AryStmt
-    : DIGIT+
-    ;
-fragment DIGIT
-    : [0-9]
+FILENUMBERSYMBOL
+    : '#'
     ;
 typeStmt
-    : (visibility WS)? TYPE WS ambiguousIdentifier endOfStatement typeStmt_Element+ typeEndStmt
-    ;
-// typeStmt_Element
-//     : ambiguousIdentifier (WS asTypeClause)? endOfStatement
-//     ;
-typeStmt_Element
-    : variableSubStmt endOfStatement
+    : (visibility WS)? TYPE WS identifier endOfStatement .*? typeEndStmt
     ;
 typeEndStmt
     : END_TYPE
     ;
 propertyGetStmt
-    : (visibility WS)? (STATIC WS)? PROPERTY_GET WS ambiguousIdentifier LPAREN WS? RPAREN (
+    : (visibility WS)? (STATIC WS)? PROPERTY_GET WS identifier LPAREN WS? RPAREN (
         WS asTypeClause
-    )? endOfStatement (blockLetSetStmt*?|.*?) endPropertyStmt
+    )? endOfStatement (blockLetSetStmt | .)*? endPropertyStmt
     ;
 blockLetSetStmt
     : letStmt | setStmt
     ;
-// blockStmt
-//     : letStmt | setStmt
-//     ;
 letStmt
-    : (LET WS)? ambiguousIdentifier WS? EQ WS? ambiguousIdentifier endOfStatement
+    : (LET WS)? identifier WS? EQ WS? identifier argList? endOfStatement
     ;
 setStmt
-    : SET WS ambiguousIdentifier WS? EQ WS? ambiguousIdentifier endOfStatement
+    : SET WS identifier WS? EQ WS? identifier argList? endOfStatement
     ;
 propertyLetStmt
-    : (visibility WS)? (STATIC WS)? PROPERTY_LET WS ambiguousIdentifier (WS? argList)? endOfStatement .*? endPropertyStmt
+    : (visibility WS)? (STATIC WS)? PROPERTY_LET WS identifier (WS? argList)? endOfStatement .*? endPropertyStmt
     ;
 propertySetStmt
-    : (visibility WS)? (STATIC WS)? PROPERTY_SET WS ambiguousIdentifier (WS? argList)? endOfStatement .*? endPropertyStmt
+    : (visibility WS)? (STATIC WS)? PROPERTY_SET WS identifier (WS? argList)? endOfStatement .*? endPropertyStmt
     ;
 endPropertyStmt
     : END_PROPERTY
     ;
-subStmt
-    : (visibility WS)? (STATIC WS)? SUB WS? ambiguousIdentifier (WS? argList)? endOfStatement .*? END_SUB
-    ;
-functionStmt
-    : (visibility WS)? (STATIC WS)? FUNCTION WS? ambiguousIdentifier (WS? argList)? (
-        WS? asTypeClause
-    )? endOfStatement .*? END_FUNCTION
-    ;
-enumerationStmt
-    : (visibility WS)? ENUM WS ambiguousIdentifier endOfStatement enumerationStmt_Constant* END_ENUM
-    ;
-enumerationStmt_Constant
-    : ambiguousIdentifier (WS? EQ WS? ambiguousIdentifier)? endOfStatement
-    ;
-// declareStmt
-//     : (visibility WS)? DECLARE WS (PTRSAFE WS)? (FUNCTION | SUB) WS ambiguousIdentifier WS LIB WS STRINGLITERAL (
-//         WS ALIAS WS STRINGLITERAL
-//     )? (WS? argList)? (WS asTypeClause)?
-//     ;
-declareStmt
-    : (visibility WS)? DECLARE WS (PTRSAFE WS)? (FUNCTION | SUB) WS ambiguousIdentifier WS LIB WS ambiguousIdentifier (
-        WS ALIAS WS ambiguousIdentifier
-    )? (WS? argList)? (WS asTypeClause)?
-    ;
 asTypeClause
-    : AS WS (NEW WS)? ambiguousIdentifier
+    : AS WS? (NEW WS)? WS? identifier
     ;
-// asTypeClause
-//     : AS WS UNDERSCORE WS NEWLINE ambiguousIdentifier
-//     ;
-// argList
-//     : LPAREN (ambiguousIdentifier | WS | ',')* RPAREN
-//     ;
 argList
     : LPAREN (WS? arg (WS? ',' WS? arg)*)? WS? RPAREN
     ;
 arg
-    : (ambiguousIdentifier WS)? ambiguousIdentifier (
+    : (identifier WS)? identifier (
         WS? LPAREN WS? RPAREN
     )? (WS? asTypeClause)? (WS? argDefaultValue)?
     ;
 argDefaultValue
-    : EQ WS? ambiguousIdentifier
-    ;
-DECLARE
-    : 'DECLARE'
-    ;
-LIB
-    : 'LIB'
-    ;
-ALIAS
-    : 'ALIAS'
-    ;
-PTRSAFE
-    : 'PTRSAFE'
-    ;
-ENUM
-    : 'ENUM'
-    ;
-END_ENUM
-    : 'END' WS 'ENUM'
-    ;
-CONST
-    : 'CONST'
-    ;
-SUB
-    : 'SUB'
-    ;
-END_SUB
-    : 'END' WS 'SUB'
-    ;
-FUNCTION
-    : 'FUNCTION'
-    ;
-END_FUNCTION
-    : 'END' WS 'FUNCTION'
-    ;
-DIM
-    : 'DIM'
-    ;
-WITHEVENTS
-    : 'WITHEVENTS'
+    : EQ WS? identifier
     ;
 PROPERTY_GET
     : 'PROPERTY' WS 'GET'
@@ -248,9 +123,6 @@ PROPERTY_SET
 END_PROPERTY
     : 'END' WS 'PROPERTY'
     ;
-// PP
-//     : [(PROPERTY) WS+ (SET)]
-//     ;
 EQ
     : '='
     ;
@@ -298,8 +170,8 @@ visibility
     | PUBLIC
     ;
 
-ambiguousIdentifier
-    : (IDENTIFIER)+
+identifier
+    : IDENTIFIER+
     ;
 L_SQUARE_BRACKET
     : '['
@@ -309,21 +181,6 @@ R_SQUARE_BRACKET
     ;
 NEWLINE
     : [\r\n\u2028\u2029]+
-    ;
-macroConstStmt
-    : MACRO_CONST WS? ambiguousIdentifier WS? EQ WS? ambiguousIdentifier
-    ;
-macroIfBlockStmt
-    : MACRO_IF WS ambiguousIdentifier WS THEN endOfStatement
-    ;
-macroElseIfBlockStmt
-    : MACRO_ELSEIF WS ambiguousIdentifier WS THEN endOfStatement
-    ;
-macroElseBlockStmt
-    : MACRO_ELSE endOfStatement
-    ;
-macroEndBlockStmt
-    : MACRO_END_IF endOfStatement
     ;
 MACRO_CONST
     : '#CONST'
@@ -343,17 +200,8 @@ MACRO_END_IF
 THEN
     : 'THEN'
     ;
-// IDENTIFIER
-//     : ~[\]()\r\n\t.,'"|!@#$%^&*\-+:=; ]+
-//     | L_SQUARE_BRACKET (~[!\]\r\n])+ R_SQUARE_BRACKET
-//     ;
-// IDENTIFIER
-//     : ~[\]()\r\n\t,'"|!@#$%^:; ]+
-//     | L_SQUARE_BRACKET (~[!\]\r\n])+ R_SQUARE_BRACKET
-//     | STRINGLITERAL
-//     ;
 IDENTIFIER
-    : ~[\]()\r\n\t,'"|!@#%^:; ]+
+    : FILENUMBERSYMBOL? ~[\]()\r\n\t,'"|!@%^:;=#/ ]+
     | L_SQUARE_BRACKET (~[!\]\r\n])+ R_SQUARE_BRACKET
     | STRINGLITERAL
     ;
@@ -381,29 +229,13 @@ endOfLine
 endOfStatement
     : (endOfLine | WS? COLON WS?)*
     ;
-
-// whitespace, line breaks, comments, ...
 LINE_CONTINUATION
     : [ \t]+ UNDERSCORE '\r'? '\n' WS* -> skip
     ;
-
-// WS
-//     : ([ \t] | LINE_CONTINUATION)+
-//     ;
 WS
     : ([ \t] | UNDERSCORE [ \t]? NEWLINE | LINE_CONTINUATION)+
     ;
 STRINGLITERAL
     : '"' (~["\r\n] | '""')* '"'
     ;
-// TOKEN
-//     : ~[+\-\u0000-\u001f <>:"/\\|?*#@] ~[\u0000-\u001f <>:"/\\|?*#@]+
-//     ;
-// PP
-//     :~'Property'
-//     ;
-// PPP :'Property'
-//     ;
-// UNKNOWN: . -> skip;
-// ignored : . ;
-// IGNORED : . ;
+UNKNOWN: . -> skip;

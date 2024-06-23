@@ -5,52 +5,62 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Debug val",
-            "type": "antlr-debug",
-            "request": "launch",
-            "input": "./VBAAntlr/code/val.vb",
-            "grammar": "./VBAAntlr/VBA.g4",
-            "startRule": "startRule",
-            "printParseTree": true,
-            "visualParseTree": true
-        },
-        {
             "name": "Debug type",
             "type": "antlr-debug",
             "request": "launch",
-            "input": "./VBAAntlr/code/type.vb",
+            "input": "./VBAAntlr/code/type.bas",
             "grammar": "./VBAAntlr/VBA.g4",
             "startRule": "startRule",
             "printParseTree": true,
             "visualParseTree": true
         },
         {
-            "name": "Debug porp",
+            "name": "Debug property",
             "type": "antlr-debug",
             "request": "launch",
-            "input": "./VBAAntlr/code/input_porp.vb",
+            "input": "./VBAAntlr/code/property.bas",
             "grammar": "./VBAAntlr/VBA.g4",
             "startRule": "startRule",
             "printParseTree": true,
             "visualParseTree": true
         },
         {
-            "name": "Debug macro if",
+            "name": "Debug let set",
             "type": "antlr-debug",
             "request": "launch",
-            "input": "./VBAAntlr/code/input_macro_if.vb",
+            "input": "./VBAAntlr/code/letset.bas",
             "grammar": "./VBAAntlr/VBA.g4",
             "startRule": "startRule",
             "printParseTree": true,
             "visualParseTree": true
         },
         {
-            "name": "Debug io",
+            "name": "Debug filenumber",
             "type": "antlr-debug",
             "request": "launch",
-            "input": "./VBAAntlr/code/input_io.vb",
+            "input": "./VBAAntlr/code/filenumber.bas",
             "grammar": "./VBAAntlr/VBA.g4",
-            "startRule": "startIORule",
+            "startRule": "startRule",
+            "printParseTree": true,
+            "visualParseTree": true
+        },
+        {
+            "name": "Debug macro",
+            "type": "antlr-debug",
+            "request": "launch",
+            "input": "./VBAAntlr/code/macro.bas",
+            "grammar": "./VBAAntlr/VBA.g4",
+            "startRule": "startRule",
+            "printParseTree": true,
+            "visualParseTree": true
+        },
+        {
+            "name": "Debug fileio",
+            "type": "antlr-debug",
+            "request": "launch",
+            "input": "./VBAAntlr/code/fileio.bas",
+            "grammar": "./VBAAntlr/VBA.g4",
+            "startRule": "startFileIoRule",
             "printParseTree": true,
             "visualParseTree": true
         },

@@ -134,17 +134,20 @@ namespace VBACodeAnalysis {
 			foreach (var item in _propertyNameDict) {
 				var name = item.Key;
 				var propName = item.Value;
+				var inertIndex = lines.Count - 1;
 				if (propName.AsType != null) {
 					var asType = propName.AsType;
 					var opt = StringComparison.OrdinalIgnoreCase;
 					if (string.Equals(propName.AsType, "variant", opt)) {
 						asType = "Object";
 					}
-					lines.Add($"Public Property {name} As {asType}");
+					var prop = $"Public Property {name} As {asType}";
+					lines.Insert(inertIndex, prop);
 				} else {
-					lines.Add($"Public Property {name}");
+					var prop = $"Public Property {name}";
+					lines.Insert(inertIndex, prop);
 				}
-				_lineReMapDict[lines.Count - 1] = propName.LineIndex;
+				_lineReMapDict[inertIndex] = propName.LineIndex;
 			}
 
 			_code = string.Join(Environment.NewLine,  lines);

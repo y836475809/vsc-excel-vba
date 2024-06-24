@@ -23,25 +23,59 @@ namespace TestProject {
 		public void TestType() {
 			var codeFmt = @"
 Public {0} type_pub
-	num As Long
+    {1}num As Long
 End {0}
 Private {0} type_pri
-	num As Long
+    {1}num As Long
 End {0}
 {0} type_non
-	num As Long
+    {1}num As Long
 End {0}
 ";
-			var code = string.Format(codeFmt, "Type");
+			var code = string.Format(codeFmt, "Type", "");
 			var pp = new TestPreprocVBA();
 			var actCode = pp.Rewrite("test", code);
-			var preCode = string.Format(codeFmt, "Structure");
+			var v = "Public ";
+			var preCode = string.Format(codeFmt, "Structure", v);
 			Helper.AssertCode(preCode, actCode);
 
 			var preColDict = new ColumnShiftDict {
 				{1, new List<ColumnShift>{ new(1, 12, 5) } },
+				{2, new List<ColumnShift>{ new(2, 4, v.Length) } },
+
 				{4, new List<ColumnShift>{ new(4, 13, 5) } },
+				{5, new List<ColumnShift>{ new(5, 4, v.Length) } },
+
 				{7, new List<ColumnShift>{ new(7, 5, 5) } },
+				{8, new List<ColumnShift>{ new(8, 4, v.Length) } },
+			};
+			var actColDict = pp.ColDict["test"];
+			Helper.AssertColumnShiftDict(preColDict, actColDict);
+		}
+
+		[Fact]
+		public void TestTypeMember() {
+			var codeFmt = @"
+Public {0} type_pub
+    {1}num1 As Long
+    {1}num2(10) As Long
+    {1}num3(1 to 5) As Long
+    Public num4 As Long
+    Private num5 As Long
+End {0}
+";
+			var code = string.Format(codeFmt, "Type", "");
+			var pp = new TestPreprocVBA();
+			var actCode = pp.Rewrite("test", code);
+			var v = "Public ";
+			var preCode = string.Format(codeFmt, "Structure", v);
+			Helper.AssertCode(preCode, actCode);
+
+			var preColDict = new ColumnShiftDict {
+				{1, new List<ColumnShift>{ new(1, 12, 5) } },
+				{2, new List<ColumnShift>{ new(2, 4, v.Length) } },
+				{3, new List<ColumnShift>{ new(3, 4, v.Length) } },
+				{4, new List<ColumnShift>{ new(4, 4, v.Length) } },
 			};
 			var actColDict = pp.ColDict["test"];
 			Helper.AssertColumnShiftDict(preColDict, actColDict);
@@ -49,7 +83,7 @@ End {0}
 
 		[Fact]
 		public void TestProperty() {
-			var code = @"
+			var code = @"Module TestType
 Property Get Name1() As String
     name1 = 1
     Name1 = name1
@@ -71,8 +105,9 @@ End Property
 Property Let Name3(ByVal arg As String)
     name = arg
 End Property
-";
-			var preCode = @"
+
+End Module";
+			var preCode = @"Module TestType
 Private Function GetName1() As String
     name1 = 1
     GetName1 = name1
@@ -97,7 +132,8 @@ End Sub
 
 Public Property Name1 As String
 Public Property Name2 As String
-Public Property Name3 As String";
+Public Property Name3 As String
+End Module";
 			var pp = new TestPreprocVBA();
 			var actCode = pp.Rewrite("test", code);
 			Helper.AssertCode(preCode, actCode);
@@ -180,9 +216,9 @@ Private Sub SetName2(n As String)
         s1 = 10
         s2 = 10
 End Sub
-
 Public Property Name1 As String
-Public Property Name2 As String";
+Public Property Name2 As String
+";
 			var pp = new TestPreprocVBA();
 			var actCode = pp.Rewrite("test", code);
 			Helper.AssertCode(preCode, actCode);
@@ -196,8 +232,8 @@ Public Property Name2 As String";
 			Helper.AssertColumnShiftDict(preColDict, actColDict);
 
 			var preLineDict = new LineReMapDict {
-				{27, 14},
-				{28, 22 },
+				{26, 14},
+				{27, 22 },
 			};
 			var actLineDict = pp.LineDict["test"];
 			Helper.AssertDict(preLineDict, actLineDict);
@@ -277,9 +313,9 @@ Private Sub SetName2(n As String)
     s1 =  10
     s1 =  n
 End Sub
-
 Public Property Name1 As String
-Public Property Name2 As String";
+Public Property Name2 As String
+";
 			var pp = new TestPreprocVBA();
 			var actCode = pp.Rewrite("test", code);
 			Helper.AssertCode(preCode, actCode);
@@ -310,25 +346,31 @@ End Sub
 		public void TestVariantInType() {
 			var codeFmt = @"
 Public {0} type_pub
-	num As {1}
+    {2}num As {1}
 End {0}
 Private {0} type_pri
-	num As {1}
+    {2}num As {1}
 End {0}
 {0} type_non
-	num As {1}
+    {2}num As {1}
 End {0}
 ";
-			var code = string.Format(codeFmt, "Type", "Variant");
+			var code = string.Format(codeFmt, "Type", "Variant", "");
 			var pp = new TestPreprocVBA();
 			var actCode = pp.Rewrite("test", code);
-			var preCode = string.Format(codeFmt, "Structure", "Object ");
+			var v = "Public ";
+			var preCode = string.Format(codeFmt, "Structure", "Object ", v);
 			Helper.AssertCode(preCode, actCode);
 
 			var preColDict = new ColumnShiftDict {
 				{1, new List<ColumnShift>{ new(1, 12, 5) } },
+				{2, new List<ColumnShift>{ new(2, 4, v.Length) } },
+
 				{4, new List<ColumnShift>{ new(4, 13, 5) } },
+				{5, new List<ColumnShift>{ new(5, 4, v.Length) } },
+
 				{7, new List<ColumnShift>{ new(7, 5, 5) } },
+				{8, new List<ColumnShift>{ new(8, 4, v.Length) } },
 			};
 			var actColDict = pp.ColDict["test"];
 			Helper.AssertColumnShiftDict(preColDict, actColDict);
@@ -357,9 +399,9 @@ End Sub
 Private Sub SetName2(n As Object )
     Dim s1 As Object 
 End Sub
-
 Public Property Name1 As Object
-Public Property Name2 As Object";
+Public Property Name2 As Object
+";
 			var pp = new TestPreprocVBA();
 			var actCode = pp.Rewrite("test", code);
 			Helper.AssertCode(preCode, actCode);
@@ -373,8 +415,8 @@ Public Property Name2 As Object";
 			Helper.AssertColumnShiftDict(preColDict, actColDict);
 
 			var preLineDict = new LineReMapDict {
-				{11, 1},
-				{12, 7 },
+				{10, 1},
+				{11, 7 },
 			};
 			var actLineDict = pp.LineDict["test"];
 			Helper.AssertDict(preLineDict, actLineDict);

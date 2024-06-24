@@ -69,7 +69,10 @@ FILENUMBERSYMBOL
     : '#'
     ;
 typeStmt
-    : (visibility WS)? TYPE WS identifier endOfStatement .*? typeEndStmt
+    : (visibility WS)? TYPE WS identifier endOfStatement (blockTypeStmt | .)*? typeEndStmt
+    ;
+blockTypeStmt
+    : (visibility WS)? identifier .*? WS asTypeClause endOfStatement
     ;
 typeEndStmt
     : END_TYPE

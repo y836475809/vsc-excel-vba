@@ -52,7 +52,7 @@ namespace VBAAntlr {
 		}
 
 		public override void ExitTypeStmt([NotNull] VBAParser.TypeStmtContext context) {
-			GetVariant(context);
+			GetTypeMember(context);
 
 			var typeStmt = context.TYPE();
 			var sym = typeStmt.Symbol;
@@ -68,6 +68,36 @@ namespace VBAAntlr {
 			var end_stm = context.typeEndStmt();
 			var end_s = end_stm.Start;
 			rewriteVBA.AddChange(end_s.Line - 1, "End Structure");
+		}
+
+		private void GetTypeMember(VBAParser.TypeStmtContext context) {
+			var typeVariables = context.blockTypeStmt();
+			foreach (var item in typeVariables) {
+				if (item.visibility() != null) {
+					continue;
+				}
+				var ident = item.identifier();
+				if (ident == null) {
+					continue;
+				}
+				{
+					var st = ident.Start;
+					var s = st.Column;
+					rewriteVBA.AddChange(st.Line - 1, (s, s), "Public ", s);
+				}
+
+				var asType = item.asTypeClause()?.identifier();
+				if (asType == null) {
+					continue;
+				}
+				var asTypeName = asType.GetText();
+				if (Util.Eq(asTypeName, "variant")){
+					var st = asType.Start;
+					var s = st.Column;
+					var e = s + asTypeName.Length;
+					rewriteVBA.AddChange(st.Line - 1, (s, e), "Object ", s, false);
+				}
+			}
 		}
 
 		public override void ExitPropertyGetStmt([NotNull] VBAParser.PropertyGetStmtContext context) {

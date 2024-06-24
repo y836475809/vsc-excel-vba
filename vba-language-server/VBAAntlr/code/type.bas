@@ -19,3 +19,10 @@ Type type_no_visible
   num As Long
   name As String
 End Type
+
+Public Type type_comment ' comment
+  ' comment
+  num As Long    ' comment
+  name As String ' comment
+  ' comment
+End Type ' comment

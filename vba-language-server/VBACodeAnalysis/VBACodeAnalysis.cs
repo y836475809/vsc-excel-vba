@@ -11,17 +11,12 @@ using Microsoft.CodeAnalysis.Completion;
 using Microsoft.CodeAnalysis.VisualBasic;
 
 namespace VBACodeAnalysis {
-    using locDiffDict = Dictionary<int, List<LocationDiff>>;
-
     public class VBACodeAnalysis {
         private AdhocWorkspace workspace;
         private Project project;
         private Dictionary<string, DocumentId> doc_id_dict;
-        private Rewrite rewrite;
-        private VBADiagnostic vbaDiagnostic;
-
-        public Dictionary<string, Dictionary<int, int>> lineMappingDict;
-        public Dictionary<string, locDiffDict> locationDiffDict;
+		private PreprocVBA _preprocVBA;
+		private VBADiagnostic vbaDiagnostic;
 
         public VBACodeAnalysis() {
             var host = MefHostServices.Create(MefHostServices.DefaultAssemblies);
@@ -34,13 +29,11 @@ namespace VBACodeAnalysis {
             project = workspace.AddProject(projectInfo);
 
             doc_id_dict = new Dictionary<string, DocumentId>();
-            lineMappingDict = new Dictionary<string, Dictionary<int, int>>();
-            locationDiffDict = new Dictionary<string, locDiffDict>();
         }
 
         public void setSetting(RewriteSetting rewriteSetting) {
-            rewrite = new Rewrite(rewriteSetting);
-            vbaDiagnostic = new VBADiagnostic();
+            _preprocVBA = new PreprocVBA();
+			vbaDiagnostic = new VBADiagnostic();
         }
 
         public void AddDocument(string name, string text, bool applyChanges= true) {
@@ -70,12 +63,10 @@ namespace VBACodeAnalysis {
                 }
                 var docId = doc_id_dict[name];
                 var doc = solution.GetDocument(docId);
-                var reSourceText = rewrite.RewriteStatement(doc);
-                locationDiffDict[name] = rewrite.locationDiffDict;
-                lineMappingDict[name] = rewrite.lineMappingDict;
-
-                solution = solution.WithDocumentText(docId, reSourceText);
-            }
+				var text = doc.GetTextAsync().Result; 
+				var rewriteCode = _preprocVBA.Rewrite(name, text.ToString());
+				solution = solution.WithDocumentText(docId, SourceText.From(rewriteCode));
+			}
             workspace.TryApplyChanges(solution);
         }
 
@@ -98,14 +89,10 @@ namespace VBACodeAnalysis {
                 return;
             }
             var docId = doc_id_dict[name];
-            var doc = workspace.CurrentSolution.GetDocument(docId);
-            doc = doc.WithText(SourceText.From(text));
-            var reSourceText = rewrite.RewriteStatement(doc);
-            locationDiffDict[name] = rewrite.locationDiffDict;
-            lineMappingDict[name] = rewrite.lineMappingDict;
-            workspace.TryApplyChanges(
-                workspace.CurrentSolution.WithDocumentText(docId, reSourceText));
-        }
+			var rewriteCode = _preprocVBA.Rewrite(name, text);
+			workspace.TryApplyChanges(
+                workspace.CurrentSolution.WithDocumentText(docId, SourceText.From(rewriteCode)));
+		}
 
         private bool IsCompletionItem(ISymbol symbol) {
             var names = new string[] {
@@ -122,17 +109,9 @@ namespace VBACodeAnalysis {
         }
 
         public int GetCharaDiff(string name, int line, int chara) {
-            if (!locationDiffDict.ContainsKey(name)) {
-                return 0;
-            }
-            var diffDict = locationDiffDict[name];
-            if (!diffDict.ContainsKey(line)) {
-                return 0;
-            }
-            var diffs = diffDict[line];
-            var sumDiff = diffs.Where(x => x.Chara <= chara).Select(x => x.Diff).Sum();
-            return sumDiff;
-        }
+            var colShift = _preprocVBA.GetColShift(name, line, chara);
+            return colShift;
+		}
 
         public async Task<List<CompletionItem>> GetCompletions(string name, string text, int line, int chara) {
 			var completions = new List<CompletionItem>();
@@ -234,13 +213,12 @@ namespace VBACodeAnalysis {
                     if (span != null && tree != null) {
                         var start = tree.GetLineSpan(span.Value).StartLinePosition;
                         var end = tree.GetLineSpan(span.Value).EndLinePosition;
-                        if(HasLineMapping(tree.FilePath, start.Line)) {
-                            var linemap = lineMappingDict[tree.FilePath];
-                            var mapedline = linemap[start.Line];
+                        var mapLineIndex = _preprocVBA.GetReMapLineIndex(tree.FilePath, start.Line);
+                        if(mapLineIndex >= 0) {
                             items.Add(new DefinitionItem(
                                 tree.FilePath,
-                                new Location(span.Value.Start, mapedline, 0),
-                                new Location(span.Value.End, mapedline, 0),
+                                new Location(span.Value.Start, mapLineIndex, 0),
+                                new Location(span.Value.End, mapLineIndex, 0),
                                 isClass));
 						} else {
                             items.Add(new DefinitionItem(
@@ -253,17 +231,6 @@ namespace VBACodeAnalysis {
                 }
             }
             return items;
-        }
-
-        private bool HasLineMapping(string filePath, int startLine) {
-            if (!lineMappingDict.ContainsKey(filePath)) {
-                return false;
-            }
-            var linemap = lineMappingDict[filePath];
-            if (!linemap.ContainsKey(startLine)) {
-                return false;
-            }
-            return true;
         }
 
         public (int, int, int) GetSignaturePosition(string name, int line, int chara) {

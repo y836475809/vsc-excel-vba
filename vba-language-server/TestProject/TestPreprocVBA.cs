@@ -1,10 +1,11 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using VBACodeAnalysis;
 using Xunit;
 
 namespace TestProject {
+	using static System.Runtime.CompilerServices.RuntimeHelpers;
 	using ChangeDict = Dictionary<int, List<ChangeVBA>>;
 	using ColumnShiftDict = Dictionary<int, List<ColumnShift>>;
 	using LineReMapDict = Dictionary<int, int>;
@@ -481,5 +482,74 @@ Call sub(0, 1)
 			var actColDict = pp.ColDict["test"];
 			Helper.AssertColumnShiftDict(preColDict, actColDict);
 		}
+
+		[Fact]
+		public void TestModuleHeaderClass() {
+			var codeFmt = @"VERSION 1.0 CLASS
+BEGIN
+  MultiUse = -1  'True
+END
+Attribute VB_Name = ""Person""
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = False
+Attribute VB_PredeclaredId = False
+Attribute VB_Exposed = False
+{0}
+
+Dim a As long";
+			{
+				var code = string.Format(codeFmt, "Option Explicit");
+				var pp = new PreprocVBA();
+				var actCode = pp.Rewrite("test", code);
+				var preCode = $@"Option Explicit On
+Public Class Person
+{string.Concat(Enumerable.Repeat("\r\n", 6))}
+
+
+Dim a As long
+End Class";
+				Helper.AssertCode(preCode, actCode);
+			}
+			{
+				var code = string.Format(codeFmt, "");
+				var pp = new PreprocVBA();
+				var actCode = pp.Rewrite("test", code);
+				var preCode = $@"Public Class Person
+{string.Concat(Enumerable.Repeat("\r\n", 7))}
+
+
+Dim a As long
+End Class";
+				Helper.AssertCode(preCode, actCode);
+			}
+		}
+
+		[Fact]
+		public void TestModuleHeaderBas() {
+			var codeFmt = @"Attribute VB_Name = ""テスト""
+{0}
+Dim a As long";
+			{
+				var code = string.Format(codeFmt, "Option Explicit");
+				var pp = new PreprocVBA();
+				var actCode = pp.Rewrite("test", code);
+				var preCode = $@"Option Explicit On
+Public Module テスト
+Dim a As long
+End Module";
+				Helper.AssertCode(preCode, actCode);
+			}
+			{
+				var code = string.Format(codeFmt, "");
+				var pp = new PreprocVBA();
+				var actCode = pp.Rewrite("test", code);
+				var preCode = $@"Public Module テスト
+
+Dim a As long
+End Module";
+				Helper.AssertCode(preCode, actCode);
+			}
+		}
+
 	}
 }

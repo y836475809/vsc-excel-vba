@@ -64,5 +64,25 @@
             "printParseTree": true,
             "visualParseTree": true
         },
+        {
+            "name": "Debug header class",
+            "type": "antlr-debug",
+            "request": "launch",
+            "input": "./VBAAntlr/code/header.cls",
+            "grammar": "./VBAAntlr/VBA.g4",
+            "startRule": "startRule",
+            "printParseTree": true,
+            "visualParseTree": true
+        },
+        {
+            "name": "Debug header bas",
+            "type": "antlr-debug",
+            "request": "launch",
+            "input": "./VBAAntlr/code/header.bas",
+            "grammar": "./VBAAntlr/VBA.g4",
+            "startRule": "startRule",
+            "printParseTree": true,
+            "visualParseTree": true
+        },
     ]
 }

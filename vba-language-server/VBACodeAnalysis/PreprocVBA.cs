@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 using Antlr4.Runtime;
 using VBAAntlr;
 
@@ -23,6 +24,32 @@ namespace VBACodeAnalysis {
 		public int LineIndex = lineIndex;
 		public string Text = text;
 		public string AsType = asType;
+	}
+
+	public class ModuleHeader {
+		public int LastLineIndex;
+		public string VbName;
+		private ModuleType _moduleType;
+
+		public ModuleHeader(int lastLineIndex, string vbName, ModuleType type) {
+			LastLineIndex = lastLineIndex;
+			VbName = vbName.Replace("\"", "");
+			_moduleType = type;
+		}
+
+		public (string, string) GetStartEnd() {
+			if(_moduleType == ModuleType.Cls) {
+				return (
+					$"Public Class {VbName}",
+					$"End Class");
+			}
+			if (_moduleType == ModuleType.Bas) {
+				return (
+					$"Public Module {VbName}",
+					$"End Module");
+			}
+			throw new Exception($"{_moduleType}");
+		}
 	}
 
 	public class ChangeVBA(int lineIndex, (int, int) repColRange, string text, int startCol, bool enableShift=true) {
@@ -62,6 +89,9 @@ namespace VBACodeAnalysis {
 		private string _code;
 		private ColumnShiftDict _colShiftDict;
 		private LineReMapDict _lineReMapDict;
+		private ModuleHeader _moduleHeader;
+		private bool _foundOption;
+		private const string OptionExplicitOn = "Option Explicit On";
 
 		public string Code {
 			get { return _code; }
@@ -76,6 +106,7 @@ namespace VBACodeAnalysis {
 		public RewriteVBA() {
 			_changeDict = [];
 			_propertyNameDict = [];
+			_foundOption = false;
 		}
 
 		public void AddChange(int lineIndex, (int, int) repColRange, string text, int startCol, bool enableShift = true) {
@@ -105,12 +136,38 @@ namespace VBACodeAnalysis {
 			_propertyNameDict[text] = 
 				new PropertyName(lineIndex, text, asType);
 		}
+		public void AddModuleAttribute(int lastLineIndex, string vbName, ModuleType type) {
+			_moduleHeader = new ModuleHeader(lastLineIndex, vbName, type);
+		}
+
+		public void FoundOption() {
+			_foundOption = true;
+		}
 
 		public void ApplyChange(string code) {
 			_colShiftDict = [];
 			_lineReMapDict = [];
 
 			var lines = code.Split(Environment.NewLine).ToList();
+
+			if (_moduleHeader != null) {
+				var headerIndex = 0;
+				if (_foundOption) {
+					lines[0] = OptionExplicitOn;
+					headerIndex = 1;
+				}
+				var (mStart, mEnd) = _moduleHeader.GetStartEnd();
+				lines[headerIndex] = mStart;
+				for (int i = headerIndex+1; i <= _moduleHeader.LastLineIndex; i++) {
+					lines[i] = "";
+				}
+				lines.Add(mEnd);
+
+				for (int i = 0; i <= headerIndex; i++) {
+					_changeDict.Remove(i);
+				}
+			}
+
 			ReverseSortChangeVBA();
 			foreach (var item in _changeDict) {
 				var lineIndex = item.Key;

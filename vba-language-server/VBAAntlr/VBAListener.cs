@@ -11,6 +11,11 @@ using Antlr4.Runtime.Tree;
 
 
 namespace VBAAntlr {
+	public enum ModuleType {
+		Cls,
+		Bas,
+	}
+
 	public interface IRewriteVBA {
 		/// <summary>
 		/// 部分置換
@@ -30,6 +35,10 @@ namespace VBAAntlr {
 		void AddChange(int lineIndex, string text);
 
 		void AddPropertyName(int lineIndex, string text, string asType);
+
+		void AddModuleAttribute(int lastLineIndex, string vbName, ModuleType type);
+
+		void FoundOption();
 	}
 
 	public class VBAListener : VBABaseListener {
@@ -50,6 +59,23 @@ namespace VBAAntlr {
 			GetFilenumber(context);
 			GetVariant(context);
 		}
+		public override void ExitModuleAttributes([NotNull] VBAParser.ModuleAttributesContext context) {
+			var attrs = context.attributeStmt();
+			var s = attrs.Where(x => Util.Eq(x.identifier()[0].GetText(), "VB_Name"));
+			if (s.Any()) {
+				var lastLineIndex = attrs.Max(x => x.Start.Line) - 1;
+				var vbName = s.First().identifier()[1].GetText();
+				var type = attrs.Length > 1 ? ModuleType.Cls : ModuleType.Bas;
+				rewriteVBA.AddModuleAttribute(lastLineIndex, vbName, type);
+			}
+		}
+
+		public override void ExitModuleOption([NotNull] VBAParser.ModuleOptionContext context) {
+			var st = context.Start;
+			rewriteVBA.AddChange(st.Line - 1, "");
+			rewriteVBA.FoundOption();
+		}
+
 
 		public override void ExitTypeStmt([NotNull] VBAParser.TypeStmtContext context) {
 			GetTypeMember(context);

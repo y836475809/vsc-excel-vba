@@ -6,7 +6,8 @@ options {
 
 startRule
     : (typeStmt 
-    | propertyGetStmt | propertyLetStmt | propertySetStmt 
+    | propertyGetStmt | propertyLetStmt | propertySetStmt
+    | moduleAttributes | moduleOption 
     | .)*?
     EOF
     ;
@@ -15,6 +16,19 @@ startFileIoRule
     | .)*?
     EOF
     ;
+moduleAttributes
+    : (attributeStmt endOfLine+)+
+    ;
+attributeStmt
+    : ATTRIBUTE WS identifier WS? EQ WS? identifier
+    ;
+ATTRIBUTE
+    : 'ATTRIBUTE'
+    ;
+moduleOption
+    : 'OPTION' WS 'EXPLICIT'
+    ;
+// Option Explicit
 // fileIoModule
 //     : comment
 //     | openStmt | printStmt | writeStmt | closeStmt

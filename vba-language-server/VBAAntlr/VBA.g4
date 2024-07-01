@@ -218,9 +218,12 @@ THEN
     : 'THEN'
     ;
 IDENTIFIER
-    : FILENUMBERSYMBOL? ~[\]()\r\n\t,'"|!@%^:;=#/ ]+
+    : FILENUMBERSYMBOL? ~[\]()\r\n\t.,'"|!@%^:;=#/ ]+
     | L_SQUARE_BRACKET (~[!\]\r\n])+ R_SQUARE_BRACKET
     | STRINGLITERAL
+    ;
+DOT
+    : '.'
     ;
 END_TYPE
     : 'END' WS 'TYPE'

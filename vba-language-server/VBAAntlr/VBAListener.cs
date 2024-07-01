@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -273,8 +273,9 @@ namespace VBAAntlr {
 		}
 
 		private void GetVBAFunction(IList<IParseTree> children) {
+			var nl = Environment.NewLine;
 			var traget_list = new List<string> { 
-				"range", "cells", "workbooks", "worksheets" };
+				"range", "cells", "columns", "workbooks", "worksheets" };
 			var traget_set = new List<string> { "as", "new" };
 			var vbaFuncList = children.Where((x, index) => {
 				if(!Util.Contains(x.GetText(), traget_list)) {
@@ -288,6 +289,18 @@ namespace VBAAntlr {
 				if (Util.Contains(children.ElementAt(idx1).GetText(), traget_set)) {
 					return false;
 				}
+
+				var pre_ch1 = children.ElementAt(index - 1);
+				var pre_text1 = pre_ch1.GetText().Replace(nl, "").Trim();
+				if (pre_text1 ==  ".") {
+					return false;
+				}
+				var pre_ch2 = children.ElementAt(index - 2);
+				var pre_text2 = pre_ch2.GetText().Replace(nl, "").Trim();
+				if (pre_text1 == "_" && pre_text2 == ".") {
+					return false;
+				}
+
 				return true;
 			});
 			foreach (var item in vbaFuncList) {

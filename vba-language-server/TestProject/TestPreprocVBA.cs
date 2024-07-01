@@ -435,6 +435,14 @@ Next
 For Each v In {0}Range(0, 1).Cells
 Next
 
+ActiveSheet.Range(2,2) = 100
+ActiveSheet. _ 
+Range(""B2"")  = 100
+
+ActiveSheet.Cells(2,2) = 100
+{0}Cells(1,3) = 100
+{0}Range({0}Cells(2, 1), {0}Cells(lastRow, 1)) = ""
+
 Dim a As Range
 Dim a As New Range
 a = New Range
@@ -451,6 +459,12 @@ a = New Range
 				{3, new List<ColumnShift>{ new(3, 4, 2) } },
 				{5, new List<ColumnShift>{ new(5, 14, 2) } },
 				{7, new List<ColumnShift>{ new(7, 14, 2) } },
+				{15, new List<ColumnShift>{ new(15, 0, 2) } },
+				{16, new List<ColumnShift>{ 
+					new(16, 0, 2),
+					new(16, 6, 2),
+					new(16, 19, 2),
+				} },
 			};
 			var actColDict = pp.ColDict["test"];
 			Helper.AssertColumnShiftDict(preColDict, actColDict);

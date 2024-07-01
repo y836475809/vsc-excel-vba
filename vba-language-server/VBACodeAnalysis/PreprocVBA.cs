@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -253,6 +253,10 @@ namespace VBACodeAnalysis {
 		}
 
 		public string Rewrite(string name, string vbaCode) {
+			if (name.EndsWith(".d.vb")) {
+				return vbaCode;
+			}
+
 			var lexer = new VBALexer(new AntlrInputStream(vbaCode));
 			var tokens = new CommonTokenStream(lexer);
 			var parser = new VBAParser(tokens);

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -39,6 +39,8 @@ namespace VBAAntlr {
 		void AddModuleAttribute(int lastLineIndex, string vbName, ModuleType type);
 
 		void FoundOption();
+
+		void AddDiagnostic((int, int) start, (int, int) end, string msg);
 	}
 
 	public class VBAListener : VBABaseListener {
@@ -137,6 +139,9 @@ namespace VBAAntlr {
 			var asType = context.asTypeClause()?.identifier()?.GetText();
 			var elems = context.blockLetSetStmt();
 			var end_stm = context.endPropertyStmt();
+
+			var ii = name.Stop.TokenIndex;
+			var ai = context.asTypeClause()?.Stop.TokenIndex;
 
 			if (GetVariant(context.asTypeClause()?.identifier())) {
 				asType = "Object";
@@ -259,7 +264,116 @@ namespace VBAAntlr {
 		}
 
 		public override void ExitOpenStmt([NotNull] VBAParser.OpenStmtContext context) {
-			base.ExitOpenStmt(context);
+			var open = context.OPEN();
+			if (context.openPath() == null) {
+				var line = open.Symbol.Line - 1;
+				var startCol = open.Symbol.Column;
+				var endtCol = startCol + open.Symbol.Text.Length;
+				rewriteVBA.AddDiagnostic((line, startCol), (line, endtCol), 
+					"Not found path");
+			}
+			var openModeList = new List<string> {
+				"Append", "Binary", "Input", "Output", "Random" };
+			var opMode = context.openMode();
+			if (opMode == null) {
+				var line = open.Symbol.Line - 1;
+				var startCol = open.Symbol.Column;
+				var endtCol = startCol + open.Symbol.Text.Length;
+				rewriteVBA.AddDiagnostic((line, startCol), (line, endtCol), 
+					"Not found open mode");
+			} else {
+				var openModeIdent = opMode.identifier();
+				if (!Util.Contains(openModeIdent.GetText(), openModeList)) {
+					var line = openModeIdent.Start.Line - 1;
+					var startCol = openModeIdent.Start.Column;
+					var endtCol = startCol + openModeIdent.GetText().Length;
+					rewriteVBA.AddDiagnostic((line, startCol), (line, endtCol), 
+						$@"Open mode is {string.Join(" or " , openModeList)}");
+				}
+			}
+			var accModeList = new List<string> {
+				"Read", "Write", "Read Write" };
+			var lockModeList = new List<string> {
+					"Shared", "Lock Read", "Lock Write", "Lock Read Write" };
+			var access = context.ACCESS();
+			var alMode = context.accessLockMode();
+			var indents = alMode?.identifier();
+			if (access != null) {
+				if(indents != null) {
+					var igc = StringComparison.OrdinalIgnoreCase;
+					var mode = string.Join(" ", indents.Select(x => x.GetText()));
+					var idx = 0;
+					if (mode.StartsWith("Read Write", igc)) {
+						idx = 2;
+					}
+					if (idx == 0 && mode.StartsWith("Read", igc)) {
+						idx = 1;
+					}
+					if (idx == 0 && mode.StartsWith("Write", igc)) {
+						idx = 1;
+					}
+					if (idx == 0) {
+						var ident = indents.First();
+						var line = ident.Start.Line - 1;
+						var colStart = ident.Start.Column;
+						var colEnd = colStart + ident.GetText().Length;
+						rewriteVBA.AddDiagnostic((line, colStart), (line, colEnd),
+							$@"Access mode is {string.Join(" or ", accModeList)}");
+						idx = 1;
+					}
+					var cnt = indents.Length;
+					var locks = indents.Take(new Range(idx, cnt));
+					if (locks.Any()) {
+						var lockMode = string.Join(" ", locks.Select(x => x.GetText()));
+						if (!Util.Contains(lockMode, lockModeList)) {
+							var startIdent = locks.First();
+							var endIdent = locks.Last();
+							var startLine = startIdent.Start.Line - 1;
+							var startCol = startIdent.Start.Column;
+							var endLine = endIdent.Start.Line - 1;
+							var endCol = endIdent.Start.Column + endIdent.GetText().Length;
+							rewriteVBA.AddDiagnostic((startLine, startCol), (endLine, endCol),
+								$@"Lock mode is {string.Join(" or ", lockModeList)}");
+						}
+					}
+				} else {
+					var line = access.Symbol.Line - 1;
+					var colStart = access.Symbol.Column;
+					var colEnd = colStart + access.Symbol.Text.Length;
+					rewriteVBA.AddDiagnostic((line, colStart), (line, colEnd),
+						$@"Access mode is {string.Join(" or ", accModeList)}");
+				}
+			} else {
+				if (indents != null) {
+					var lockMode = string.Join(" ", indents.Select(x => x.GetText()));
+					if (!Util.Contains(lockMode, lockModeList)) {
+						var startIdent = indents.First();
+						var endIdent = indents.Last();
+						var startLine = startIdent.Start.Line - 1;
+						var startCol = startIdent.Start.Column;
+						var endLine = endIdent.Start.Line - 1;
+						var endCol = endIdent.Start.Column + endIdent.GetText().Length;
+						rewriteVBA.AddDiagnostic((startLine, startCol), (endLine, endCol),
+							$@"Lock mode is {string.Join(" or ", lockModeList)}");
+					}
+				}
+			}
+
+			var fn = context.fileNumber();
+			if (fn == null) {
+				var line = open.Symbol.Line - 1;
+				var startCol = open.Symbol.Column;
+				var endtCol = startCol + open.Symbol.Text.Length;
+				rewriteVBA.AddDiagnostic((line, startCol), (line, endtCol),
+					"Not found filen number");
+			} else {
+				var fnText = fn.identifier().GetText();
+				if (fnText.StartsWith("#")) {
+					var st = fn.Start;
+					rewriteVBA.AddChange(st.Line - 1,
+						(st.Column, st.Column + 1), " ", st.Column, false);
+				}
+			}
 		}
 
 		private void GetLetSet(IEnumerable<ITerminalNode> tokens) {

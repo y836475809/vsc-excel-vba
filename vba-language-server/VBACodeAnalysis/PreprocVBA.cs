@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using Antlr4.Runtime;
+using Microsoft.CodeAnalysis;
 using VBAAntlr;
 
 
@@ -85,6 +86,7 @@ namespace VBACodeAnalysis {
 	public class RewriteVBA : IRewriteVBA {
 		private ChangeDict _changeDict;
 		private Dictionary<string, PropertyName> _propertyNameDict;
+		private List<DiagnosticItem> _diagnosticList;
 
 		private string _code;
 		private ColumnShiftDict _colShiftDict;
@@ -102,10 +104,14 @@ namespace VBACodeAnalysis {
 		public LineReMapDict LineReMapDict {
 			get { return _lineReMapDict; }
 		}
+		public List<DiagnosticItem> DiagnosticList {
+			get { return _diagnosticList; }
+		}
 
 		public RewriteVBA() {
 			_changeDict = [];
 			_propertyNameDict = [];
+			_diagnosticList = [];
 			_foundOption = false;
 		}
 
@@ -142,6 +148,17 @@ namespace VBACodeAnalysis {
 
 		public void FoundOption() {
 			_foundOption = true;
+		}
+
+		public void AddDiagnostic((int, int) start, (int, int) end, string msg) {
+			var (startLinel, startCol) = start;
+			var (endLinel, endCol) = end;
+			var diagnoType = DiagnosticSeverity.Error.ToString();
+			var item = new DiagnosticItem(
+						diagnoType, msg,
+						startLinel, startCol,
+						endLinel, endCol);
+			_diagnosticList.Add(item);
 		}
 
 		public void ApplyChange(string code) {
@@ -225,10 +242,12 @@ namespace VBACodeAnalysis {
 	public class PreprocVBA {
 		protected Dictionary<string, ColumnShiftDict> _fileColShiftDict;
 		protected Dictionary<string, LineReMapDict> _fileLineReMapDict;
+		protected Dictionary<string, List<DiagnosticItem>> _fileDiagnosticDict;
 
 		public PreprocVBA() {
 			_fileColShiftDict = [];
 			_fileLineReMapDict = [];
+			_fileDiagnosticDict = [];
 		}
 
 		public int GetColShift(string name, int line, int col) {
@@ -252,6 +271,13 @@ namespace VBACodeAnalysis {
 			return lineIndex;
 		}
 
+		public List<DiagnosticItem> GetDiagnostics(string name) {
+			if (!_fileDiagnosticDict.TryGetValue(name, out List<DiagnosticItem> value)) {
+				return [];
+			}
+			return value;
+		}
+
 		public string Rewrite(string name, string vbaCode) {
 			if (name.EndsWith(".d.vb")) {
 				return vbaCode;
@@ -271,6 +297,7 @@ namespace VBACodeAnalysis {
 			rewriteVBA.ApplyChange(vbaCode);
 			_fileColShiftDict[name] = rewriteVBA.ColShiftDict;
 			_fileLineReMapDict[name] = rewriteVBA.LineReMapDict;
+			_fileDiagnosticDict[name] = rewriteVBA.DiagnosticList;
 			return rewriteVBA.Code;
 		}
 	}

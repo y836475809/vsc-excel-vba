@@ -30,5 +30,12 @@ namespace VBACodeAnalysis {
                 && this.EndLine == EndLine
                 && this.EndChara == EndChara;
         }
-    }
+		public bool Eq(DiagnosticItem obj) {
+			return this.Severity == obj.Severity
+				&& this.StartLine == obj.StartLine
+				&& this.StartChara == obj.StartChara
+				&& this.EndLine == obj.EndLine
+				&& this.EndChara == obj.EndChara;
+		}
+	}
 }

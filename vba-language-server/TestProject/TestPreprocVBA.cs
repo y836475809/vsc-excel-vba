@@ -1,14 +1,17 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using TestProject;
 using VBACodeAnalysis;
 using Xunit;
 
-namespace TestProject {
-	using static System.Runtime.CompilerServices.RuntimeHelpers;
+namespace TestPreprocVBA {
 	using ChangeDict = Dictionary<int, List<ChangeVBA>>;
 	using ColumnShiftDict = Dictionary<int, List<ColumnShift>>;
 	using LineReMapDict = Dictionary<int, int>;
+	using DiagoItem = DiagnosticItem;
+	using DiagoItemList = List<DiagnosticItem>;
 
 	class TestPreprocVBA : PreprocVBA {
 		public Dictionary<string, ColumnShiftDict> ColDict {
@@ -460,7 +463,7 @@ a = New Range
 				{5, new List<ColumnShift>{ new(5, 14, 2) } },
 				{7, new List<ColumnShift>{ new(7, 14, 2) } },
 				{15, new List<ColumnShift>{ new(15, 0, 2) } },
-				{16, new List<ColumnShift>{ 
+				{16, new List<ColumnShift>{
 					new(16, 0, 2),
 					new(16, 6, 2),
 					new(16, 19, 2),
@@ -565,5 +568,89 @@ End Module";
 			}
 		}
 
+
+	public class TestDiagnostic {
+		[Theory]
+		[InlineData("Open fp1 For Output As #1")]
+		[InlineData("Open fp2 For Output Access Read As #1")]
+		[InlineData("Open fp3 For Output Access Read Shared As #1")]
+		[InlineData("Open fp4 For Output Access Read Write Lock Read As #1")]
+		[InlineData("Open fp5 For Output Access Read Lock Read As #1")]
+		[InlineData("Open fp6 For Output Access Read Write Shared As #1")]
+		public void TestOpenNoError(string code) {
+			var pp = new TestPreprocVBA();
+			pp.Rewrite("test", code);
+			var diagnoItems = pp.GetDiagnostics("test");
+			Assert.Empty(diagnoItems);
+		}
+
+		public static IEnumerable<object[]> OpenParams =>
+		[
+				[ @"
+Open For Output As #1", new DiagoItemList {
+						new ("Error", "", 1, 0, 1, 4)
+				} ],
+				[ @"
+Open fp For Output As", new DiagoItemList {
+						new ("Error", "", 1, 0, 1, 4)
+				} ],
+[ @"
+Open fp For Output", new DiagoItemList {
+						new ("Error", "", 1, 0, 1, 4)
+				} ],
+				[ @"
+Open fp As #1", new DiagoItemList {
+						new ("Error", "", 1, 0, 1, 4)
+				} ],
+				[ @"
+Open fp For xOutput As #1",  new DiagoItemList {
+						new ("Error", "", 1, 12, 1, 19)
+				} ],
+				[ @"
+Open fp For Output Access As #1", new DiagoItemList {
+					new ("Error", "", 1, 19, 1, 25)
+				} ],
+				[ @"
+Open fp For Output Access xRead As #1", new DiagoItemList {
+					new ("Error", "", 1, 26, 1, 31)
+				} ],
+				[ @"
+Open fp For Output Access Read xWrite As #1", new DiagoItemList {
+					new ("Error", "", 1, 31, 1, 37)
+				} ],
+				[ @"
+Open fp For Output xShared As #1", new DiagoItemList {
+					new ("Error", "", 1, 19, 1, 26)
+				} ],
+				[ @"
+Open fp For Output Lock xRead As #1", new DiagoItemList {
+					new ("Error", "", 1, 19, 1, 29)
+				} ],
+				[ @"
+Open fp For Output Access Read Write xShared As #1", new DiagoItemList {
+					new ("Error", "", 1, 37, 1, 44)
+				} ],
+				[ @"
+Open fp For Output Access Read Write Lock xRead As #1", new DiagoItemList {
+					new ("Error", "", 1, 37, 1, 47)
+				} ],
+				[ @"
+Open For xOutput Access xRead Write Lock xRead As", new DiagoItemList {
+					new ("Error", "", 1, 0, 1, 4),
+					new ("Error", "", 1, 0, 1, 4),
+					new ("Error", "", 1, 9, 1, 16),
+					new ("Error", "", 1, 24, 1, 29),
+					new ("Error", "", 1, 30, 1, 46),
+				} ]
+		];
+
+		[Theory]
+		[MemberData(nameof(OpenParams))]
+		public void TestOpenError(string code, DiagoItemList pre) {
+			var pp = new TestPreprocVBA();
+			pp.Rewrite("test", code);
+			var di = pp.GetDiagnostics("test");
+			Helper.AssertDiagnoList(pre, di);
+		}
 	}
 }

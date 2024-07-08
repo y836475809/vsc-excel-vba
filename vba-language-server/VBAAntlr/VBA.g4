@@ -8,6 +8,8 @@ startRule
     : (typeStmt 
     | propertyGetStmt | propertyLetStmt | propertySetStmt
     | moduleAttributes | moduleOption 
+    | openStmt
+    // | setStmt | letStmt
     | .)*?
     EOF
     ;
@@ -37,12 +39,15 @@ fileIoModule
     : openStmt
     ;
 openStmt
-    : OPEN WS identifier WS FOR WS OpenMode 
-       (WS ACCESS WS AccessMode)?
-       (WS LockMode)?
-       WS AS WS fileNumber
-       (WS 'LEN' WS? EQ WS? identifier)?
+    : OPEN 
+    (WS openPath)? (WS FOR WS openMode)?
+    (WS ACCESS)? (WS accessLockMode)?
+    (WS AS WS fileNumber)?
+    //    openLenStmt?
     ;
+// openLenStmt
+//     : 'LEN' WS? EQ WS? identifier
+//     ;
 OPEN
     : 'OPEN'
     ;
@@ -55,26 +60,17 @@ ACCESS
 printStmt
     : 'PRINT' WS fileNumber WS? (',' | ';') (WS? identifier)?
     ;
-writeStmt
-    : 'WRITE' WS fileNumber (WS? (',' | ';') WS? identifier?)+
-    ;
+// writeStmt
+//     : 'WRITE' WS fileNumber (WS? (',' | ';') WS? identifier?)+
+//     ;
 closeStmt
     : 'CLOSE' (WS fileNumber (WS? ',' WS? fileNumber)*)?
     ;
-OpenMode
-    : 'APPEND' | 'BINARY' 
-    | 'INPUT' | 'OUTPUT' 
-    | 'RANDOM'
+openPath
+    : identifier
     ;
-AccessMode
-    : 'READ' | 'WRITE' 
-    | ('READ' WS 'WRITE')
-    ;
-LockMode
-    : 'SHARED' 
-    | ('LOCK' WS 'READ') 
-    | ('LOCK' WS 'WRITE') 
-    | ('LOCK' WS 'READ' WS 'WRITE')
+openMode
+    : identifier
     ;
 fileNumber
     : '#'? identifier
@@ -82,6 +78,14 @@ fileNumber
 FILENUMBERSYMBOL
     : '#'
     ;
+accessLockMode
+    : (identifier WS identifier WS identifier WS identifier WS identifier)
+    | (identifier WS identifier WS identifier WS identifier)
+    | (identifier WS identifier WS identifier)
+    | (identifier WS identifier)
+    |  identifier
+    ;
+
 typeStmt
     : (visibility WS)? TYPE WS identifier endOfStatement (blockTypeStmt | .)*? typeEndStmt
     ;

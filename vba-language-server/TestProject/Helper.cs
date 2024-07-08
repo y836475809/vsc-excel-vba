@@ -15,8 +15,9 @@ namespace TestProject {
 	using ColumnShiftDict = Dictionary<int, List<ColumnShift>>;
 	using LineReMapDict = Dictionary<int, int>;
 	using locDiffDiict = Dictionary<int, List<LocationDiff>>;
+	using DiagoItem = DiagnosticItem;
 
-    class Helper {
+	class Helper {
         public static string getPath(string fileName, [CallerFilePath] string filePath = "") {
             return Path.Combine(Path.GetDirectoryName(filePath), "code", fileName);
         }
@@ -55,7 +56,22 @@ namespace TestProject {
             return items.FindAll(x => errorTypes.Contains(x.Severity.ToLower()));
         }
 
-        public static void AssertCode(string pre, string act) {
+		public static void AssertDiagnoList(List<DiagoItem> pre, List<DiagoItem> act) {
+            var comp = (DiagoItem a, DiagoItem b) => {
+				if (a.StartLine != b.StartLine) {
+					return a.StartLine - b.StartLine;
+				}
+				return a.StartChara - b.EndChara;
+			};
+            pre.Sort((a, b) => { return comp(a, b); });
+			act.Sort((a, b) => { return comp(a, b); });
+			
+			foreach ((DiagoItem prItem, DiagoItem actItem) in pre.Zip(act)) {
+				Assert.True(prItem.Eq(actItem));
+			}
+		}
+
+		public static void AssertCode(string pre, string act) {
             var preLines = pre.Split("\r\n");
             var actLines = act.Split("\r\n");
             Assert.Equal(preLines.Length, actLines.Length);

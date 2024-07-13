@@ -8,13 +8,15 @@ startRule
     : (typeStmt 
     | propertyGetStmt | propertyLetStmt | propertySetStmt
     | moduleAttributes | moduleOption 
-    | openStmt
+    | openStmt | outputStmt | closeStmt 
+    | inputStmt | lineInputStmt
     // | setStmt | letStmt
     | .)*?
     EOF
     ;
 startFileIoRule
-    : (fileIoModule 
+    : (openStmt |  outputStmt | closeStmt 
+    | inputStmt | lineInputStmt
     | .)*?
     EOF
     ;
@@ -37,17 +39,18 @@ moduleOption
 //     ;
 fileIoModule
     : openStmt
+    | outputStmt
     ;
 openStmt
-    : OPEN 
-    (WS openPath)? (WS FOR WS openMode)?
-    (WS ACCESS)? (WS accessLockMode)?
-    (WS AS WS fileNumber)?
+    : OPEN WS openPath WS FOR WS ('APPEND' | 'BINARY' | 'INPUT' | 'OUTPUT' | 'RANDOM')
+    (WS ACCESS WS ('READ' | 'WRITE' | 'READ WRITE'))?
+    (WS ('SHARED' | 'LOCK READ' | 'LOCK WRITE' | 'LOCK READ WRITE'))?
+    WS AS WS fileNumber
     //    openLenStmt?
     ;
 // openLenStmt
 //     : 'LEN' WS? EQ WS? identifier
-//     ;
+//     ;put
 OPEN
     : 'OPEN'
     ;
@@ -57,14 +60,43 @@ FOR
 ACCESS
     : 'ACCESS'
     ;
-printStmt
-    : 'PRINT' WS fileNumber WS? (',' | ';') (WS? identifier)?
+outputStmt
+    : OUTPUT (WS fileNumber)? WS? ',' WS? outputArg? outputList*
     ;
-// writeStmt
-//     : 'WRITE' WS fileNumber (WS? (',' | ';') WS? identifier?)+
-//     ;
+outputList
+    : (WS? (';' | ',' | outputArg))+
+    ;
+outputArg
+    : (identifier WS)? identifier (
+        WS? LPAREN (WS? outputArg WS? ','?)* WS? RPAREN
+    )?
+    ;
+OUTPUT
+    : PRINT | WRITE
+    ;
+PRINT
+    : 'PRINT'
+    ;
+WRITE
+    : 'WRITE'
+    ;
+inputStmt
+    : INPUT WS fileNumber (WS? ',' WS? identifier)+
+    ;
+lineInputStmt
+    : LINE_INPUT WS fileNumber WS? ',' WS? identifier
+    ;
+INPUT
+    : 'INPUT'
+    ;
+LINE_INPUT
+    : 'LINE' WS 'INPUT'
+    ;
 closeStmt
-    : 'CLOSE' (WS fileNumber (WS? ',' WS? fileNumber)*)?
+    : CLOSE (WS fileNumber (WS? ',' WS? fileNumber)*)?
+    ;
+CLOSE
+    : 'CLOSE'
     ;
 openPath
     : identifier
@@ -78,14 +110,6 @@ fileNumber
 FILENUMBERSYMBOL
     : '#'
     ;
-accessLockMode
-    : (identifier WS identifier WS identifier WS identifier WS identifier)
-    | (identifier WS identifier WS identifier WS identifier)
-    | (identifier WS identifier WS identifier)
-    | (identifier WS identifier)
-    |  identifier
-    ;
-
 typeStmt
     : (visibility WS)? TYPE WS identifier endOfStatement (blockTypeStmt | .)*? typeEndStmt
     ;

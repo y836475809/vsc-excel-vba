@@ -82,11 +82,20 @@ namespace VBACodeAnalysis {
 			}
 		}
 	}
+	public class IgnoreDiagnostic(int startLine, int startCol,
+		int endLine, int endCol, string text) {
+		public string Text = text;
+		public int StartLine = startLine;
+		public int StartCol = startCol;
+		public int EndLine = endLine;
+		public int EndCol = endCol;
+	}
 
 	public class RewriteVBA : IRewriteVBA {
 		private ChangeDict _changeDict;
 		private Dictionary<string, PropertyName> _propertyNameDict;
 		private List<DiagnosticItem> _diagnosticList;
+		private List<IgnoreDiagnostic> _ignoreDiagnosticList;
 
 		private string _code;
 		private ColumnShiftDict _colShiftDict;
@@ -108,10 +117,15 @@ namespace VBACodeAnalysis {
 			get { return _diagnosticList; }
 		}
 
+		public List<IgnoreDiagnostic> IgnoreDiagnosticList {
+			get { return _ignoreDiagnosticList; }
+		}
+
 		public RewriteVBA() {
 			_changeDict = [];
 			_propertyNameDict = [];
 			_diagnosticList = [];
+			_ignoreDiagnosticList = [];
 			_foundOption = false;
 		}
 
@@ -150,15 +164,13 @@ namespace VBACodeAnalysis {
 			_foundOption = true;
 		}
 
-		public void AddDiagnostic((int, int) start, (int, int) end, string msg) {
+		public void AddIgnoreDiagnostic((int, int) start, (int, int) end, string text) {
 			var (startLinel, startCol) = start;
 			var (endLinel, endCol) = end;
-			var diagnoType = DiagnosticSeverity.Error.ToString();
-			var item = new DiagnosticItem(
-						diagnoType, msg,
+			var item = new IgnoreDiagnostic(
 						startLinel, startCol,
-						endLinel, endCol);
-			_diagnosticList.Add(item);
+						endLinel, endCol, text);
+			_ignoreDiagnosticList.Add(item);
 		}
 
 		public void ApplyChange(string code) {
@@ -243,11 +255,13 @@ namespace VBACodeAnalysis {
 		protected Dictionary<string, ColumnShiftDict> _fileColShiftDict;
 		protected Dictionary<string, LineReMapDict> _fileLineReMapDict;
 		protected Dictionary<string, List<DiagnosticItem>> _fileDiagnosticDict;
+		protected Dictionary<string, List<IgnoreDiagnostic>> _fileIgnoreDiagnosticDict;
 
 		public PreprocVBA() {
 			_fileColShiftDict = [];
 			_fileLineReMapDict = [];
 			_fileDiagnosticDict = [];
+			_fileIgnoreDiagnosticDict = [];
 		}
 
 		public int GetColShift(string name, int line, int col) {
@@ -278,6 +292,13 @@ namespace VBACodeAnalysis {
 			return value;
 		}
 
+		public List<IgnoreDiagnostic> GetIgnoreDiagnostics(string name) {
+			if (!_fileIgnoreDiagnosticDict.TryGetValue(name, out List<IgnoreDiagnostic> value)) {
+				return [];
+			}
+			return value;
+		}
+
 		public string Rewrite(string name, string vbaCode) {
 			if (name.EndsWith(".d.vb")) {
 				return vbaCode;
@@ -298,6 +319,7 @@ namespace VBACodeAnalysis {
 			_fileColShiftDict[name] = rewriteVBA.ColShiftDict;
 			_fileLineReMapDict[name] = rewriteVBA.LineReMapDict;
 			_fileDiagnosticDict[name] = rewriteVBA.DiagnosticList;
+			_fileIgnoreDiagnosticDict[name] = rewriteVBA.IgnoreDiagnosticList;
 			return rewriteVBA.Code;
 		}
 	}

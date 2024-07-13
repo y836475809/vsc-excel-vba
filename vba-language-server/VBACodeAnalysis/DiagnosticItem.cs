@@ -4,16 +4,18 @@ using System.Text;
 
 namespace VBACodeAnalysis {
     public class DiagnosticItem {
-        public string Severity { get; set; }
+        public string Id;
+		public string Severity { get; set; }
         public string Message { get; set; }
         public int StartLine { get; set; }
         public int StartChara { get; set; }
         public int EndLine { get; set; }
         public int EndChara { get; set; }
 
-        public DiagnosticItem(string Severity, string Message, 
+        public DiagnosticItem(string id, string Severity, string Message, 
             int StartLine, int StartChara,
             int EndLine, int EndChara) {
+            this.Id = id;
             this.Severity = Severity;
             this.Message = Message;
             this.StartLine = StartLine;
@@ -31,7 +33,8 @@ namespace VBACodeAnalysis {
                 && this.EndChara == EndChara;
         }
 		public bool Eq(DiagnosticItem obj) {
-			return this.Severity == obj.Severity
+			return this.Id == obj.Id
+				&& this.Severity == obj.Severity
 				&& this.StartLine == obj.StartLine
 				&& this.StartChara == obj.StartChara
 				&& this.EndLine == obj.EndLine

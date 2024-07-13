@@ -9,11 +9,24 @@ using System.Threading.Tasks;
 
 namespace VBACodeAnalysis {
 	public class VBADiagnostic {
-        public async Task<List<DiagnosticItem>> GetDiagnostics(Document doc) {
+        public List<IgnoreDiagnostic> ignoreDs;
+        private Dictionary<string, string> _errorMsgDict;
+        public VBADiagnostic() {
+            ignoreDs = [];
+			_errorMsgDict = new Dictionary<string, string> {
+				["open"] = Properties.Resources.OpenErrorMsg,
+				["print"] = Properties.Resources.PrintErrorMsg,
+				["write"] = Properties.Resources.WriteErrorMsg,
+				["close"] = Properties.Resources.CloseErrorMsg,
+				["input"] = Properties.Resources.InputErrorMsg,
+				["line_input"] = Properties.Resources.LineInputErrorMsg,
+			};
+		}
+
+		public async Task<List<DiagnosticItem>> GetDiagnostics(Document doc) {
             var codes = new string[] {
                 "BC35000",  // ランタイム ライブラリ関数 が定義されていないため、
                                    // 要求された操作を実行できません。
-                "BC30627", // 'Option' ステートメントは、宣言または 'Imports' ステートメントの前に記述しなければなりません
             };
             var AddItems = new List<DiagnosticItem>();
             var node = doc.GetSyntaxRootAsync().Result;
@@ -37,13 +50,6 @@ namespace VBACodeAnalysis {
                         return false;
                     }
                 }
-                if (x.Id == "BC30201") {
-                    // BC30201 #1 式が必要です
-                    if (IsFileInOutStatement3(x, node, ref AddItems)) {
-                        return false;
-                    }
-                }
-
 				if (x.Id == "BC30800") {
                     // メソッドの引数は、かっこで囲む必要があります
                     var targetNode = node.FindNode(x.Location.SourceSpan);
@@ -86,7 +92,7 @@ namespace VBACodeAnalysis {
                 var msg = x.GetMessage();
                 var s = x.Location.GetLineSpan().StartLinePosition;
                 var e = x.Location.GetLineSpan().EndLinePosition;
-                return new DiagnosticItem(severity, msg,
+                return new DiagnosticItem(x.Id, severity, msg,
                     s.Line, s.Character,
                     e.Line, e.Character);
             }).ToList();
@@ -119,6 +125,7 @@ namespace VBACodeAnalysis {
                     var startPos = lineSpan.StartLinePosition;
                     var endPos = lineSpan.EndLinePosition;
                     dls.Add(new DiagnosticItem(
+                        "VBA_call",
                         DiagnosticSeverity.Error.ToString(),
                         "Call is required.",
                         startPos.Line, startPos.Character,
@@ -130,40 +137,23 @@ namespace VBACodeAnalysis {
         private bool IsFileInOutStatement1(Diagnostic x, SyntaxNode node, ref List<DiagnosticItem> dls) {
             //  BC30451 宣言されていません。アクセスできない保護レベルになっています
             var idefNode = node.FindNode(x.Location.SourceSpan);
-            var name = idefNode.ToString().ToLower();
-            var targets = new string[] { "open", "close", "print", "write" };
-            if (!targets.Contains(name)) {
-                return false;
-            }
-            var parentNode = idefNode.Parent;
-            var childNodes = parentNode?.ChildNodes();
-            if (childNodes == null) {
-                return false;
-            }
-            if (childNodes.Count() < 2) {
-                return false;
-            }
-            var agsNode = childNodes.ElementAt(1);
-            var arg = agsNode as ArgumentListSyntax;
-            if (arg is null) {
-                return false;
-            }
-            if (name == "open") {
-                // Open fname For Output As #1
-                var result = Regex.IsMatch(arg.ToFullString(),
-                    @"\S+\s+For\s+(Input|Output|Append|Random|Binary)\s+As\s+(#\d+|\S+)",
-                    RegexOptions.IgnoreCase);
-                if (result) {
-                    return true;
-                }
-                var lsp = parentNode.GetLocation().GetLineSpan();
-                var sp = lsp.StartLinePosition;
-                var ep = lsp.EndLinePosition;
-                dls.Add(new DiagnosticItem(
-                    DiagnosticSeverity.Error.ToString(),
-                    "Requires 4 arguments. Open {FilePath} For Input | Output | Append As #Filenumber",
-                    sp.Line, sp.Character,
-                    ep.Line, ep.Character));
+            var ss = x.Location.GetLineSpan();
+            var ssp = ss.StartLinePosition;
+            var sep = ss.EndLinePosition;
+
+			foreach (var item in ignoreDs) {
+                if(item.Text == idefNode.ToString()
+					&& ssp.Line == item.StartLine
+                    && ssp.Character == item.StartCol
+					&& sep.Line == item.EndLine
+					&& sep.Character == item.EndCol) {
+					return true;
+				}
+			}
+            var name = idefNode.ToString();
+			var targets = new List<string> { "open", "close", "print", "write", "input", "line_input" };
+            if (Util.Contains(name, targets)) {
+                return true;
             }
             return false;
         }
@@ -171,43 +161,45 @@ namespace VBACodeAnalysis {
         private bool IsFileInOutStatement2(Diagnostic x, SyntaxNode node, ref List<DiagnosticItem> dls) {
             // BC30800 メソッドの引数はかっこで囲む必要があります。
             // BC32017 コンマ、')'、または有効な式の継続文字が必要です。
-            var openParent = node.FindNode(x.Location.SourceSpan).Parent;
-            var openChild = openParent.ChildNodes();
-            if (!openChild.Any()) {
-                return false;
-            }
-            var name = openChild.First().ToString().ToLower();
-            var targets = new string[] { "open" };
-            if (targets.Contains(name)) {
-                return true;
-            }
+			var op = node.FindNode(x.Location.SourceSpan).GetFirstToken().GetPreviousToken();
+			var ss = op.GetLocation().GetLineSpan();
+			var ssp = ss.StartLinePosition;
+			var sep = ss.EndLinePosition;
+			foreach (var item in ignoreDs) {
+				if (Util.Eq(item.Text, op.Text)
+					&& ssp.Line == item.StartLine
+					&& ssp.Character == item.StartCol
+					&& sep.Line == item.EndLine
+					&& sep.Character == item.EndCol) {
+					return true;
+				}
+			}
+
+			var name = op.Text.ToLower();
+			if (_errorMsgDict.TryGetValue(name, out string value)) {
+				var msg = value;
+                var id = $"VBA_{name}";
+				var endCol = sep.Character;
+                var diagno = new DiagnosticItem(
+					id,
+                    DiagnosticSeverity.Error.ToString(),
+                    msg,
+                    ssp.Line, ssp.Character,
+                    sep.Line, endCol);
+				if (!contains(dls, diagno)) {
+					dls.Add(diagno);
+				}
+				return true;
+			}
             return false;
         }
-        private bool IsFileInOutStatement3(Diagnostic x, SyntaxNode node, ref List<DiagnosticItem> dls) {
-            // BC30201 #1 式が必要です
-            var fileNum = node.FindNode(x.Location.SourceSpan);
-            var result = Regex.IsMatch(fileNum.ToFullString(),
-                @"#\d+", RegexOptions.IgnoreCase);
-			if (!result) {
-                return false;
+
+        private bool contains(List<DiagnosticItem> dls, DiagnosticItem d) {
+            foreach (var item in dls) {
+                if (item.Eq(d)) {
+                    return true;
+                }
 			}
-            var parent = fileNum;
-			for (int i = 0; i < 2; i++) {
-                if(parent == null) {
-                    return false;
-                }
-                if (parent.IsKind(SyntaxKind.ArgumentList)) {
-                    parent = parent.Parent;
-                    break;
-                }
-                parent = parent.Parent;
-            }
-            var names = new List<string> { "close", "print", "write" };
-            var childnodes = parent?.ChildNodes();
-            if(childnodes != null && childnodes.Any()) {
-                var name = childnodes.First().ToString().ToLower();
-                return names.Contains(name);
-            }
             return false;
         }
     }

@@ -1,4 +1,4 @@
-﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.FindSymbols;
 using Microsoft.CodeAnalysis.Host.Mef;
 using Microsoft.CodeAnalysis.Recommendations;
@@ -521,6 +521,7 @@ namespace VBACodeAnalysis {
         public async Task<List<DiagnosticItem>> GetDiagnostics(string name) {
 			var docId = doc_id_dict[name];
 			var doc = workspace.CurrentSolution.GetDocument(docId);
+			vbaDiagnostic.ignoreDs = _preprocVBA.GetIgnoreDiagnostics(name);
 			return await vbaDiagnostic.GetDiagnostics(doc);
          }
 

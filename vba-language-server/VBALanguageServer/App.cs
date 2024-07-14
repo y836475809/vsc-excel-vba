@@ -5,15 +5,18 @@ using System.IO;
 using System.Text;
 using System.Text.Json;
 using System.Reflection;
+using System.Linq;
 
 namespace VBALanguageServer {
 	class App {
-		private CodeAdapter codeAdapter;
-		private Server server;
+        private Server server;
 		private VBACodeAnalysis.VBACodeAnalysis vbaca;
         private Logger logger;
 
-        public App() {
+		private PreprocVBA _preprocVba;
+		private Dictionary<string, string> _vbCache;
+
+		public App() {
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
             logger = new Logger();
         }
@@ -24,8 +27,10 @@ namespace VBALanguageServer {
         }
 
         private void Reset() {
-            codeAdapter = new CodeAdapter();
-			vbaca = new VBACodeAnalysis.VBACodeAnalysis();
+            _preprocVba = new PreprocVBA();
+            _vbCache = [];
+
+            vbaca = new VBACodeAnalysis.VBACodeAnalysis();
             var settings = LoadSettings();
             vbaca.setSetting(settings.RewriteSetting);
         }
@@ -40,8 +45,8 @@ namespace VBALanguageServer {
             };
             server.DocumentAdded += (object sender, DocumentAddedEventArgs e) => {
                 foreach (var FilePath in e.FilePaths) {
-                    codeAdapter.SetCode(FilePath, Helper.getCode(FilePath));
-                    var vbCode = codeAdapter.GetVbCodeInfo(FilePath).VbCode;
+                    var vbCode = _preprocVba.Rewrite(FilePath, Helper.getCode(FilePath));
+                    _vbCache[FilePath] = vbCode;
                     vbaca.AddDocument(FilePath, vbCode, false);
                 }
                 vbaca.ApplyChanges(e.FilePaths);
@@ -50,33 +55,34 @@ namespace VBALanguageServer {
             server.DocumentDeleted += (object sender, DocumentDeletedEventArgs e) => {
                 foreach (var FilePath in e.FilePaths) {
                     vbaca.DeleteDocument(FilePath);
-                    codeAdapter.Delete(FilePath);
+                    _vbCache.Remove(FilePath);
                 }
-                logger.Info("DocumentDeleted");
+				logger.Info("DocumentDeleted");
             };
             server.DocumentRenamed += (object sender, DocumentRenamedEventArgs e) => {
                 vbaca.DeleteDocument(e.OldFilePath);
-                codeAdapter.Delete(e.OldFilePath);
-                codeAdapter.SetCode(e.NewFilePath, Helper.getCode(e.NewFilePath));
-                var vbCode = codeAdapter.GetVbCodeInfo(e.NewFilePath).VbCode;
+				var filePath = e.NewFilePath;
+                var vbCode = _preprocVba.Rewrite(filePath, Helper.getCode(filePath));
+                _vbCache.Remove(filePath);
+                _vbCache[filePath] = vbCode;
                 vbaca.AddDocument(e.NewFilePath, vbCode);
                 logger.Info("DocumentRenamed");
             };
             server.DocumentChanged += (object sender, DocumentChangedEventArgs e) => {
-                codeAdapter.SetCode(e.FilePath, e.Text);
-                var vbCode = codeAdapter.GetVbCodeInfo(e.FilePath).VbCode;
+				var filePath = e.FilePath;
+                var vbCode = _preprocVba.Rewrite(filePath, e.Text);
+                _vbCache[filePath] = vbCode;
                 vbaca.ChangeDocument(e.FilePath, vbCode);
                 logger.Info("DocumentChanged");
             };
             server.CompletionReq += (object sender, CompletionEventArgs e) => {
                 e.Items = new List<CompletionItem>();
-				if (!codeAdapter.Has(e.FilePath)) {
+                if (!_vbCache.ContainsKey(e.FilePath)) {
                     logger.Info($"CompletionReq, non: {Path.GetFileName(e.FilePath)}");
                     return;
 				}
-               
-                codeAdapter.parse(e.FilePath, e.Text, out VbCodeInfo vbCodeInfo);
-                var vbCode = vbCodeInfo.VbCode;
+				var filePath = e.FilePath;
+                var vbCode = _preprocVba.Rewrite(filePath, e.Text);
                 var line = e.Line;
                 if (line < 0) {
                     logger.Info($"CompletionReq, line={line}: {Path.GetFileName(e.FilePath)}");
@@ -91,23 +97,22 @@ namespace VBALanguageServer {
             };
             server.DefinitionReq += (object sender, DefinitionEventArgs e) => {
                 var list = new List<DefinitionItem>();
-                if (!codeAdapter.Has(e.FilePath)) {
+                var filePath = e.FilePath;
+                if (!_vbCache.ContainsKey(filePath)) {
                     e.Items = list;
                     logger.Info($"DefinitionReq, non: {Path.GetFileName(e.FilePath)}");
                     return;
                 }
-                var vbCodeInfo = codeAdapter.GetVbCodeInfo(e.FilePath);
-                var vbCode = vbCodeInfo.VbCode;
+                var vbCode = _vbCache[filePath];
                 var line = e.Line;
                 if (line < 0) {
                     e.Items = list;
-                    logger.Info($"DefinitionReq, line={line}: {Path.GetFileName(e.FilePath)}");
+                    logger.Info($"DefinitionReq, line={line}: {Path.GetFileName(filePath)}");
                     return;
                 }
                 var adjChara = vbaca.GetCharaDiff(e.FilePath, line, e.Chara) + e.Chara;
                 var Items = vbaca.GetDefinitions(e.FilePath, vbCode, line, adjChara).Result;
                 foreach (var item in Items) {
-                    var itemVbCodeInfo = codeAdapter.GetVbCodeInfo(item.FilePath);
                     if (item.IsKindClass()) {
                         item.Start.Positon = 0;
                         item.Start.Line = 0;
@@ -126,12 +131,12 @@ namespace VBALanguageServer {
             };
             server.HoverReq += (object sender, CompletionEventArgs e) => {
                 e.Items = new List<CompletionItem>();
-                if (!codeAdapter.Has(e.FilePath)) {
+				var filePath = e.FilePath;
+                if (!_vbCache.ContainsKey(filePath)) {
                     logger.Info($"HoverReq, non: {Path.GetFileName(e.FilePath)}");
                     return;
                 }
-                var vbCodeInfo = codeAdapter.GetVbCodeInfo(e.FilePath);
-                var vbCode = vbCodeInfo.VbCode;
+                var vbCode = _vbCache[filePath];
                 var line = e.Line;
                 if (line < 0) {
                     logger.Info($"HoverReq, non: {Path.GetFileName(e.FilePath)}");
@@ -142,14 +147,15 @@ namespace VBALanguageServer {
                 logger.Info("HoverReq");
             };
             server.DiagnosticReq += (object sender, DiagnosticEventArgs e) => {
-                if (!codeAdapter.Has(e.FilePath)) {
+				var filePath = e.FilePath;
+                if (!_vbCache.ContainsKey(filePath)) {
                     logger.Info($"DiagnosticReq, non: {Path.GetFileName(e.FilePath)}");
                     return;
                 }
-                var vbCodeInfo = codeAdapter.GetVbCodeInfo(e.FilePath);
-                var items = vbaca.GetDiagnostics(e.FilePath).Result;
-                foreach (var item in items) {
-                    var itemVbCodeInfo = codeAdapter.GetVbCodeInfo(e.FilePath);
+                var items1 = _preprocVba.GetDiagnostics(e.FilePath);
+				var items2 = vbaca.GetDiagnostics(e.FilePath).Result;
+                var items = items2.Concat(items1).ToList();
+				foreach (var item in items) {
                     var charDiff = vbaca.GetCharaDiff(e.FilePath, item.StartLine, item.StartChara);
                     item.StartChara -= charDiff;
                     item.EndChara -= charDiff;
@@ -158,18 +164,17 @@ namespace VBALanguageServer {
                 logger.Info("DiagnosticReq");
             };
             server.DebugGetDocumentsEvent += (object sender, DebugEventArgs e) => {
-                e.Text = JsonSerializer.Serialize(codeAdapter.getVbCodeDict());
+                e.Text = JsonSerializer.Serialize(_vbCache);
             };
 			server.ReferencesReq += (object sender, ReferencesEventArgs e) => {
-                if (!codeAdapter.Has(e.FilePath)) {
+				var filePath = e.FilePath;
+                if (!_vbCache.ContainsKey(filePath)) {
                     logger.Info($"ReferencesReq, non: {Path.GetFileName(e.FilePath)}");
                     return;
                 }
-                var vbCodeInfo = codeAdapter.GetVbCodeInfo(e.FilePath);
                 var adjChara = vbaca.GetCharaDiff(e.FilePath, e.Line, e.Chara) + e.Chara;
                 var items = vbaca.GetReferences(e.FilePath, e.Line, adjChara).Result;
                 foreach (var item in items) {
-                    var itemVbCodeInfo = codeAdapter.GetVbCodeInfo(item.FilePath);
                     item.Start = AdjustLocation(item.FilePath, item.Start);
                     item.End = AdjustLocation(item.FilePath, item.End);
                 }
@@ -178,13 +183,13 @@ namespace VBALanguageServer {
             };
             server.SignatureHelpReq += (object sender, SignatureHelpEventArgs e) => {
                 var items = new List<SignatureHelpItem>();
-                if (!codeAdapter.Has(e.FilePath)) {
+				var filePath = e.FilePath;
+                if (!_vbCache.ContainsKey(filePath)) {
                     e.Items = items;
                     logger.Info($"SignatureHelpReq, non: {Path.GetFileName(e.FilePath)}");
                     return;
                 }
-                codeAdapter.parse(e.FilePath, e.Text, out VbCodeInfo vbCodeInfo);
-                var vbCode = vbCodeInfo.VbCode;
+                var vbCode = _preprocVba.Rewrite(filePath, e.Text);
                 var line = e.Line;
                 if (line < 0) {
                     e.Items = items;

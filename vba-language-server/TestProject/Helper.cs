@@ -14,7 +14,6 @@ namespace TestProject {
 	using ChangeDict = Dictionary<int, List<ChangeVBA>>;
 	using ColumnShiftDict = Dictionary<int, List<ColumnShift>>;
 	using LineReMapDict = Dictionary<int, int>;
-	using locDiffDiict = Dictionary<int, List<LocationDiff>>;
 	using DiagoItem = DiagnosticItem;
 
 	class Helper {
@@ -77,19 +76,6 @@ namespace TestProject {
             Assert.Equal(preLines.Length, actLines.Length);
             for (int i = 0; i < preLines.Length; i++) {
                 Assert.True(preLines[i] == actLines[i], $"Fault {i}");
-            }
-        }
-
-        public static void AssertLocationDiffDict(locDiffDiict pre, locDiffDiict act) {
-            pre.All(x => act.Contains(x));
-            foreach (var item in pre) {
-                var preList = item.Value;
-                var actList = act[item.Key];
-                foreach (var (First, Second) in preList.Zip(actList)) {
-                    Assert.Equal(First.Line, Second.Line);
-                    Assert.Equal(First.Chara, Second.Chara);
-                    Assert.Equal(First.Diff, Second.Diff);
-                }
             }
         }
 

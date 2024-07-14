@@ -5,6 +5,51 @@ using Xunit;
 
 namespace TestProject {
     public class TestSignatureHelp {
+		[Theory]
+		[InlineData(" sub0(", 2, -1, -1, -1)]
+		[InlineData(" sub0()", 7, -1, -1, -1)]
+		[InlineData(" sub4(1, ", 2, -1, -1, -1)]
+		[InlineData(" sub4(1, 2, 3, 4)", 17, -1, -1, -1)]
+
+		[InlineData(" sub0(", 6, 2, 1, 0)]
+		[InlineData(" sub0()", 6, 2, 1, 0)]
+		[InlineData(" sub4(", 6, 2, 1, 0)]
+
+		[InlineData(" sub4(1, ", 7, 2, 1, 0)]
+		[InlineData(" sub4(1, 2, ", 8, 2, 1, 1)]
+		[InlineData(" sub4(1, 2, ", 9, 2, 1, 1)]
+		[InlineData(" sub4(1, 2, ", 10, 2, 1, 1)]
+		[InlineData(" sub4(1, 2, 3, ", 11, 2, 1, 2)]
+		[InlineData(" sub4(1, 2, 3, 4", 14, 2, 1, 3)]
+
+		[InlineData(" sub4(1, )", 7, 2, 1, 0)]
+		[InlineData(" sub4(1, 2, )", 8, 2, 1, 1)]
+		[InlineData(" sub4(1, 2, )", 9, 2, 1, 1)]
+		[InlineData(" sub4(1, 2, )", 10, 2, 1, 1)]
+		[InlineData(" sub4(1, 2, 3, )", 11, 2, 1, 2)]
+		[InlineData(" sub4(1, 2, 3, 4)", 14, 2, 1, 3)]
+		public void TestGetSignaturePosition(string code, int codePos, int procLine, int procChara, int argPos) {
+			var mod1 = @"Attribute VB_Name = ""module1""
+Sub sub0()
+End Sub
+Sub sub4(a0 As Long, a1 As Long, a3 As Long, a4 As Long)
+End Sub
+";
+			var modName = "mod2";
+			var mod2 = $@"Attribute VB_Name = ""module2""
+Sub Main()
+{code}
+End Sub
+";
+			var vbaca = new VBACodeAnalysis.VBACodeAnalysis();
+			vbaca.setSetting(new RewriteSetting());
+			vbaca.AddDocument("mod1", mod1);
+			vbaca.AddDocument(modName, mod2);
+			var actRet = 
+				vbaca.GetSignaturePosition(modName, 2, codePos);
+			Assert.Equal((procLine, procChara, argPos), actRet);
+		}
+
 		private string GetClassCode() {
 			return @"Public Class SigTest
     Default Public Property Item(Index As Long) As Object

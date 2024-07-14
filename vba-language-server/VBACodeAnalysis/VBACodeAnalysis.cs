@@ -1,4 +1,4 @@
-using Microsoft.CodeAnalysis;
+﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.FindSymbols;
 using Microsoft.CodeAnalysis.Host.Mef;
 using Microsoft.CodeAnalysis.Recommendations;
@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using System.Linq;
 using Microsoft.CodeAnalysis.Completion;
 using Microsoft.CodeAnalysis.VisualBasic;
+using Microsoft.CodeAnalysis.VisualBasic.Syntax;
 
 namespace VBACodeAnalysis {
     public class VBACodeAnalysis {
@@ -234,80 +235,63 @@ namespace VBACodeAnalysis {
         }
 
         public (int, int, int) GetSignaturePosition(string name, int line, int chara) {
-            var procLine = -1;
-            var procChara = -1;
-            var argPosition = 0;
+            var non = (-1, -1, -1);
 
             if (!doc_id_dict.ContainsKey(name)) {
-                return (procLine, procChara, - 1);
+                return non;
             }
             var docId = doc_id_dict[name];
             if (!workspace.CurrentSolution.ContainsDocument(docId)) {
-                return (procLine, procChara, -1);
+                return non;
             }
 
             var doc = workspace.CurrentSolution.GetDocument(docId);
             var position = GetPosition(doc, line, chara);
             if (position < 0) {
-                return (procLine, procChara, -1);
+                return non;
             }
 
             var rootNode = doc.GetSyntaxRootAsync().Result;
             var currentToken = rootNode.FindToken(position);
             var currentNode = rootNode.FindNode(currentToken.Span);
 
-            var preToken = currentToken.GetPreviousToken();
-            if (preToken.Text == "(") {
-                var chNodes = currentNode.Parent.ChildNodes();
-				if (chNodes.Any()) {
-					var args = chNodes.Where(x => x.IsKind(SyntaxKind.ArgumentList));
-					if (args.Any()) {
-                        var procToken = args.First().ChildTokens().First().GetPreviousToken();
-                        var lp = procToken.GetLocation().GetLineSpan();
-                        procLine = lp.StartLinePosition.Line;
-                        procChara = lp.StartLinePosition.Character;
-                        return (procLine, procChara, argPosition);
-                    }
+            if (currentNode is ArgumentListSyntax argList) {
+				return GetProcAndArgPosition(argList, position);
+			}
+
+			if (currentNode is SimpleArgumentSyntax simpleArgs) {
+                if (simpleArgs.Parent is not ArgumentListSyntax parentArgList) {
+					return non;
 				}
-            } 
+				return GetProcAndArgPosition(parentArgList, position);
+			}
 
-            if (currentNode.IsKind(SyntaxKind.ArgumentList)) {
-                var procToken = currentNode.ChildTokens().First().GetPreviousToken().GetLocation().GetLineSpan();
-                procLine = procToken.StartLinePosition.Line;
-                procChara = procToken.StartLinePosition.Character;
-                var commnaTokens = currentNode.ChildTokens().Where(x => x.IsKind(SyntaxKind.CommaToken));
-                foreach (var item in commnaTokens) {
-                    if (item.Span.End <= position) {
-                        argPosition++;
-                    }
-                }
-                return (procLine, procChara, argPosition);
-            } 
-
-            var node = rootNode.FindNode(currentToken.Span).Parent;
-            const int seacrhMax = 5;
-            for (int i = 0; i < seacrhMax; i++) {
-                if (node.IsKind(SyntaxKind.ArgumentList)) {
-                    var procToken = node.ChildTokens().First().GetPreviousToken();
-                    var lp = procToken.GetLocation().GetLineSpan();
-                    procLine = lp.StartLinePosition.Line;
-                    procChara = lp.StartLinePosition.Character;
-                    var commnaTokens = node.ChildTokens().Where(x => x.IsKind(SyntaxKind.CommaToken));
-                    foreach (var item in commnaTokens) {
-                        if (item.Span.End <= position) {
-                            argPosition++;
-                        }
-                    }
-                    break;
-                }
-                if (node.Parent == null) {
-                    break;
-                }
-                node = node.Parent;
-            }
-
-            return (procLine, procChara, argPosition);
+			return non;
         }
+
+        private (int, int, int) GetProcAndArgPosition(ArgumentListSyntax argList, int position) {
+			var argPosition = 0;
+			var non = (-1, -1, -1);
+
+			if (!argList.CloseParenToken.IsMissing) {
+				var closeParent = argList.CloseParenToken;
+				if (closeParent.Span.End <= position) {
+					return non;
+				}
+			}
+
+			var commaTokens = argList.DescendantTokens()
+                .Where(x => x.IsKind(SyntaxKind.CommaToken));
+			foreach (var item in commaTokens) {
+				if (item.Span.End > position) {
+					break;
+				}
+				argPosition++;
+			}
+			var procToken = argList.OpenParenToken.GetPreviousToken();
+			var procSp = procToken.GetLocation().GetLineSpan().StartLinePosition;
+			return (procSp.Line, procSp.Character, argPosition);
+		}
 
         public async Task<List<SignatureHelpItem>> GetSignatureHelp(string name, int line, int chara) {
             var items = new List<SignatureHelpItem>();

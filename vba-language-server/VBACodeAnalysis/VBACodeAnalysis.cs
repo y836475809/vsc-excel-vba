@@ -32,12 +32,16 @@ namespace VBACodeAnalysis {
             doc_id_dict = [];
         }
 
-        public void setSetting(RewriteSetting rewriteSetting) {
+		public void setSetting(RewriteSetting rewriteSetting) {
             _preprocVBA = new PreprocVBA();
 			vbaDiagnostic = new VBADiagnostic();
         }
 
-        public void AddDocument(string name, string text, bool applyChanges= true) {
+        public string Rewrite(string name, string vbaCode) {
+            return _preprocVBA.Rewrite(name, vbaCode);
+		}
+
+		public void AddDocument(string name, string text, bool applyChanges= true) {
             if (doc_id_dict.TryGetValue(name, out DocumentId docId)) {
                 workspace.TryApplyChanges(
                     workspace.CurrentSolution.WithDocumentText(
@@ -80,16 +84,16 @@ namespace VBACodeAnalysis {
             doc_id_dict.Remove(name);
         }
 
-        public void ChangeDocument(string name, string text) {
+        public void ChangeDocument(string name, string vbCode) {
             if (!doc_id_dict.TryGetValue(name, out DocumentId docId)) {
                 return;
             }
             if (name.EndsWith(".d.vb")) {
                 return;
             }
-			var rewriteCode = _preprocVBA.Rewrite(name, text);
 			workspace.TryApplyChanges(
-                workspace.CurrentSolution.WithDocumentText(docId, SourceText.From(rewriteCode)));
+                workspace.CurrentSolution.WithDocumentText(
+                    docId, SourceText.From(vbCode)));
 		}
 
         private bool IsCompletionItem(ISymbol symbol) {

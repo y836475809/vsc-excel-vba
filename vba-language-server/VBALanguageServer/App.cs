@@ -12,8 +12,6 @@ namespace VBALanguageServer {
         private Server server;
 		private VBACodeAnalysis.VBACodeAnalysis vbaca;
         private Logger logger;
-
-		private PreprocVBA _preprocVba;
 		private Dictionary<string, string> _vbCache;
 
 		public App() {
@@ -27,13 +25,11 @@ namespace VBALanguageServer {
         }
 
         private void Reset() {
-            _preprocVba = new PreprocVBA();
-            _vbCache = [];
-
             vbaca = new VBACodeAnalysis.VBACodeAnalysis();
             var settings = LoadSettings();
             vbaca.setSetting(settings.RewriteSetting);
-        }
+			_vbCache = [];
+		}
 
         public void Initialize() {  
             Reset();
@@ -45,7 +41,7 @@ namespace VBALanguageServer {
             };
             server.DocumentAdded += (object sender, DocumentAddedEventArgs e) => {
                 foreach (var FilePath in e.FilePaths) {
-                    var vbCode = _preprocVba.Rewrite(FilePath, Helper.getCode(FilePath));
+                    var vbCode = vbaca.Rewrite(FilePath, Helper.getCode(FilePath));
                     _vbCache[FilePath] = vbCode;
                     vbaca.AddDocument(FilePath, vbCode, false);
                 }
@@ -62,7 +58,7 @@ namespace VBALanguageServer {
             server.DocumentRenamed += (object sender, DocumentRenamedEventArgs e) => {
                 vbaca.DeleteDocument(e.OldFilePath);
 				var filePath = e.NewFilePath;
-                var vbCode = _preprocVba.Rewrite(filePath, Helper.getCode(filePath));
+                var vbCode = vbaca.Rewrite(filePath, Helper.getCode(filePath));
                 _vbCache.Remove(filePath);
                 _vbCache[filePath] = vbCode;
                 vbaca.AddDocument(e.NewFilePath, vbCode);
@@ -70,7 +66,7 @@ namespace VBALanguageServer {
             };
             server.DocumentChanged += (object sender, DocumentChangedEventArgs e) => {
 				var filePath = e.FilePath;
-                var vbCode = _preprocVba.Rewrite(filePath, e.Text);
+                var vbCode = vbaca.Rewrite(filePath, e.Text);
                 _vbCache[filePath] = vbCode;
                 vbaca.ChangeDocument(e.FilePath, vbCode);
                 logger.Info("DocumentChanged");
@@ -82,7 +78,7 @@ namespace VBALanguageServer {
                     return;
 				}
 				var filePath = e.FilePath;
-                var vbCode = _preprocVba.Rewrite(filePath, e.Text);
+                var vbCode = vbaca.Rewrite(filePath, e.Text);
                 var line = e.Line;
                 if (line < 0) {
                     logger.Info($"CompletionReq, line={line}: {Path.GetFileName(e.FilePath)}");
@@ -152,9 +148,7 @@ namespace VBALanguageServer {
                     logger.Info($"DiagnosticReq, non: {Path.GetFileName(e.FilePath)}");
                     return;
                 }
-                var items1 = _preprocVba.GetDiagnostics(e.FilePath);
-				var items2 = vbaca.GetDiagnostics(e.FilePath).Result;
-                var items = items2.Concat(items1).ToList();
+				var items = vbaca.GetDiagnostics(e.FilePath).Result;
 				foreach (var item in items) {
                     var charDiff = vbaca.GetCharaDiff(e.FilePath, item.StartLine, item.StartChara);
                     item.StartChara -= charDiff;
@@ -189,7 +183,7 @@ namespace VBALanguageServer {
                     logger.Info($"SignatureHelpReq, non: {Path.GetFileName(e.FilePath)}");
                     return;
                 }
-                var vbCode = _preprocVba.Rewrite(filePath, e.Text);
+                var vbCode = vbaca.Rewrite(filePath, e.Text);
                 var line = e.Line;
                 if (line < 0) {
                     e.Items = items;

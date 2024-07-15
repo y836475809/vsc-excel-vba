@@ -186,7 +186,7 @@ namespace VBACodeAnalysis {
                     msg,
                     ssp.Line, ssp.Character,
                     sep.Line, endCol);
-				if (!contains(dls, diagno)) {
+				if (!Contains(dls, diagno)) {
 					dls.Add(diagno);
 				}
 				return true;
@@ -194,7 +194,7 @@ namespace VBACodeAnalysis {
             return false;
         }
 
-        private bool contains(List<DiagnosticItem> dls, DiagnosticItem d) {
+        private bool Contains(List<DiagnosticItem> dls, DiagnosticItem d) {
             foreach (var item in dls) {
                 if (item.Eq(d)) {
                     return true;

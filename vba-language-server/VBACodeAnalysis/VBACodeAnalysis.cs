@@ -29,7 +29,7 @@ namespace VBACodeAnalysis {
             });
             project = workspace.AddProject(projectInfo);
 
-            doc_id_dict = new Dictionary<string, DocumentId>();
+            doc_id_dict = [];
         }
 
         public void setSetting(RewriteSetting rewriteSetting) {
@@ -38,8 +38,7 @@ namespace VBACodeAnalysis {
         }
 
         public void AddDocument(string name, string text, bool applyChanges= true) {
-            if (doc_id_dict.ContainsKey(name)) {
-                var docId = doc_id_dict[name];
+            if (doc_id_dict.TryGetValue(name, out DocumentId docId)) {
                 workspace.TryApplyChanges(
                     workspace.CurrentSolution.WithDocumentText(
                         docId, SourceText.From(text)));
@@ -73,23 +72,21 @@ namespace VBACodeAnalysis {
 
         public void DeleteDocument(string name)
         {
-            if (!doc_id_dict.ContainsKey(name)) {
+            if (!doc_id_dict.TryGetValue(name, out DocumentId docId)) {
                 return;
             }
-            var docId = doc_id_dict[name];
             workspace.TryApplyChanges(
                workspace.CurrentSolution.RemoveDocument(docId));
             doc_id_dict.Remove(name);
         }
 
         public void ChangeDocument(string name, string text) {
-            if (!doc_id_dict.ContainsKey(name)) {
+            if (!doc_id_dict.TryGetValue(name, out DocumentId docId)) {
                 return;
             }
             if (name.EndsWith(".d.vb")) {
                 return;
             }
-            var docId = doc_id_dict[name];
 			var rewriteCode = _preprocVBA.Rewrite(name, text);
 			workspace.TryApplyChanges(
                 workspace.CurrentSolution.WithDocumentText(docId, SourceText.From(rewriteCode)));
@@ -116,11 +113,9 @@ namespace VBACodeAnalysis {
 
         public async Task<List<CompletionItem>> GetCompletions(string name, string text, int line, int chara) {
 			var completions = new List<CompletionItem>();
-            if (!doc_id_dict.ContainsKey(name)) {
+            if (!doc_id_dict.TryGetValue(name, out DocumentId docId)) {
                 return completions;
             }
-
-            var docId = doc_id_dict[name];
             var doc = workspace.CurrentSolution.GetDocument(docId);
 
             var position = GetPosition(doc, line, chara);
@@ -180,10 +175,9 @@ namespace VBACodeAnalysis {
 
         public async Task<List<DefinitionItem>> GetDefinitions(string name, string text, int line, int chara) {
             var items = new List<DefinitionItem>();
-            if (!doc_id_dict.ContainsKey(name)) {
+            if (!doc_id_dict.TryGetValue(name, out DocumentId docId)) {
                 return items;
             }
-            var docId = doc_id_dict[name];
             if (workspace.CurrentSolution.ContainsDocument(docId)) {
                 var doc = workspace.CurrentSolution.GetDocument(docId);
                 var model = await doc.GetSemanticModelAsync();
@@ -237,10 +231,9 @@ namespace VBACodeAnalysis {
         public (int, int, int) GetSignaturePosition(string name, int line, int chara) {
             var non = (-1, -1, -1);
 
-            if (!doc_id_dict.ContainsKey(name)) {
+            if (!doc_id_dict.TryGetValue(name, out DocumentId docId)) {
                 return non;
             }
-            var docId = doc_id_dict[name];
             if (!workspace.CurrentSolution.ContainsDocument(docId)) {
                 return non;
             }
@@ -296,10 +289,9 @@ namespace VBACodeAnalysis {
         public async Task<List<SignatureHelpItem>> GetSignatureHelp(string name, int line, int chara) {
             var items = new List<SignatureHelpItem>();
 
-            if (!doc_id_dict.ContainsKey(name)) {
+            if (!doc_id_dict.TryGetValue(name, out DocumentId docId)) {
                 return items;
             }
-            var docId = doc_id_dict[name];
             if (!workspace.CurrentSolution.ContainsDocument(docId)) {
                 return items;
             }
@@ -382,10 +374,9 @@ namespace VBACodeAnalysis {
 
         public async Task<List<CompletionItem>> GetHover(string name, int line, int chara) {
             var items = new List<CompletionItem>();
-            if (!doc_id_dict.ContainsKey(name)) {
+            if (!doc_id_dict.TryGetValue(name, out DocumentId docId)) {
                 return items;
             }
-            var docId = doc_id_dict[name];
             if (!workspace.CurrentSolution.ContainsDocument(docId)) {
                 return items;
             }
@@ -471,7 +462,7 @@ namespace VBACodeAnalysis {
             }
             var dispText = $"{accessibility} {symbolName} As {typeName}";
             if (isConst) {
-                if (typeName.ToLower() == "string") {
+                if (Util.Eq(typeName, "string")) {
                     constValue = @$"""{constValue}""";
                 }
                 dispText = $"{accessibility} Const {symbolName} As {typeName} = {constValue}";
@@ -484,19 +475,18 @@ namespace VBACodeAnalysis {
             item.ReturnType = typeName;
         }
 
-        private string ConvKind(string TypeName) {
-            var lower = TypeName.ToLower();
-            var convTypeName = TypeName;
-            if (lower == "int64") {
+        private string ConvKind(string typeName) {
+            var convTypeName = typeName;
+            if (Util.Eq(typeName, "int64")) {
                 convTypeName = "Long";
             }
-            if (lower == "int32") {
+            if (Util.Eq(typeName, "int32")) {
                 convTypeName = "Integer";
             }
-            if (lower == "datetime") {
+            if (Util.Eq(typeName, "datetime")) {
                 convTypeName = "Date";
             }
-            if (lower == "object") {
+            if (Util.Eq(typeName, "object")) {
                 convTypeName = "Variant";
             }
             return convTypeName;
@@ -511,10 +501,10 @@ namespace VBACodeAnalysis {
 
         public async Task<List<ReferenceItem>> GetReferences(string name, int line, int chara) {
             var items = new List<ReferenceItem>();
-            if (!doc_id_dict.ContainsKey(name)) {
+            if (!doc_id_dict.TryGetValue(name, out DocumentId value)) {
                 return items;
             }
-            var docId = doc_id_dict[name];
+            var docId = value;
             if (!workspace.CurrentSolution.ContainsDocument(docId)) {
                 return items;
             }

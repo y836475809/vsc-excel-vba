@@ -76,7 +76,7 @@ namespace VBALanguageServer {
                 logger.Info("DocumentChanged");
             };
             server.CompletionReq += (object sender, CompletionEventArgs e) => {
-                e.Items = new List<CompletionItem>();
+                e.Items = [];
                 if (!_vbCache.ContainsKey(e.FilePath)) {
                     logger.Info($"CompletionReq, non: {Path.GetFileName(e.FilePath)}");
                     return;
@@ -130,7 +130,7 @@ namespace VBALanguageServer {
                 logger.Info("DefinitionReq");
             };
             server.HoverReq += (object sender, CompletionEventArgs e) => {
-                e.Items = new List<CompletionItem>();
+                e.Items = [];
 				var filePath = e.FilePath;
                 if (!_vbCache.ContainsKey(filePath)) {
                     logger.Info($"HoverReq, non: {Path.GetFileName(e.FilePath)}");

@@ -23,13 +23,10 @@
     "configuration": {
       "title": "vsc-excel-vba",
       "properties": {
-        "vsc-excel-vba.VBALanguageServerPath": {
-          "type": [
-            "string",
-            "null"
-          ],
-          "default": null,
-          "description": "VBA language server executable file path"
+        "vsc-excel-vba.LSFilename": {
+          "type": ["string"],
+          "default": "VBALanguageServer.exe",
+          "description": "VBA language server executable file name"
         }
       }
     },

@@ -130,11 +130,19 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	const srcDirName = path.basename(project.srcDir);
 	const config = vscode.workspace.getConfiguration();
-	const exeFilePath = await config.get("vsc-excel-vba.VBALanguageServerPath") as string;
-	const serverOptions: ServerOptions = { 
-		command: exeFilePath,
-		args: [`--src_dir_name=${srcDirName}`],
-		transport: TransportKind.stdio,	
+	const lspFilename = config.get("vsc-excel-vba.LSFilename") as string;
+	const exeFilePath = path.join(context.asAbsolutePath("bin"), lspFilename);
+	const serverOptions: ServerOptions = {
+		run: {
+			command: path.join(context.asAbsolutePath("bin"), "Release", lspFilename),
+			args: [`--src_dir_name=${srcDirName}`],
+			transport: TransportKind.stdio,
+		},
+		debug: {
+			command: path.join(context.asAbsolutePath("bin"), "Debug", lspFilename),
+			args: [`--src_dir_name=${srcDirName}`],
+			transport: TransportKind.stdio,
+		}	
 	 };
 
 	const clientOptions: LanguageClientOptions = {
@@ -144,8 +152,8 @@ export async function activate(context: vscode.ExtensionContext) {
 		},
 	};
 	client = new LanguageClient(
-		"languageServerExample",
-		"Language Server Example",
+		"VBALanguageServer",
+		"VBA Language Server",
 		serverOptions,
 		clientOptions
 	);

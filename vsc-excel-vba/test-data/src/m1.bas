@@ -1,5 +1,5 @@
 Attribute VB_Name = "m1"
-Option Explicit
+
 
 
 ''' <summary>
@@ -67,10 +67,11 @@ End Sub
 
 Function callFunc() As Long
     Dim p2 As New Person
-    p2.SayHello(1,1)
+    call p2.SayHello(1,1)
 
     Dim datFile As String
-    Dim Output As String
+    datFile = ""
+    ' Dim Output As String
     Open datFile For Output As #1
 
 End Function
@@ -86,7 +87,7 @@ Public Sub call1()
     'Range("A3:E5").
     Call Sample2
     p2.Name2 = "pp"
-    p2.SayHello(1,1)
+    p2.SayHello(1, 1)
     p2.QSayHell
     ' completion position
 

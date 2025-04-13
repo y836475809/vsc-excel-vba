@@ -10,18 +10,5 @@ namespace VBALanguageServer {
                 return sr.ReadToEnd();
             }
         }
-
-        public class LowerCaseNamingPolicy : JsonNamingPolicy {
-            public override string ConvertName(string name) =>
-                name.ToLower();
-        }
-
-        public static JsonSerializerOptions getJsonOptions() {
-            var options = new JsonSerializerOptions {
-                PropertyNamingPolicy = new LowerCaseNamingPolicy(),
-                WriteIndented = true
-            };
-            return options;
-        }
     }
 }

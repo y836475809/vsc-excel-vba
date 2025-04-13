@@ -145,7 +145,8 @@ End Sub";
 			}
 			var vbaca = new VBACodeAnalysis.VBACodeAnalysis();
 			vbaca.setSetting(new RewriteSetting());
-			vbaca.AddDocument("test", code);
+			var vbCode = vbaca.Rewrite("test", code);
+			vbaca.AddDocument("test", vbCode);
 			var diagnoList = vbaca.GetDiagnostics("test").Result;
 			Helper.AssertDiagnoList(pre, diagnoList);
 		}
@@ -229,8 +230,10 @@ End Sub";
 			}
 			var vbaca = new VBACodeAnalysis.VBACodeAnalysis();
 			vbaca.setSetting(new RewriteSetting());
-			vbaca.AddDocument("m1", module);
-			vbaca.AddDocument("test", code);
+			var vbModule = vbaca.Rewrite("m1", module);
+			var vbCode = vbaca.Rewrite("test", code);
+			vbaca.AddDocument("m1", vbModule);
+			vbaca.AddDocument("test", vbCode);
 			var diagnoList = vbaca.GetDiagnostics("test").Result;
 			Helper.AssertDiagnoList(pre, diagnoList);
 		}

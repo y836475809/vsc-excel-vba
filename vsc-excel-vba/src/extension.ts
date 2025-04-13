@@ -1,34 +1,26 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
+import * as path from "path";
 import * as vscode from 'vscode';
+import {
+	LanguageClient,
+	LanguageClientOptions,
+	ServerOptions,
+	TransportKind,
+} from 'vscode-languageclient/node';
 import { VBACommands } from './vba-commands';
 import { Project } from './project';
 import { Logger } from "./logger";
-import { FileEvents } from "./file-events";
-import { VBALSLaunch } from "./vba-ls-launch";
-import { VBADocumentSymbolProvider } from "./vba-document-symbol-provider";
-import { VBASignatureHelpProvider } from "./vba-signaturehelp-provider";
-import { VBADefinitionProvider } from "./vba-definition-provider";
-import { VBAHoverProvider } from "./vba-hover-provider";
-import { VBACompletionItemProvider } from "./vba-completionitem-provider";
-import { VBAReferenceProvider } from "./vba-reference-provider";
-import { VBALSRequest } from './vba-ls-request';
 import { VBACreateFile } from "./vba-create-file";
+import { VBADocumentSymbolProvider } from "./vba-document-symbol-provider";
 import { SheetTreeDataProvider } from "./sheet-treedata-provider";
 
+let client: LanguageClient;
 let outputChannel: vscode.OutputChannel;
 let logger: Logger;
-let fileEvents: FileEvents;
-let vbaLSRequest: VBALSRequest;
-let vbaLSLaunch: VBALSLaunch;
 let statusBarItem: vscode.StatusBarItem;
 let disposables: vscode.Disposable[] = [];
 let sheetTDProvider: SheetTreeDataProvider;
-
-function dispose() {
-	disposables.forEach(x=>x.dispose());
-	disposables = [];
-}
 
 const registerProviderSideBar = () => {
 	const docSelector = { language: "vb" };
@@ -38,26 +30,6 @@ const registerProviderSideBar = () => {
 
 	sheetTDProvider = new SheetTreeDataProvider("sheetView");
 	disposables.push(sheetTDProvider);
-};
-
-const registerProviderVBALS = (srcDir: string) => {
-	const docSelector = { language: "vb" };
-	vbaLSRequest.srcDir = srcDir;
-
-	disposables.push(vscode.languages.registerSignatureHelpProvider(
-		docSelector, new VBASignatureHelpProvider(vbaLSRequest), '(', ','));
-
-	disposables.push(vscode.languages.registerDefinitionProvider(
-		docSelector, new VBADefinitionProvider(vbaLSRequest)));
-
-	disposables.push(vscode.languages.registerHoverProvider(
-		docSelector, new VBAHoverProvider(vbaLSRequest)));
-
-	disposables.push(vscode.languages.registerCompletionItemProvider(
-		docSelector, new VBACompletionItemProvider(vbaLSRequest), "."));
-	
-	disposables.push(vscode.languages.registerReferenceProvider(
-		docSelector, new VBAReferenceProvider(vbaLSRequest)));
 };
 
 // This method is called when your extension is activated
@@ -71,42 +43,17 @@ export async function activate(context: vscode.ExtensionContext) {
 		outputChannel.appendLine(msg);
 	});
 
-	const config = vscode.workspace.getConfiguration();
-	let enableLSP = await config.get("vsc-excel-vba.enableLSP") as boolean;
-	let vbaLanguageServerPort = await config.get("vsc-excel-vba.VBALanguageServerPort") as number;
-	let enableAutoLaunchVBALanguageServer = await config.get("vsc-excel-vba.enableAutoLaunchVBALanguageServer") as boolean;
-	let vbaLanguageServerPath = await config.get("vsc-excel-vba.VBALanguageServerPath") as string;
-
-	vbaLSRequest = new VBALSRequest(vbaLanguageServerPort);
-	fileEvents = new FileEvents(vbaLSRequest);
-	vbaLSLaunch = new VBALSLaunch(vbaLanguageServerPort);
 	const project = new Project("vbaproject.json");
 	const vbaCommand = new VBACommands(context.asAbsolutePath("scripts"));
 
-    statusBarItem = vscode.window.createStatusBarItem(
-		vscode.StatusBarAlignment.Left, 1);
-	statusBarItem.text = `Run ${extName}`;
-	statusBarItem.command = `${extName}.toggle`;
-	statusBarItem.show();
+	await project.readProject();
+	registerProviderSideBar();
 
-	vscode.workspace.onDidChangeConfiguration(async event => {
-		if(!event.affectsConfiguration("vsc-excel-vba")){
-			return;
-		}
-		const config = vscode.workspace.getConfiguration();
-		enableLSP = await config.get("vsc-excel-vba.enableLSP") as boolean;
-		vbaLanguageServerPort = await config.get("vsc-excel-vba.VBALanguageServerPort") as number;
-		enableAutoLaunchVBALanguageServer = await config.get("vsc-excel-vba.enableAutoLaunchVBALanguageServer") as boolean;
-		vbaLanguageServerPath = await config.get("vsc-excel-vba.VBALanguageServerPath") as string;
-	});
-
-	context.subscriptions.push(vscode.commands.registerCommand("vsc-excel-vba.toggle", async () => {
-		if(statusBarItem.text === `Run ${extName}`){
-			await vscode.commands.executeCommand("vsc-excel-vba.start");
-		}else{
-			await vscode.commands.executeCommand("vsc-excel-vba.stop");
-		}
-	}));
+    // statusBarItem = vscode.window.createStatusBarItem(
+	// 	vscode.StatusBarAlignment.Left, 1);
+	// statusBarItem.text = `Run ${extName}`;
+	// statusBarItem.command = `${extName}.toggle`;
+	// statusBarItem.show();
 
 	context.subscriptions.push(vscode.commands.registerCommand("vsc-excel-vba.gotoVBA", async () => {
 		await vbaCommand.exceue(project, "gotoVBA");
@@ -140,12 +87,6 @@ export async function activate(context: vscode.ExtensionContext) {
 	}));
 	context.subscriptions.push(vscode.commands.registerCommand("vsc-excel-vba.setBreakpoints", async () => {
 		await vbaCommand.exceue(project, "setBreakpoints");
-	}));
-	context.subscriptions.push(vscode.commands.registerCommand("vsc-excel-vba.test.registerProvider", async () => {
-		dispose();
-		const wfs = vscode.workspace.workspaceFolders!;
-		const srcDir = wfs[0].uri.fsPath;
-		registerProviderVBALS(srcDir);
 	}));
 
 	context.subscriptions.push(vscode.commands.registerCommand("vsc-excel-vba.createProject", async (args) => {
@@ -187,95 +128,34 @@ export async function activate(context: vscode.ExtensionContext) {
 		await vbacf.create(uri, "module");
 	}));
 
-	const loadProject = async (report: (msg: string)=>void) => {
-		report("Load Project");
-		await project.readProject();
+	const srcDirName = path.basename(project.srcDir);
+	const config = vscode.workspace.getConfiguration();
+	const exeFilePath = await config.get("vsc-excel-vba.VBALanguageServerPath") as string;
+	const serverOptions: ServerOptions = { 
+		command: exeFilePath,
+		args: [`--src_dir_name=${srcDirName}`],
+		transport: TransportKind.stdio,	
+	 };
 
-		registerProviderSideBar();
-
-		report("Loaded project successfully");
+	const clientOptions: LanguageClientOptions = {
+		documentSelector: [{ scheme: 'file', language: 'vb' }],
+		synchronize: {
+			fileEvents: vscode.workspace.createFileSystemWatcher(`${project.srcDir}/*.{bas,cls}`)
+		},
 	};
-
-	const startServer = async (report: (msg: string)=>void) => {
-		report("Start server");
-
-		if(enableAutoLaunchVBALanguageServer){
-			report("Shutdown VBALanguageServer");
-			await vbaLSLaunch.shutdown();
-			report("Start VBALanguageServer");
-			await vbaLSLaunch.start(vbaLanguageServerPort, vbaLanguageServerPath);
-		}else{
-			report("Reset VBALanguageServer");
-			await vbaLSLaunch.reset();
-		}
-
-		report("Register FileEvent");
-		fileEvents.registerFileEvent();
-
-		registerProviderVBALS(project.srcDir);
-		
-		report("Add VBA define");
-		await vbaLSRequest.addVBADefines(project.getDefinitionFileUris(context));
-
-		report("Add source");
-		await vbaLSRequest.addDocuments(await project.getSrcFileUris());
-
-		const activeDoc = vscode.window.activeTextEditor?.document;
-		if(activeDoc){
-			report("Diagnose active document");
-			await vbaLSRequest.diagnostic(activeDoc);
-		}
-
-		report("Server started successfully");
-	};
-
-	context.subscriptions.push(vscode.commands.registerCommand("vsc-excel-vba.start", async () => {
-		const options: vscode.ProgressOptions = {
-			location: vscode.ProgressLocation.Notification,
-			title: "Server status"
-		};
-		vscode.window.withProgress(options, async progress => {
-			try {	
-				await loadProject((msg) => {
-					logger.info(msg);
-					progress.report({ message: msg });
-				});
-				if(enableLSP){
-					await startServer((msg) => {
-						logger.info(msg);
-						progress.report({ message: msg });
-					});
-				}
-				vscode.window.showInformationMessage("Success");
-				statusBarItem.text = `Stop ${extName}`;
-			} catch (error) {
-				dispose();
-				fileEvents.dispose();
-				
-				let errorMsg = "Fail start";
-				if(error instanceof Error){
-					errorMsg = `${error.message}`;
-				}
-				logger.info(`Fail start, ${errorMsg}`);
-				vscode.window.showErrorMessage(`Fail start\n${errorMsg}\nPlease restart again`);
-				statusBarItem.text = `Run ${extName}`;
-			}
-		});
-	}));
-
-	context.subscriptions.push(vscode.commands.registerCommand("vsc-excel-vba.stop", async () => {
-		dispose();
-		fileEvents.dispose();
-
-		await vbaLSLaunch.shutdown();
-		statusBarItem.text = `Run ${extName}`;
-	}));
+	client = new LanguageClient(
+		"languageServerExample",
+		"Language Server Example",
+		serverOptions,
+		clientOptions
+	);
+	client.start();
 }
 
 // This method is called when your extension is deactivated
 export async function deactivate() {
-	dispose();
-	fileEvents.dispose();
-
-	await vbaLSLaunch.shutdown();
+	if (!client) {
+		return undefined;
+	}
+	return client.stop();
 }

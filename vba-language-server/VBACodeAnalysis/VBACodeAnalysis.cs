@@ -497,7 +497,9 @@ namespace VBACodeAnalysis {
         }
 
         public async Task<List<DiagnosticItem>> GetDiagnostics(string name) {
-			var docId = doc_id_dict[name];
+			if (!doc_id_dict.TryGetValue(name, out DocumentId docId)) {
+				return [];
+			}
 			var doc = workspace.CurrentSolution.GetDocument(docId);
 			vbaDiagnostic.ignoreDs = _preprocVBA.GetIgnoreDiagnostics(name);
 			return await vbaDiagnostic.GetDiagnostics(doc);

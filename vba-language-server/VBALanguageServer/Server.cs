@@ -1,156 +1,537 @@
-﻿using System;
+﻿using Microsoft.CodeAnalysis;
+using Microsoft.VisualStudio.LanguageServer.Protocol;
+using LSP = Microsoft.VisualStudio.LanguageServer.Protocol;
+using Nerdbank.Streams;
+using Newtonsoft.Json.Linq;
+using StreamJsonRpc;
+using System;
+using System.Collections.Generic;
 using System.IO;
-using System.Net;
-using System.Text;
-using System.Text.Json;
+using System.Linq;
+using System.Reflection;
+using System.Threading.Tasks;
+using VBACodeAnalysis;
+using System.Diagnostics;
+using System.Reflection.Emit;
+using static System.Formats.Asn1.AsnWriter;
+using SharpCompress.Common;
+
 
 namespace VBALanguageServer {
-    public class Server
-    {
-        public event EventHandler<DocumentAddedEventArgs> DocumentAdded;
-        public event EventHandler<DocumentDeletedEventArgs> DocumentDeleted;
-        public event EventHandler<DocumentRenamedEventArgs> DocumentRenamed;
-        public event EventHandler<DocumentChangedEventArgs> DocumentChanged;
-        public event EventHandler<CompletionEventArgs> CompletionReq;
-        public event EventHandler<DefinitionEventArgs> DefinitionReq;
-        public event EventHandler<CompletionEventArgs> HoverReq;
-        public event EventHandler<DiagnosticEventArgs> DiagnosticReq;
-        public event EventHandler<EventArgs> ResetReq;
-        public event EventHandler<DebugEventArgs> DebugGetDocumentsEvent;
-        public event EventHandler<ReferencesEventArgs> ReferencesReq;
-        public event EventHandler<SignatureHelpEventArgs> SignatureHelpReq;
-        private HttpListener listener;
-        private JsonSerializerOptions jsonOptions;
+	internal class CurrentTextDocument {
+		public string AbsoluteUri;
+		public string Text;
 
-        private const int ResponseOK = 200;
+		public void Update(DidChangeTextDocumentParams @params) {
+			var changes = @params.ContentChanges;
+			if (changes.Length == 0) {
+				return;
+			}
+			this.AbsoluteUri = @params.TextDocument.Uri.AbsoluteUri;
+			this.Text = changes[0].Text;
+		}
 
-        public Server() {
-            jsonOptions = Helper.getJsonOptions();
-        }
+		public bool TryGetText(Uri uri, out string text) {
+			text = null;
+			if (this.AbsoluteUri != uri.AbsoluteUri) {
+				return false;
+			}
+			text = this.Text;
+			return true;
+		}
+	}
 
-        public void Setup(int port)
-        {
-            listener = new HttpListener();
+	public class Server {
+		private readonly string srcDirName;
+		private VBACodeAnalysis.VBACodeAnalysis vbaca;
+		private Dictionary<string, string> vbCache;
+		private readonly JsonRpc rpc;
+		private DebounceDispatcher didTextChangeDebounce;
+		private CurrentTextDocument currentTextDocument;
 
-            // リスナー設定
-            listener.Prefixes.Clear();
-            listener.Prefixes.Add(@$"http://localhost:{port}/");
-            listener.Start();
-        }
+		public Server(string srcDirName, Stream stdin, Stream stdout) {
+			this.srcDirName = srcDirName;
+			var stream = FullDuplexStream.Splice(stdin, stdout);
+			this.rpc = JsonRpc.Attach(stream, this);
+			this.rpc.Completion.Wait();
+		}
 
-        public void Run()
-        {
-            bool ignoreShutdown = false;
-            bool run = true;
-            while (run)
-            {
-                // リクエスト取得
-                var context = listener.GetContext();
-                var request = context.Request;
-                Command cmd;
-                using (var reader = new StreamReader(request.InputStream, request.ContentEncoding))
-                {
-                    var json_str = reader.ReadToEnd();
-                    cmd = JsonSerializer.Deserialize<Command>(json_str);
-                }
+		private void InitVBACodeAnalysis(string work_dir, string[] exts) {
+			Logger.Info($"work_dir={work_dir}");
 
-                // レスポンス取得
-                var response = context.Response;
-				try {
-                    switch (cmd?.id) {
-                        case "IsReady":
-                            Response(response, ResponseOK);
-                            break;
-                        case "AddDocuments":
-                            var args_add = new DocumentAddedEventArgs(cmd.filepaths);
-                            DocumentAdded?.Invoke(this, args_add);
-                            Response(response, ResponseOK);
-                            break;
-                        case "DeleteDocuments":
-                            var args_del = new DocumentDeletedEventArgs(cmd.filepaths);
-                            DocumentDeleted?.Invoke(this, args_del);
-                            Response(response, ResponseOK);
-                            break;
-                        case "RenameDocument":
-                            var args_rename = new DocumentRenamedEventArgs(cmd.filepaths[0], cmd.filepaths[1]);
-                            DocumentRenamed?.Invoke(this, args_rename);
-                            Response(response, ResponseOK);
-                            break;
-                        case "ChangeDocument":
-                            DocumentChanged?.Invoke(this, new DocumentChangedEventArgs(cmd.filepaths[0], cmd.text));
-                            Response(response, ResponseOK);
-                            break;
-                        case "Completion":
-                            var args = new CompletionEventArgs(cmd.filepaths[0], cmd.text, cmd.line, cmd.chara);
-                            CompletionReq?.Invoke(this, args);
-                            Response(response, args.Items);
-                            break;
-                        case "Definition":
-                            var args_def = new DefinitionEventArgs(cmd.filepaths[0], cmd.text, cmd.line, cmd.chara);
-                            DefinitionReq?.Invoke(this, args_def);
-                            Response(response, args_def.Items);
-                            break;
-                        case "Hover":
-                            var args_hover = new CompletionEventArgs(cmd.filepaths[0], cmd.text, cmd.line, cmd.chara);
-                            HoverReq?.Invoke(this, args_hover);
-                            Response(response, args_hover.Items);
-                            break;
-                        case "Diagnostic":
-                            var args_diagnostic = new DiagnosticEventArgs(cmd.filepaths[0]);
-                            DiagnosticReq?.Invoke(this, args_diagnostic);
-                            Response(response, args_diagnostic.Items);
-                            break;
-                        case "Shutdown":
-                            if (!ignoreShutdown) {
-                                run = false;
-                            }
-                            break;
-                        case "Reset":
-                            ResetReq?.Invoke(this, new EventArgs());
-                            Response(response, ResponseOK);
-                            break;
-                        case "IgnoreShutdown":
-                            ignoreShutdown = true;
-                            Response(response, ResponseOK);
-                            break;
-                        case "Debug:GetDocuments":
-                            var args_debug = new DebugEventArgs();
-                            string debugInfo = string.Empty;
-                            DebugGetDocumentsEvent?.Invoke(this, args_debug);
-                            Response(response, args_debug.Text);
-                            break;
-                        case "References":
-                            var args_refs = new ReferencesEventArgs(cmd.filepaths[0], cmd.line, cmd.chara);
-                            ReferencesReq?.Invoke(this, args_refs);
-                            Response(response, args_refs.Items);
-                            break;
-                        case "SignatureHelp":
-                            var argsSignatureHelp = new SignatureHelpEventArgs(cmd.filepaths[0], cmd.text, cmd.line, cmd.chara);
-                            SignatureHelpReq?.Invoke(this, argsSignatureHelp);
-                            Response(response, argsSignatureHelp.Items);
-                            break;
-                    }
-                } catch (Exception e) {
-                    response.StatusDescription = e.Message + ": " + e.StackTrace;
-                    Response(response, 500); ;
+			this.didTextChangeDebounce = new DebounceDispatcher(300);
+			this.currentTextDocument = new CurrentTextDocument();
+
+			this.vbaca = new VBACodeAnalysis.VBACodeAnalysis();
+			this.vbaca.setSetting(this.LoadSettings().RewriteSetting);
+			this.vbCache = [];
+
+			var fps = Enumerable.Empty<string>();
+			foreach (var ext in exts) {
+				fps = fps.Concat(Directory.GetFiles(work_dir, ext));
+			}
+			Logger.Info($"fps={fps.Count()}");
+			foreach (var fp in fps) {
+				var vbCode = this.vbaca.Rewrite(fp, Helper.getCode(fp));
+				this.vbCache[fp] = vbCode;
+				this.vbaca.AddDocument(fp, vbCode, false);
+			}
+			this.vbaca.ApplyChanges([.. fps]);
+		}
+
+		[JsonRpcMethod(Methods.InitializeName)]
+		public object Initialize(JToken arg) {
+			Logger.Info("Initialize");
+
+			var init_params = arg.ToObject<InitializeParams>();
+			var work_dir = Path.Combine(this.GetFsPath(init_params.RootUri), this.srcDirName);
+			this.InitVBACodeAnalysis(work_dir, ["*.bas", "*.cls"]);
+
+			var capabilities = new ServerCapabilities {
+				TextDocumentSync = new TextDocumentSyncOptions {
+					OpenClose = true,
+					Change = TextDocumentSyncKind.Full,
+					Save = new SaveOptions {
+						IncludeText = false,
+					}
+				},
+				CompletionProvider = new CompletionOptions {
+					TriggerCharacters = ["."],
+					// TODO Resolve
+					ResolveProvider = false,
+					WorkDoneProgress = false,
+				},
+				HoverProvider = true,
+				SignatureHelpProvider = new SignatureHelpOptions {
+					TriggerCharacters = ["(", ","],
+				},
+				DefinitionProvider = true,
+				TypeDefinitionProvider = false,
+				ImplementationProvider = false,
+				ReferencesProvider = true,
+				DocumentHighlightProvider = false,
+				DocumentSymbolProvider = false,
+				CodeLensProvider = null,
+				DocumentLinkProvider = null,
+				DocumentFormattingProvider = false,
+				DocumentRangeFormattingProvider = false,
+				RenameProvider = false,
+				FoldingRangeProvider = null,
+				ExecuteCommandProvider = null,
+				WorkspaceSymbolProvider = false,
+			};
+
+			var result = new InitializeResult {
+				Capabilities = capabilities
+			};
+			return result;
+		}
+
+		[JsonRpcMethod(Methods.InitializedName)]
+		public void Initialized(JToken arg) {
+			Logger.Info("Initialized");
+		}
+
+		[JsonRpcMethod(Methods.ShutdownName)]
+		public JToken ShutdownName() {
+			return null;
+		}
+
+		[JsonRpcMethod(Methods.ExitName)]
+		public void ExitName() {
+			System.Environment.Exit(0);
+		}
+
+		[JsonRpcMethod(Methods.WorkspaceDidChangeWatchedFilesName)]
+		public ApplyWorkspaceEditResponse OnWorkspaceDidChangeWatchedFiles(JToken arg) {
+			Logger.Info("WorkspaceDidChangeWatchedFiles");
+			var @params = arg.ToObject<DidChangeWatchedFilesParams>();
+			var createFPList = @params.Changes
+				.Where(x => x.FileChangeType == FileChangeType.Created)
+				.Select(x => {
+					var fp = this.GetFsPath(x.Uri);
+					// TODO
+					// [42:32.074][Info] WorkspaceDidChangeWatchedFiles
+					// [42:32.075][Info] Created \test-data\src\m2.bas
+					// [42:32.096][Info] Created \test-data\src\m2.bas
+					Logger.Info($"Created {fp}");
+					var vbCode = vbaca.Rewrite(fp, Helper.getCode(fp));
+					this.vbCache[fp] = vbCode;
+					this.vbaca.AddDocument(fp, vbCode, false);
+					return fp;
+				});
+			if(createFPList.Any()) {
+				this.vbaca.ApplyChanges([.. createFPList]);
+			}
+
+			@params.Changes
+				.Where(x => x.FileChangeType == FileChangeType.Deleted)
+				.ToList().ForEach(x => {
+					var fp = this.GetFsPath(x.Uri);
+					Logger.Info($"Deleted {fp}");
+					this.vbaca.DeleteDocument(fp);
+					this.vbCache.Remove(fp);
+				});
+			var result = new ApplyWorkspaceEditResponse {
+				Applied = true,
+			};
+			return result;
+		}
+
+		[JsonRpcMethod(Methods.TextDocumentDidOpenName)]
+		public void OnTextDocumentOpened(JToken arg) {
+			Logger.Info("OnTextDocumentOpened");
+			var @params = arg.ToObject<DidOpenTextDocumentParams>();
+			this.SendDiagnostics(@params.TextDocument.Uri);
+		}
+
+		[JsonRpcMethod(Methods.TextDocumentDidCloseName)]
+		public void OnTextDocumentClosed(JToken arg) {
+			var @params = arg.ToObject<DidCloseTextDocumentParams>();
+			var diag_params = new PublishDiagnosticParams {
+				Uri = @params.TextDocument.Uri,
+				Diagnostics = []
+			};
+			this.SendNotificationAsync(Methods.TextDocumentPublishDiagnostics, diag_params);
+		}
+
+		[JsonRpcMethod(Methods.TextDocumentDidChangeName)]
+		public void OnTextDocumentChanged(JToken arg) {
+			var @params = arg.ToObject<DidChangeTextDocumentParams>();
+			this.currentTextDocument.Update(@params);
+
+			this.didTextChangeDebounce.Debounce(() => {
+				Logger.Info("OnTextDocumentChanged");
+				var @params = arg.ToObject<DidChangeTextDocumentParams>();
+				var uri = @params.TextDocument.Uri;
+				var changes = @params.ContentChanges;
+				Logger.Info(uri.LocalPath);
+				var fp = this.GetFsPath(uri);
+				if (changes.Length == 0) {
+					return;
 				}
-                if (run) {
-                    response.Close();
-                }
-            }
-        }
+				var vbCode = this.vbaca.Rewrite(fp, changes[0].Text);
+				this.vbCache[fp] = vbCode;
+				this.vbaca.ChangeDocument(fp, vbCode);
+				this.SendDiagnostics(@params.TextDocument.Uri);
+			});
+		}
 
-        private void Response(HttpListenerResponse response, int StatusCode) {
-            response.StatusCode = StatusCode;
-        }
+		public void SendDiagnostics(Uri uri) {
+			var fp = this.GetFsPath(uri);
+			var items = this.vbaca.GetDiagnostics(fp).Result;
+			if (items.Count == 0) {
+				return;
+			}
+			var parameter = new PublishDiagnosticParams();
+			var diagnostics = new List<LSP.Diagnostic>();
+			foreach (var item in items) {
+				var charDiff = this.vbaca.GetCharaDiff(fp, item.StartLine, item.StartChara);
+				item.StartChara -= charDiff;
+				item.EndChara -= charDiff;
 
-        private void Response<T>(HttpListenerResponse response, T CompletionItems) {
-            var text = Encoding.UTF8.GetBytes(
-                JsonSerializer.Serialize<T>(CompletionItems, jsonOptions));
-            response.ContentType = "application/json";
-            response.ContentLength64 = text.Length;
-            response.OutputStream.Write(text, 0, text.Length);
-            response.StatusCode = ResponseOK;
-        }
-    }
+				var diagnostic = new LSP.Diagnostic();
+				diagnostic.Message = item.Message;
+				var severity = LSP.DiagnosticSeverity.Information;
+				if (item.Severity.ToLower() == "info") {
+					severity = LSP.DiagnosticSeverity.Information;
+				}
+				if (item.Severity.ToLower() == "warning") {
+					severity = LSP.DiagnosticSeverity.Warning;
+				}
+				if (item.Severity.ToLower() == "error") {
+					severity = LSP.DiagnosticSeverity.Error;
+				}
+				diagnostic.Severity = severity;
+				diagnostic.Range = new LSP.Range {
+					Start = new Position(item.StartLine, item.StartChara),
+					End = new Position(item.EndLine, item.EndChara)
+				};
+				diagnostics.Add(diagnostic);
+			}
+
+			parameter.Uri = uri;
+			parameter.Diagnostics = [.. diagnostics];
+			this.SendNotificationAsync(Methods.TextDocumentPublishDiagnostics, parameter);
+		}
+
+		[JsonRpcMethod(Methods.TextDocumentHoverName)]
+		public Hover OnTextDocumentHover(JToken arg) {
+			var @params = arg.ToObject<TextDocumentPositionParams>();
+			var fp = this.GetFsPath(@params.TextDocument.Uri);
+			if (!this.vbCache.ContainsKey(fp)) {
+				Logger.Info($"{Path.GetFileName(fp)}");
+				return null;
+			}
+			var line = @params.Position.Line;
+			var chara = @params.Position.Character;
+			if (line < 0) {
+				Logger.Info($"HoverReq, non: {Path.GetFileName(fp)}");
+				return null;
+			}
+			var adjChara = vbaca.GetCharaDiff(fp, line, chara) + chara;
+			var items = vbaca.GetHover(fp, line, adjChara).Result;
+			if(items.Count == 0) {
+				return null;
+			}
+			var item = items[0];
+			var msList = new List<SumType<string, MarkedString>>();
+			if (item.Description != "") {
+				msList.Add(new MarkedString{
+					Language = "xml",
+					Value = item.Description
+				});
+			}
+			if (item.DisplayText != "") {
+				msList.Add(new MarkedString {
+					Language = "vb",
+					Value = item.DisplayText
+				});
+			}
+			if (item.ReturnType != "") {
+				msList.Add(new MarkedString {
+					Language = MarkupKind.PlainText.ToString(),
+					Value = $"@return {item.ReturnType}"
+				});
+			}
+			if (item.Kind != "") {
+				msList.Add(new MarkedString {
+					Language = MarkupKind.PlainText.ToString(),
+					Value = $"@kind {item.Kind}"
+				});
+			}
+			var result = new Hover() {
+				Contents = msList.ToArray(),
+				Range = new LSP.Range() {
+					Start = new Position(line, adjChara),
+					End = new Position(line, adjChara),
+				},
+			};
+			return result;
+		}
+
+		[JsonRpcMethod(Methods.TextDocumentReferencesName)]
+		public LSP.Location[] OnTextDocumentReferences(JToken arg) {
+			Logger.Info("OnTextDocumentReferences");
+			var @params = arg.ToObject<ReferenceParams>();
+			var fp = this.GetFsPath(@params.TextDocument.Uri);
+			if (!this.vbCache.ContainsKey(fp)) {
+				Logger.Info($"ReferencesReq, non: {Path.GetFileName(fp)}");
+				return [];
+			}
+			var line = @params.Position.Line;
+			var chara = @params.Position.Character;
+			if (line < 0) {
+				Logger.Info($"DefinitionReq, line={line}: {Path.GetFileName(fp)}");
+				return [];
+			}
+			var locations = new List<LSP.Location>();
+			var adjChara = vbaca.GetCharaDiff(fp, line, chara) + chara;
+			var items = vbaca.GetReferences(fp, line, adjChara).Result;
+			foreach (var item in items) {
+				var start = AdjustPosition(item.FilePath, item.Start.Line, item.Start.Character);
+				var end = AdjustPosition(item.FilePath, item.End.Line, item.End.Character);
+				var loc = new LSP.Location {
+					Uri = new Uri(item.FilePath),
+					Range = new LSP.Range {
+						Start = start,
+						End = end,
+					}
+				};
+				locations.Add(loc);
+			}
+			return locations.ToArray();
+		}
+
+		[JsonRpcMethod(Methods.TextDocumentDefinitionName)]
+		public LSP.Location[] OnTextDocumentDefinition(JToken arg) {
+			Logger.Info("OnTextDocumentDefinition");
+			var @params = arg.ToObject<TextDocumentPositionParams>();
+			var fp = this.GetFsPath(@params.TextDocument.Uri);
+			if (!this.vbCache.TryGetValue(fp, out string vbCode)) {
+				Logger.Info($"DefinitionReq, non: {Path.GetFileName(fp)}");
+				return [];
+			}
+
+			var line = @params.Position.Line;
+			var chara = @params.Position.Character;
+			if (line < 0) {
+				Logger.Info($"DefinitionReq, line={line}: {Path.GetFileName(fp)}");
+				return [];
+			}
+			var locations = new List<LSP.Location>();
+			var adjChara = vbaca.GetCharaDiff(fp, line, chara) + chara;
+			var Items = vbaca.GetDefinitions(fp, vbCode, line, adjChara).Result;
+			foreach (var item in Items) {
+				if (item.IsKindClass()) {
+					var loc = new LSP.Location {
+						Uri = new Uri(item.FilePath),
+						Range = new LSP.Range {
+							Start = new Position(0, 0),
+							End = new Position(0, 0),
+						}
+					};
+					locations.Add(loc);
+				} else {
+					var start = AdjustPosition(item.FilePath, item.Start.Line, item.Start.Character);
+					var end = AdjustPosition(item.FilePath, item.End.Line, item.End.Character);
+					var loc = new LSP.Location {
+						Uri = new Uri(item.FilePath),
+						Range = new LSP.Range {
+							Start = start,
+							End = end,
+						}
+					};
+					locations.Add(loc);
+				}
+			}
+			return [.. locations];
+		}
+
+		[JsonRpcMethod(Methods.TextDocumentCompletionName)]
+		public CompletionList OnTextDocumentCompletion(JToken arg) {
+			Logger.Info("OnTextDocumentCompletion");
+			var @params = arg.ToObject<CompletionParams>();
+
+			var fp = this.GetFsPath(@params.TextDocument.Uri);
+			var line = @params.Position.Line;
+			var chara = @params.Position.Character;
+			if (line < 0) {
+				Logger.Info($"CompletionReq, line={line}: {Path.GetFileName(fp)}");
+				return null;
+			}
+
+			if (!this.vbCache.TryGetValue(fp, out string vbCode)) {
+				Logger.Info($"CompletionReq, non: {Path.GetFileName(fp)}");
+				return null;
+			}
+			if (this.currentTextDocument.TryGetText(@params.TextDocument.Uri, out string currentText)) {
+				if (currentText != vbCode) {
+					var currentvVBCode = vbaca.Rewrite(fp, currentText);
+					vbaca.ChangeDocument(fp, currentvVBCode);
+				}
+			}
+
+			List<LSP.CompletionItem> compItems = new List<LSP.CompletionItem>();
+			var adjChara = vbaca.GetCharaDiff(fp, line, chara) + chara;
+			var items = vbaca.GetCompletions(fp, vbCode, line, adjChara).Result;
+			foreach (var item in items) {
+				var compItem = new LSP.CompletionItem();
+				compItem.Label = item.DisplayText;
+				if(item.Description != "") {
+					compItem.Documentation = new MarkupContent {
+						Kind = MarkupKind.Markdown,
+						Value = item.Description,
+					};
+				}
+				var kind = item.Kind.ToLower();
+				var compItemKind = CompletionItemKind.Text;
+				if (kind == "method") { compItemKind = CompletionItemKind.Method; }
+				if (kind == "field") { compItemKind = CompletionItemKind.Field; }
+				if (kind == "property") { compItemKind = CompletionItemKind.Property; }
+				if (kind == "local") { compItemKind = CompletionItemKind.Variable; }
+				if (kind == "class") { compItemKind = CompletionItemKind.Class; }
+				if (kind == "keyword") { compItemKind = CompletionItemKind.Keyword; }
+				compItem.Kind = compItemKind;
+				compItems.Add(compItem);
+			}
+			var list = new CompletionList() {
+				IsIncomplete =false,
+				Items = [.. compItems],
+			};
+			return list;
+		}
+
+		[JsonRpcMethod(Methods.TextDocumentSignatureHelpName)]
+		public SignatureHelp OnTextDocumentSignatureHelp(JToken arg) {
+			Logger.Info("OnTextDocumentSignatureHelp");
+			var @params = arg.ToObject<SignatureHelpParams>();
+
+			var fp = this.GetFsPath(@params.TextDocument.Uri);
+			var line = @params.Position.Line;
+			var chara = @params.Position.Character;
+			if (line < 0) {
+				Logger.Info($"CompletionReq, line={line}: {Path.GetFileName(fp)}");
+				return null;
+			}
+			
+			if (!this.vbCache.TryGetValue(fp, out string vbCode)) {
+				return null;
+			}
+			if (this.currentTextDocument.TryGetText(@params.TextDocument.Uri, out string currentText)) {
+				if (currentText != vbCode) {
+					var currentvVBCode = vbaca.Rewrite(fp, currentText);
+					vbaca.ChangeDocument(fp, currentvVBCode);
+				}
+			}
+
+			var adjChara = vbaca.GetCharaDiff(fp, line, chara) + chara;
+			var (procLine, procCharaPos, argPosition) = vbaca.GetSignaturePosition(fp, line, adjChara);
+			if (procLine < 0) {
+				Logger.Info($"Sigine < 0: {Path.GetFileName(fp)}");
+				return null;
+			}
+
+			var items = vbaca.GetSignatureHelp(fp, procLine, procCharaPos).Result;
+			if (!items.Any()) {
+				Logger.Info($"items == 0: {Path.GetFileName(fp)}");
+				return null;
+			}
+
+			var signatures = new List<SignatureInformation>();
+			foreach (var item in items) {
+				signatures.Add(new SignatureInformation {
+					Label = item.DisplayText,
+					Documentation = new MarkupContent {
+						Kind = MarkupKind.PlainText,
+						Value = item.Description,
+					},
+					Parameters = item.Args.Select(args => {
+						return new ParameterInformation {
+							Label = args.Name,
+							Documentation = args.AsType
+						};
+					}).ToArray()
+				});
+			}
+			var resultl = new SignatureHelp {
+				ActiveParameter = argPosition,
+				Signatures = [..signatures]
+			};
+			return resultl;
+		}
+
+		private Task SendNotificationAsync<TIn>(LspNotification<TIn> method, TIn param) {
+			return this.rpc.NotifyWithParameterObjectAsync(method.Name, param);
+		}
+
+		private Position AdjustPosition(string filePath, int vbaLine, int vbaChara) {
+			var charaDiff = vbaca.GetCharaDiff(filePath, vbaLine, vbaChara);
+			var line = vbaLine;
+			var chara = vbaChara - charaDiff;
+			if (line < 0) {
+				line = 0;
+			}
+			if (chara < 0) {
+				chara = 0;
+			}
+			return new LSP.Position(line, chara);
+		}
+		private Settings LoadSettings() {
+			var settings = new Settings();
+			var assembly = Assembly.GetEntryAssembly();
+			var jsonPath = Path.Join(Path.GetDirectoryName(assembly.Location), "settings.json");
+			using (var sr = new StreamReader(jsonPath)) {
+				var jsonStr = sr.ReadToEnd();
+				settings.Parse(jsonStr);
+			}
+			return settings;
+		}
+
+		private string GetFsPath(Uri uri) {
+			string lp = uri.LocalPath.TrimStart('/');
+			string fsPath = Path.GetFullPath(lp);
+			return fsPath;
+		}
+	}
 }

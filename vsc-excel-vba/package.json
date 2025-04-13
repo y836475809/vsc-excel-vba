@@ -23,25 +23,13 @@
     "configuration": {
       "title": "vsc-excel-vba",
       "properties": {
-        "vsc-excel-vba.enableLSP": {
-          "type": "boolean",
-          "default": true,
-          "description": "Enable/disable VBA LSP"
-        },
-        "vsc-excel-vba.VBALanguageServerPort": {
-          "type": "number",
-          "default": 9088,
-          "description": "server port"
-        },
         "vsc-excel-vba.VBALanguageServerPath": {
-          "type": ["string", "null"],
+          "type": [
+            "string",
+            "null"
+          ],
           "default": null,
           "description": "VBA language server executable file path"
-        },
-        "vsc-excel-vba.enableAutoLaunchVBALanguageServer": {
-          "type": "boolean",
-          "default": true,
-          "description": "Enable/disable auto launch VBA language server"
         }
       }
     },
@@ -60,22 +48,6 @@
       }
     ],
     "commands": [
-      {
-        "command": "vsc-excel-vba.toggle",
-        "title": "Toggle vsc-excel-vba"
-      },
-      {
-        "command": "vsc-excel-vba.start",
-        "title": "Start vsc-excel-vba"
-      },
-      {
-        "command": "vsc-excel-vba.stop",
-        "title": "Stop vsc-excel-vba"
-      },
-      {
-        "command": "vsc-excel-vba.test.registerProvider",
-        "title": "registerProvider command for vsc-excel-vba test"
-      },
       {
         "command": "vsc-excel-vba.createProject",
         "title": "Create VBA project"
@@ -158,14 +130,6 @@
     },
     "menus": {
       "commandPalette": [
-        {
-          "command": "vsc-excel-vba.toggle",
-          "when": "false"
-        },
-        {
-          "command": "vsc-excel-vba.test.registerProvider",
-          "when": "false"
-        },
         {
           "command": "vsc-excel-vba.createProject",
           "when": "false"
@@ -262,9 +226,9 @@
       ],
       "view/title": [
         {
-            "command": "vsc-excel-vba.getSheetNames",
-            "when": "view == sheetView",
-            "group": "navigation"
+          "command": "vsc-excel-vba.getSheetNames",
+          "when": "view == sheetView",
+          "group": "navigation"
         }
       ],
       "view/item/context": [
@@ -301,6 +265,7 @@
     "vsce": "^2.15.0"
   },
   "dependencies": {
+    "vscode-languageclient": "^9.0.1",
     "vscode-uri": "^3.0.7"
   }
 }

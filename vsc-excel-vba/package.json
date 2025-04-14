@@ -121,7 +121,9 @@
       "explorer": [
         {
           "id": "sheetView",
-          "name": "Excel sheets"
+          "name": "Excel sheets",
+          "icon": "$(default-view-icon)",
+          "when": "vsc-excel-vba.showSheetView"
         }
       ]
     },

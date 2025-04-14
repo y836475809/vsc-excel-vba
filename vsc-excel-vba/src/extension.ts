@@ -48,6 +48,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	await project.readProject();
 	registerProviderSideBar();
+	vscode.commands.executeCommand("setContext", "vsc-excel-vba.showSheetView", true);
 
     // statusBarItem = vscode.window.createStatusBarItem(
 	// 	vscode.StatusBarAlignment.Left, 1);

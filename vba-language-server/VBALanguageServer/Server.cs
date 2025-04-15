@@ -220,9 +220,6 @@ namespace VBALanguageServer {
 		public void SendDiagnostics(Uri uri) {
 			var fp = this.GetFsPath(uri);
 			var items = this.vbaca.GetDiagnostics(fp).Result;
-			if (items.Count == 0) {
-				return;
-			}
 			var parameter = new PublishDiagnosticParams();
 			var diagnostics = new List<LSP.Diagnostic>();
 			foreach (var item in items) {

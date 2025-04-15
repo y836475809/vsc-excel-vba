@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -53,6 +54,13 @@ namespace VBACodeAnalysis {
 		}
 	}
 
+	public class AttributeVBName(int line, int startChara, int endChara, string vbaName) {
+		public int Line = line;
+		public int StartChara = startChara;
+		public int EndChara = endChara;
+		public string VBAName = vbaName;
+	}
+
 	public class ChangeVBA(int lineIndex, (int, int) repColRange, string text, int startCol, bool enableShift=true) {
 		private int _lineIndex = lineIndex;
 		private (int, int) _repColRange = repColRange;
@@ -94,13 +102,13 @@ namespace VBACodeAnalysis {
 	public class RewriteVBA : IRewriteVBA {
 		private ChangeDict _changeDict;
 		private Dictionary<string, PropertyName> _propertyNameDict;
-		private List<DiagnosticItem> _diagnosticList;
 		private List<IgnoreDiagnostic> _ignoreDiagnosticList;
 
 		private string _code;
 		private ColumnShiftDict _colShiftDict;
 		private LineReMapDict _lineReMapDict;
 		private ModuleHeader _moduleHeader;
+		private AttributeVBName _attributeVBName;
 		private bool _foundOption;
 		private const string OptionExplicitOn = "Option Explicit On";
 
@@ -113,8 +121,21 @@ namespace VBACodeAnalysis {
 		public LineReMapDict LineReMapDict {
 			get { return _lineReMapDict; }
 		}
-		public List<DiagnosticItem> DiagnosticList {
-			get { return _diagnosticList; }
+
+		public List<DiagnosticItem> GetAttributeDiagnosticList(string name) {
+			if (_attributeVBName == null) {
+				return [];
+			}
+			if (_attributeVBName.VBAName == name) {
+				return [];
+			}
+			var attr = _attributeVBName;
+			return [
+				new DiagnosticItem(
+					"CS0103", "Error",
+					$"File name is {name}, module name is {attr.VBAName}",
+					attr.Line, attr.StartChara, attr.Line, attr.EndChara)
+			];
 		}
 
 		public List<IgnoreDiagnostic> IgnoreDiagnosticList {
@@ -124,7 +145,6 @@ namespace VBACodeAnalysis {
 		public RewriteVBA() {
 			_changeDict = [];
 			_propertyNameDict = [];
-			_diagnosticList = [];
 			_ignoreDiagnosticList = [];
 			_foundOption = false;
 		}
@@ -158,6 +178,10 @@ namespace VBACodeAnalysis {
 		}
 		public void AddModuleAttribute(int lastLineIndex, string vbName, ModuleType type) {
 			_moduleHeader = new ModuleHeader(lastLineIndex, vbName, type);
+		}
+
+		public void SetAttributeVBName(int line, int startChara, int endChara, string vbName) {
+			_attributeVBName = new AttributeVBName(line, startChara, endChara, vbName);
 		}
 
 		public void FoundOption() {
@@ -318,9 +342,15 @@ namespace VBACodeAnalysis {
 			rewriteVBA.ApplyChange(vbaCode);
 			_fileColShiftDict[name] = rewriteVBA.ColShiftDict;
 			_fileLineReMapDict[name] = rewriteVBA.LineReMapDict;
-			_fileDiagnosticDict[name] = rewriteVBA.DiagnosticList;
-			_fileIgnoreDiagnosticDict[name] = rewriteVBA.IgnoreDiagnosticList;
+			SetDiagnosticDict(rewriteVBA, name);
 			return rewriteVBA.Code;
+		}
+
+		private void SetDiagnosticDict(RewriteVBA rewriteVBA, string fp) {
+			var name = Path.GetFileNameWithoutExtension(fp);
+			var diagnosticList = rewriteVBA.GetAttributeDiagnosticList(name);
+			_fileDiagnosticDict[fp] = [.. diagnosticList];
+			_fileIgnoreDiagnosticDict[fp] = rewriteVBA.IgnoreDiagnosticList;
 		}
 	}
 }

@@ -502,7 +502,9 @@ namespace VBACodeAnalysis {
 			}
 			var doc = workspace.CurrentSolution.GetDocument(docId);
 			vbaDiagnostic.ignoreDs = _preprocVBA.GetIgnoreDiagnostics(name);
-			return await vbaDiagnostic.GetDiagnostics(doc);
+            var prepDiagnosticList = _preprocVBA.GetDiagnostics(name);
+			var diagnosticList = await vbaDiagnostic.GetDiagnostics(doc);
+            return [.. diagnosticList.Concat(prepDiagnosticList)];
          }
 
         public async Task<List<ReferenceItem>> GetReferences(string name, int line, int chara) {

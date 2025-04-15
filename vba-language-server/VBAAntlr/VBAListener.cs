@@ -38,6 +38,8 @@ namespace VBAAntlr {
 
 		void AddModuleAttribute(int lastLineIndex, string vbName, ModuleType type);
 
+		void SetAttributeVBName(int line, int startChara, int endChara, string vbName);
+
 		void FoundOption();
 
 		void AddIgnoreDiagnostic((int, int) start, (int, int) end, string text);
@@ -66,9 +68,15 @@ namespace VBAAntlr {
 			var s = attrs.Where(x => Util.Eq(x.identifier()[0].GetText(), "VB_Name"));
 			if (s.Any()) {
 				var lastLineIndex = attrs.Max(x => x.Start.Line) - 1;
-				var vbName = s.First().identifier()[1].GetText();
+				var vbNameIdent = s.First().identifier()[1];
+				var vbName = vbNameIdent.GetText();
+				var vbNameStart = vbNameIdent.Start;
 				var type = attrs.Length > 1 ? ModuleType.Cls : ModuleType.Bas;
 				rewriteVBA.AddModuleAttribute(lastLineIndex, vbName, type);
+				rewriteVBA.SetAttributeVBName(
+					vbNameStart.Line,
+					vbNameStart.Column, vbNameStart.Column + vbName.Length, 
+					vbName.Trim('"'));
 			}
 		}
 

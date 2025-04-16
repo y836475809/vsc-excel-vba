@@ -176,6 +176,11 @@ namespace VBACodeAnalysis {
 			}
 
 			var name = op.Text.ToLower();
+            if (_errorMsgDict.ContainsKey(name) && op.GetPreviousToken().Text == ".") {
+				// open, print, write,...がエラーで何かのメソッドの場合は
+				// Properties.Resourcesのエラーではないので抜ける
+				return false;
+            }
 			if (_errorMsgDict.TryGetValue(name, out string value)) {
 				var msg = value;
                 var id = $"VBA_{name}";

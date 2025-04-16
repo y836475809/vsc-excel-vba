@@ -99,8 +99,7 @@ namespace VBALanguageServer {
 				},
 				CompletionProvider = new CompletionOptions {
 					TriggerCharacters = ["."],
-					// TODO Resolve
-					ResolveProvider = false,
+					ResolveProvider = true,
 					WorkDoneProgress = false,
 				},
 				HoverProvider = true,
@@ -387,10 +386,13 @@ namespace VBALanguageServer {
 			return [.. locations];
 		}
 
+		private Dictionary<string, string> CompletionResolveDict = [];
+
 		[JsonRpcMethod(Methods.TextDocumentCompletionName)]
 		public CompletionList OnTextDocumentCompletion(JToken arg) {
 			Logger.Info("OnTextDocumentCompletion");
 			var @params = arg.ToObject<CompletionParams>();
+			this.CompletionResolveDict = [];
 
 			var fp = this.GetFsPath(@params.TextDocument.Uri);
 			var line = @params.Position.Line;
@@ -416,13 +418,10 @@ namespace VBALanguageServer {
 			var items = vbaca.GetCompletions(fp, vbCode, line, adjChara).Result;
 			foreach (var item in items) {
 				var compItem = new LSP.CompletionItem();
+				compItem.Data = item.CompletionText;
+				this.CompletionResolveDict.Add(item.CompletionText, item.Description);
+
 				compItem.Label = item.DisplayText;
-				if(item.Description != "") {
-					compItem.Documentation = new MarkupContent {
-						Kind = MarkupKind.Markdown,
-						Value = item.Description,
-					};
-				}
 				var kind = item.Kind.ToLower();
 				var compItemKind = CompletionItemKind.Text;
 				if (kind == "method") { compItemKind = CompletionItemKind.Method; }
@@ -439,6 +438,24 @@ namespace VBALanguageServer {
 				Items = [.. compItems],
 			};
 			return list;
+		}
+
+		[JsonRpcMethod(Methods.TextDocumentCompletionResolveName)]
+		public LSP.CompletionItem OnTextDocumentCompletionResolve(JToken arg) {
+			Logger.Info("OnTextDocumentCompletionResolve");
+			var @params = arg.ToObject<LSP.CompletionItem>();
+
+			var completionText = Convert.ToString(@params.Data);
+			var item = new LSP.CompletionItem();
+			var value = $"```vb\n{completionText}\n \n```";
+			if (this.CompletionResolveDict.TryGetValue(completionText, out string doc)) {
+				value = $"```vb\n{completionText}\n \n```\n```xml\n{doc}\n```";
+			}
+			item.Documentation = new MarkupContent {
+				Kind = MarkupKind.Markdown,
+				Value = value,
+			};
+			return item;
 		}
 
 		[JsonRpcMethod(Methods.TextDocumentSignatureHelpName)]

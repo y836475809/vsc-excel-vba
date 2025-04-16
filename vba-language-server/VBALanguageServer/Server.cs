@@ -15,6 +15,7 @@ using System.Diagnostics;
 using System.Reflection.Emit;
 using static System.Formats.Asn1.AsnWriter;
 using SharpCompress.Common;
+using Microsoft.CodeAnalysis.VisualBasic.Syntax;
 
 
 namespace VBALanguageServer {
@@ -70,6 +71,7 @@ namespace VBALanguageServer {
 			foreach (var ext in exts) {
 				fps = fps.Concat(Directory.GetFiles(work_dir, ext));
 			}
+			fps = fps.Concat(GetVBDefineFiles());
 			Logger.Info($"fps={fps.Count()}");
 			foreach (var fp in fps) {
 				var vbCode = this.vbaca.Rewrite(fp, Helper.getCode(fp));
@@ -523,6 +525,16 @@ namespace VBALanguageServer {
 				settings.Parse(jsonStr);
 			}
 			return settings;
+		}
+
+		private List<string> GetVBDefineFiles() {
+			var assembly = Assembly.GetEntryAssembly();
+			var dir = Path.Join(Path.GetDirectoryName(assembly.Location), "d.vb");
+			if (!Path.Exists(dir)) {
+				return [];
+			}
+			var fps = Directory.GetFiles(dir, "*.d.vb");
+			return [.. fps];
 		}
 
 		private string GetFsPath(Uri uri) {

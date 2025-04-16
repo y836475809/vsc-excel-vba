@@ -1,8 +1,0 @@
-{
-  "profiles": {
-    "VBALanguageServer": {
-      "commandName": "Project",
-      "commandLineArgs": "9088"
-    }
-  }
-}

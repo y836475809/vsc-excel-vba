@@ -74,7 +74,7 @@ namespace VBALanguageServer {
 			fps = fps.Concat(GetVBDefineFiles());
 			Logger.Info($"fps={fps.Count()}");
 			foreach (var fp in fps) {
-				var vbCode = this.vbaca.Rewrite(fp, Helper.getCode(fp));
+				var vbCode = this.vbaca.Rewrite(fp, Util.GetCode(fp));
 				this.vbCache[fp] = vbCode;
 				this.vbaca.AddDocument(fp, vbCode, false);
 			}
@@ -156,7 +156,7 @@ namespace VBALanguageServer {
 					// [42:32.075][Info] Created \test-data\src\m2.bas
 					// [42:32.096][Info] Created \test-data\src\m2.bas
 					Logger.Info($"Created {fp}");
-					var vbCode = vbaca.Rewrite(fp, Helper.getCode(fp));
+					var vbCode = vbaca.Rewrite(fp, Util.GetCode(fp));
 					this.vbCache[fp] = vbCode;
 					this.vbaca.AddDocument(fp, vbCode, false);
 					return fp;

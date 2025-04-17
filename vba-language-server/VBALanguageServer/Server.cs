@@ -419,7 +419,7 @@ namespace VBALanguageServer {
 			foreach (var item in items) {
 				var compItem = new LSP.CompletionItem();
 				compItem.Data = item.CompletionText;
-				this.CompletionResolveDict.Add(item.CompletionText, item.Description);
+				this.CompletionResolveDict[item.CompletionText] = item.Description;
 
 				compItem.Label = item.DisplayText;
 				var kind = item.Kind.ToLower();

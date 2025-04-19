@@ -12,7 +12,6 @@ import { VBACommands } from './vba-commands';
 import { Project } from './project';
 import { Logger } from "./logger";
 import { VBACreateFile } from "./vba-create-file";
-import { VBADocumentSymbolProvider } from "./vba-document-symbol-provider";
 import { SheetTreeDataProvider } from "./sheet-treedata-provider";
 
 let client: LanguageClient;
@@ -23,11 +22,6 @@ let disposables: vscode.Disposable[] = [];
 let sheetTDProvider: SheetTreeDataProvider;
 
 const registerProviderSideBar = () => {
-	const docSelector = { language: "vb" };
-
-	disposables.push(vscode.languages.registerDocumentSymbolProvider(
-		docSelector, new VBADocumentSymbolProvider()));
-
 	sheetTDProvider = new SheetTreeDataProvider("sheetView");
 	disposables.push(sheetTDProvider);
 };

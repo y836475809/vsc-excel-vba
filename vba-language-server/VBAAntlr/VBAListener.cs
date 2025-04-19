@@ -34,7 +34,7 @@ namespace VBAAntlr {
 		/// <param name="text"></param>
 		void AddChange(int lineIndex, string text);
 
-		void AddPropertyName(int lineIndex, string text, string asType);
+		void AddPropertyName(int lineIndex, string prefix, string text, string asType);
 
 		void AddModuleAttribute(int lastLineIndex, string vbName, ModuleType type);
 
@@ -155,7 +155,7 @@ namespace VBAAntlr {
 				asType = "Object";
 			} 
 
-			rewriteVBA.AddPropertyName(name.Start.Line - 1, name.GetText(), asType);
+			rewriteVBA.AddPropertyName(name.Start.Line - 1, "Get", name.GetText(), asType);
 
 			foreach ( var e in elems) {
 				var let_stmt = e.letStmt();
@@ -232,7 +232,7 @@ namespace VBAAntlr {
 					asType = argIdent?.GetText();
 				}
 			}
-			rewriteVBA.AddPropertyName(name.Start.Line - 1, name.GetText(), asType);
+			rewriteVBA.AddPropertyName(name.Start.Line - 1, "Let", name.GetText(), asType);
 
 			var name_s = name.Start;
 			rewriteVBA.AddChange(name_s.Line - 1, (0, name_s.Column),
@@ -262,7 +262,7 @@ namespace VBAAntlr {
 				GetVariant(argIdent);
 				asType = argIdent?.GetText();
 			}
-			rewriteVBA.AddPropertyName(name.Start.Line - 1, name.GetText(), asType);
+			rewriteVBA.AddPropertyName(name.Start.Line - 1, "Set", name.GetText(), asType);
 			
 			var name_s = name.Start;
 			rewriteVBA.AddChange(name_s.Line - 1, (0, name_s.Column),

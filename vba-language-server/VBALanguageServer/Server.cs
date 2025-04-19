@@ -76,9 +76,9 @@ namespace VBALanguageServer {
 			foreach (var fp in fps) {
 				var vbCode = this.vbaca.Rewrite(fp, Util.GetCode(fp));
 				this.vbCache[fp] = vbCode;
-				this.vbaca.AddDocument(fp, vbCode, false);
+				this.vbaca.AddDocument(fp, vbCode, true);
 			}
-			this.vbaca.ApplyChanges([.. fps]);
+			//this.vbaca.ApplyChanges([.. fps]);
 		}
 
 		[JsonRpcMethod(Methods.InitializeName)]
@@ -111,7 +111,7 @@ namespace VBALanguageServer {
 				ImplementationProvider = false,
 				ReferencesProvider = true,
 				DocumentHighlightProvider = false,
-				DocumentSymbolProvider = false,
+				DocumentSymbolProvider = true,
 				CodeLensProvider = null,
 				DocumentLinkProvider = null,
 				DocumentFormattingProvider = false,
@@ -515,6 +515,19 @@ namespace VBALanguageServer {
 				Signatures = [..signatures]
 			};
 			return resultl;
+		}
+
+		[JsonRpcMethod(Methods.TextDocumentDocumentSymbolName)]
+		public DocumentSymbol[] OnTextDocumentDocumentSymbol(JToken arg) {
+			while (!didTextChangeDebounce.IsCompleted) {
+				Task.Delay(100).Wait();
+			}
+			Logger.Info("OnTextDocumentDocumentSymbol");
+			var @params = arg.ToObject<DocumentSymbolParams>();
+			var uri = @params.TextDocument.Uri;
+			var fp = this.GetFsPath(@params.TextDocument.Uri);
+			var docSymbols = this.vbaca.GetDocumentSymbols(fp, uri);
+			return docSymbols;
 		}
 
 		private Task SendNotificationAsync<TIn>(LspNotification<TIn> method, TIn param) {

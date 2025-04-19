@@ -10,6 +10,7 @@ using System.Linq;
 using Microsoft.CodeAnalysis.Completion;
 using Microsoft.CodeAnalysis.VisualBasic;
 using Microsoft.CodeAnalysis.VisualBasic.Syntax;
+using LSP = Microsoft.VisualStudio.LanguageServer.Protocol;
 
 namespace VBACodeAnalysis {
     public class VBACodeAnalysis {
@@ -553,6 +554,21 @@ namespace VBACodeAnalysis {
             }
             return items;
         }
+
+        public LSP.DocumentSymbol[] GetDocumentSymbols(string name, Uri uri) {
+			if (!doc_id_dict.TryGetValue(name, out DocumentId docId)) {
+				return [];
+			}
+			var doc = workspace.CurrentSolution.GetDocument(docId);
+			var node = doc.GetSyntaxRootAsync().Result;
+            var docSymbols = DocumentSymbolProvider.GetDocumentSymbols(node, uri,  (int line) => {
+                if(_preprocVBA.TryGetProperty(name, line, out string prefix, out string propName)) {
+                    return (true, prefix, propName);
+                }
+                return (false, null, null);
+			});
+            return docSymbols;
+		}
 
         private int GetPosition(Document doc, int line, int chara) {
             var lines = doc.GetTextAsync().Result.Lines;

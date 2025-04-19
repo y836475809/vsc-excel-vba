@@ -15,6 +15,7 @@ namespace VBACodeAnalysis {
 	using ChangeDict = Dictionary<int, List<ChangeVBA>>;
 	using ColumnShiftDict = Dictionary<int, List<ColumnShift>>;
 	using LineReMapDict = Dictionary<int, int>;
+	using PropertyDict = Dictionary<int, PropertyName>;
 
 	public class ColumnShift(int lineIndex, int startCol, int shiftCol) {
 		public int LineIndex = lineIndex;
@@ -22,8 +23,9 @@ namespace VBACodeAnalysis {
 		public int ShiftCol = shiftCol;
 	}
 
-	public class PropertyName(int lineIndex, string text, string asType) {
+	public class PropertyName(int lineIndex, string prefix, string text, string asType) {
 		public int LineIndex = lineIndex;
+		public string Prefix = prefix;
 		public string Text = text;
 		public string AsType = asType;
 	}
@@ -107,6 +109,7 @@ namespace VBACodeAnalysis {
 		private string _code;
 		private ColumnShiftDict _colShiftDict;
 		private LineReMapDict _lineReMapDict;
+		private PropertyDict _propertyDict;
 		private ModuleHeader _moduleHeader;
 		private AttributeVBName _attributeVBName;
 		private bool _foundOption;
@@ -120,6 +123,10 @@ namespace VBACodeAnalysis {
 		}
 		public LineReMapDict LineReMapDict {
 			get { return _lineReMapDict; }
+		}
+
+		public PropertyDict PropertyDict {
+			get { return _propertyDict; }
 		}
 
 		public List<DiagnosticItem> GetAttributeDiagnosticList(string name) {
@@ -145,6 +152,7 @@ namespace VBACodeAnalysis {
 		public RewriteVBA() {
 			_changeDict = [];
 			_propertyNameDict = [];
+			_propertyDict = [];
 			_ignoreDiagnosticList = [];
 			_foundOption = false;
 		}
@@ -165,7 +173,9 @@ namespace VBACodeAnalysis {
 			value.Add(new ChangeVBA(lineIndex, (-1, -1), text, 0));
 		}
 
-		public void AddPropertyName(int lineIndex, string text, string asType) {
+		public void AddPropertyName(int lineIndex, string prefix, string text, string asType) {
+			_propertyDict[lineIndex] = new PropertyName(lineIndex, prefix, text, asType);
+			
 			if (_propertyNameDict.ContainsKey(text)) {
 				var propName = _propertyNameDict[text];
 				if(propName.AsType == null && asType != null) {
@@ -174,7 +184,7 @@ namespace VBACodeAnalysis {
 				return;
 			}
 			_propertyNameDict[text] = 
-				new PropertyName(lineIndex, text, asType);
+				new PropertyName(lineIndex, prefix, text, asType);
 		}
 		public void AddModuleAttribute(int lastLineIndex, string vbName, ModuleType type) {
 			_moduleHeader = new ModuleHeader(lastLineIndex, vbName, type);
@@ -278,12 +288,14 @@ namespace VBACodeAnalysis {
 	public class PreprocVBA {
 		protected Dictionary<string, ColumnShiftDict> _fileColShiftDict;
 		protected Dictionary<string, LineReMapDict> _fileLineReMapDict;
+		protected Dictionary<string, PropertyDict> _filePropertyDict;
 		protected Dictionary<string, List<DiagnosticItem>> _fileDiagnosticDict;
 		protected Dictionary<string, List<IgnoreDiagnostic>> _fileIgnoreDiagnosticDict;
 
 		public PreprocVBA() {
 			_fileColShiftDict = [];
 			_fileLineReMapDict = [];
+			_filePropertyDict = [];
 			_fileDiagnosticDict = [];
 			_fileIgnoreDiagnosticDict = [];
 		}
@@ -307,6 +319,20 @@ namespace VBACodeAnalysis {
 				return -1;
 			}
 			return lineIndex;
+		}
+
+		public bool TryGetProperty(string name, int line, out string prefix, out string propertyName) {
+			prefix = null;
+			propertyName = null;
+			if (!_filePropertyDict.TryGetValue(name, out PropertyDict dict)) {
+				return false;
+			}
+			if (!dict.TryGetValue(line, out PropertyName prop)) {
+				return false;
+			}
+			prefix = prop.Prefix;
+			propertyName = prop.Text;
+			return true;
 		}
 
 		public List<DiagnosticItem> GetDiagnostics(string name) {
@@ -342,6 +368,7 @@ namespace VBACodeAnalysis {
 			rewriteVBA.ApplyChange(vbaCode);
 			_fileColShiftDict[name] = rewriteVBA.ColShiftDict;
 			_fileLineReMapDict[name] = rewriteVBA.LineReMapDict;
+			_filePropertyDict[name] = rewriteVBA.PropertyDict;
 			SetDiagnosticDict(rewriteVBA, name);
 			return rewriteVBA.Code;
 		}

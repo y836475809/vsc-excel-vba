@@ -1,138 +1,79 @@
 ﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.Elfie.Model;
 using Microsoft.CodeAnalysis.VisualBasic.Syntax;
 using Microsoft.VisualStudio.LanguageServer.Protocol;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Xml.Linq;
 using LSP = Microsoft.VisualStudio.LanguageServer.Protocol;
+using CAVB = Microsoft.CodeAnalysis.VisualBasic;
 
 namespace VBACodeAnalysis {
 	class DocumentSymbolProvider {
 		public static DocumentSymbol[] GetDocumentSymbols(SyntaxNode node, Uri uri, Func<int, (bool, string, string)> propMapFunc) {
 			var children = new List<DocumentSymbol>();
-			var varChildren = GetFieldVarSymbols(node, LSP.SymbolKind.Field, true);
-			var methodStmts = node.DescendantNodes().OfType<MethodBlockSyntax>();
-			foreach (var stmt in methodStmts) {
-				var s = stmt.SubOrFunctionStatement;
-				var name = s.Identifier.Text;
-				var lineSpan = s.GetLocation().GetLineSpan();
-				var sp = lineSpan.StartLinePosition;
-				var ep = lineSpan.EndLinePosition;
-				var (ret, prefix, propName) = propMapFunc(sp.Line);
-				if (ret) {
-					var range = new LSP.Range {
-						Start = new Position { Line = sp.Line, Character = 0 },
-						End = new Position { Line = ep.Line, Character = ep.Character },
-					};
-					name = $"{prefix} {propName}";
-					children.Add(new DocumentSymbol {
-						Name = name.Trim(),
-						Deprecated = false,
-						Kind = LSP.SymbolKind.Property,
-						Range = range,
-						SelectionRange = range
-					});
-				} else {
-					var range = new LSP.Range {
-						Start = new Position { Line = sp.Line, Character = 0 },
-						End = new Position { Line = ep.Line, Character = ep.Character },
-					};
-					var varChildren2 = GetLocalVarSymbols(stmt);
-					children.Add(new DocumentSymbol {
-						Name = name.Trim(),
-						Deprecated = false,
-						Kind = LSP.SymbolKind.Method,
-						Range = range,
-						SelectionRange = range,
-						Children = [.. varChildren2]
-					});
-				}
-			}
+			children.AddRange(GetVarSymbols(node, LSP.SymbolKind.Field, true));
+			children.AddRange(GetMethodSymbols(node, propMapFunc));
+			children.AddRange(GetTypeSymbols(node));
+			children.AddRange(GetEnumSymbols(node));
 
-			var varStmts = node.DescendantNodes().OfType<DeclareStatementSyntax>();
-			foreach (var stmt in varStmts) {
+			var symbolName = Path.GetFileNameWithoutExtension(uri.LocalPath);
+			var ext = Path.GetExtension(uri.LocalPath);
+			LSP.SymbolKind kind;
+			if (ext == ".bas") {
+				kind = LSP.SymbolKind.Module;
+			} else if (ext == ".cls") {
+				kind = LSP.SymbolKind.Class;
+			} else {
+				kind = LSP.SymbolKind.Module;
+			}
+			var rootSymbol = GetSymbol(node, symbolName, kind);
+			rootSymbol.Children = [.. children];
+			return [rootSymbol];
+		}
+
+		private static List<DocumentSymbol> GetMethodSymbols(SyntaxNode node, Func<int, (bool, string, string)> propMapFunc) {
+			var symbols = new List<DocumentSymbol>();
+			var methodSyntaxes = node.DescendantNodes().OfType<MethodBlockSyntax>();
+			foreach (var syntax in methodSyntaxes) {
+				var stmt = syntax.SubOrFunctionStatement;
 				var name = stmt.Identifier.Text;
 				var lineSpan = stmt.GetLocation().GetLineSpan();
 				var sp = lineSpan.StartLinePosition;
-				var ep = lineSpan.EndLinePosition;
-				var range = new LSP.Range {
-					Start = new Position { Line = sp.Line, Character = 0 },
-					End = new Position { Line = ep.Line, Character = ep.Character },
-				};
-				children.Add(new DocumentSymbol {
-					Name = name.Trim(),
-					Deprecated = false,
-					Kind = LSP.SymbolKind.Variable,
-					Range = range,
-					SelectionRange = range
-				});
+				var (isPorp, prefix, propName) = propMapFunc(sp.Line);
+				if (isPorp) {
+					name = $"{prefix} {propName}";
+					symbols.Add(GetSymbol(stmt, name, LSP.SymbolKind.Property));
+				} else {
+					var methodSymbol = GetSymbol(stmt, name, LSP.SymbolKind.Method);
+					methodSymbol.Children = [.. GetLocalVarSymbols(syntax)];
+					symbols.Add(methodSymbol);
+				}
 			}
-
-			var rootName = Path.GetFileNameWithoutExtension(uri.LocalPath);
-			var ext = Path.GetExtension(uri.LocalPath);
-			LSP.SymbolKind rootKind;
-			if (ext == ".bas") {
-				rootKind = LSP.SymbolKind.Module;
-			} else if (ext == ".cls") {
-				rootKind = LSP.SymbolKind.Class;
-			} else {
-				rootKind = LSP.SymbolKind.Module;
-			}
-			var rootLineSpen = node.GetLocation().GetLineSpan();
-			var rootSp = rootLineSpen.StartLinePosition;
-			var rootEp = rootLineSpen.EndLinePosition;
-			var rootRange = new LSP.Range {
-				Start = new Position { Line = rootSp.Line, Character = 0 },
-				End = new Position { Line = rootEp.Line, Character = rootEp.Character },
-			};
-			var typeChildren = GetTypeSymbols(node);
-			var enumChildren = GetEnumSymbols(node);
-			var nchildren = children.Concat(typeChildren).Concat(enumChildren).Concat(varChildren);
-			var docSymbol = new DocumentSymbol {
-				Name = rootName.Trim(),
-				Kind = rootKind,
-				Deprecated = false,
-				Range = rootRange,
-				SelectionRange = rootRange,
-				Children = [.. nchildren]
-			};
-			
-			return [docSymbol];
+			return symbols;
 		}
 
-		private static List<DocumentSymbol> GetFieldVarSymbols(SyntaxNode node, LSP.SymbolKind kind, bool root) {
+		private static List<DocumentSymbol> GetVarSymbols(SyntaxNode node, LSP.SymbolKind kind, bool root) {
 			var symbols = new List<DocumentSymbol>();
 			var varSyntaxes = node.DescendantNodes().OfType<FieldDeclarationSyntax>();
 			foreach (var syntax in varSyntaxes) {
 				if (root) {
-					if (syntax.Parent != null && syntax.Parent.IsKind(Microsoft.CodeAnalysis.VisualBasic.SyntaxKind.StructureBlock)) {
+					if (syntax.Parent != null && syntax.Parent.IsKind(CAVB.SyntaxKind.StructureBlock)) {
 						continue;
 					}
 				} else {
-					if (node.IsKind(Microsoft.CodeAnalysis.VisualBasic.SyntaxKind.ModuleBlock)) {
+					if (node.IsKind(CAVB.SyntaxKind.ModuleBlock)) {
 						continue;
 					}
-					if (node.IsKind(Microsoft.CodeAnalysis.VisualBasic.SyntaxKind.ClassBlock)) {
+					if (node.IsKind(CAVB.SyntaxKind.ClassBlock)) {
 						continue;
 					}
 				}
 				foreach (var declarator in syntax.Declarators) {
-					var ident = declarator.Names.ToFullString();
-					var spen = syntax.GetLocation().GetLineSpan();
-					var sp = spen.StartLinePosition;
-					var ep = spen.EndLinePosition;
-					var range = new LSP.Range {
-						Start = new Position { Line = sp.Line, Character = 0 },
-						End = new Position { Line = ep.Line, Character = ep.Character },
-					};
-					symbols.Add(new DocumentSymbol {
-						Name = ident.Trim(),
-						Kind = kind,
-						Deprecated = false,
-						Range = range,
-						SelectionRange = range
-					});
+					var name = declarator.Names.ToFullString();
+					symbols.Add(GetSymbol(syntax, name, kind));
 				}
 			}
 			return symbols;
@@ -143,23 +84,10 @@ namespace VBACodeAnalysis {
 			var structureSyntaxes = node.DescendantNodes().OfType<StructureBlockSyntax>();
 			foreach (var syntax in structureSyntaxes) {
 				var stmt = syntax.StructureStatement;
-				var ident = stmt.Identifier.Text;
-				var spen = stmt.GetLocation().GetLineSpan();
-				var sp = spen.StartLinePosition;
-				var ep = spen.EndLinePosition;
-				var range = new LSP.Range {
-					Start = new Position { Line = sp.Line, Character = 0 },
-					End = new Position { Line = ep.Line, Character = ep.Character },
-				};
-				var varChildren = GetFieldVarSymbols(stmt.Parent, LSP.SymbolKind.Variable, false);
-				symbols.Add(new DocumentSymbol {
-					Name = ident.Trim(),
-					Kind = LSP.SymbolKind.Struct,
-					Deprecated = false,
-					Range = range,
-					SelectionRange = range,
-					Children = [..varChildren]
-				});
+				var name = stmt.Identifier.Text;
+				var typeSymbol = GetSymbol(stmt, name, LSP.SymbolKind.Struct);
+				typeSymbol.Children = [.. GetVarSymbols(stmt.Parent, LSP.SymbolKind.Variable, false)];
+				symbols.Add(typeSymbol);
 			}
 			return symbols;
 		}
@@ -169,23 +97,10 @@ namespace VBACodeAnalysis {
 			var enumSyntaxes = node.DescendantNodes().OfType<EnumBlockSyntax>();
 			foreach (var syntax in enumSyntaxes) {
 				var stmt = syntax.EnumStatement;
-				var ident = stmt.Identifier.Text;
-				var spen = stmt.GetLocation().GetLineSpan();
-				var sp = spen.StartLinePosition;
-				var ep = spen.EndLinePosition;
-				var range = new LSP.Range {
-					Start = new Position { Line = sp.Line, Character = 0 },
-					End = new Position { Line = ep.Line, Character = ep.Character },
-				};
-				var varChildren = GetEnumVarSymbols(stmt.Parent);
-				symbols.Add(new DocumentSymbol {
-					Name = ident.Trim(),
-					Kind = LSP.SymbolKind.Enum,
-					Deprecated = false,
-					Range = range,
-					SelectionRange = range,
-					Children = [.. varChildren]
-				});
+				var name = stmt.Identifier.Text;
+				var enumSymbol = GetSymbol(stmt, name, LSP.SymbolKind.Enum);
+				enumSymbol.Children = [..GetEnumVarSymbols(stmt.Parent)];
+				symbols.Add(enumSymbol);
 			}
 			return symbols;
 		}
@@ -195,21 +110,8 @@ namespace VBACodeAnalysis {
 			var varSyntaxes = node.DescendantNodes().OfType<LocalDeclarationStatementSyntax>();
 			foreach (var syntax in varSyntaxes) {
 				foreach (var declarator in syntax.Declarators) {
-					var ident = declarator.Names.ToFullString();
-					var spen = syntax.GetLocation().GetLineSpan();
-					var sp = spen.StartLinePosition;
-					var ep = spen.EndLinePosition;
-					var range = new LSP.Range {
-						Start = new Position { Line = sp.Line, Character = 0 },
-						End = new Position { Line = ep.Line, Character = ep.Character },
-					};
-					symbols.Add(new DocumentSymbol {
-						Name = ident.Trim(),
-						Kind = LSP.SymbolKind.Variable,
-						Deprecated = false,
-						Range = range,
-						SelectionRange = range
-					});
+					var name = declarator.Names.ToFullString();
+					symbols.Add(GetSymbol(syntax, name, LSP.SymbolKind.Variable));
 				}
 			}
 			return symbols;
@@ -219,23 +121,27 @@ namespace VBACodeAnalysis {
 			var symbols = new List<DocumentSymbol>();
 			var varSyntaxes = node.DescendantNodes().OfType<EnumMemberDeclarationSyntax>();
 			foreach (var syntax in varSyntaxes) {
-				var ident = syntax.Identifier.Text;
-				var spen = syntax.GetLocation().GetLineSpan();
-				var sp = spen.StartLinePosition;
-				var ep = spen.EndLinePosition;
-				var range = new LSP.Range {
-					Start = new Position { Line = sp.Line, Character = 0 },
-					End = new Position { Line = ep.Line, Character = ep.Character },
-				};
-				symbols.Add(new DocumentSymbol {
-					Name = ident.Trim(),
-					Kind = LSP.SymbolKind.EnumMember,
-					Deprecated = false,
-					Range = range,
-					SelectionRange = range
-				});
+				var name = syntax.Identifier.Text;
+				symbols.Add(GetSymbol(node, name, LSP.SymbolKind.EnumMember));
 			}
 			return symbols;
+		}
+
+		private static DocumentSymbol GetSymbol(SyntaxNode node, string name, LSP.SymbolKind kind) {
+			var spen = node.GetLocation().GetLineSpan();
+			var sp = spen.StartLinePosition;
+			var ep = spen.EndLinePosition;
+			var range = new LSP.Range {
+				Start = new Position { Line = sp.Line, Character = 0 },
+				End = new Position { Line = ep.Line, Character = ep.Character },
+			};
+			return new DocumentSymbol {
+				Name = name.Trim(),
+				Kind = kind,
+				Deprecated = false,
+				Range = range,
+				SelectionRange = range
+			};
 		}
 	}
 }

@@ -32,6 +32,9 @@ export class VBACommands {
                 msg = `${msg}, ${error.message}`;
             }
             vscode.window.showErrorMessage(msg);
+            vscode.window.showErrorMessage(
+                `Open excel file or Enable 'Trust Access to Visual Basic Project'
+                (File > Options > Trust Center > Trust Center Settings > Macro Settings)`);
             return false;
         } 
     }

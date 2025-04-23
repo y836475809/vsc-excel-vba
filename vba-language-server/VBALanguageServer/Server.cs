@@ -131,6 +131,7 @@ namespace VBALanguageServer {
 		[JsonRpcMethod(Methods.InitializedName)]
 		public void Initialized(JToken arg) {
 			Logger.Info("Initialized");
+			this.SendNotificationAsync("custom/initialized");
 		}
 
 		[JsonRpcMethod(Methods.ShutdownName)]
@@ -532,6 +533,10 @@ namespace VBALanguageServer {
 
 		private Task SendNotificationAsync<TIn>(LspNotification<TIn> method, TIn param) {
 			return this.rpc.NotifyWithParameterObjectAsync(method.Name, param);
+		}
+
+		private Task SendNotificationAsync(string method) {
+			return this.rpc.NotifyWithParameterObjectAsync(method);
 		}
 
 		private Position AdjustPosition(string filePath, int vbaLine, int vbaChara) {

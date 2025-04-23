@@ -152,6 +152,20 @@ export async function activate(context: vscode.ExtensionContext) {
 		serverOptions,
 		clientOptions
 	);
+
+	vscode.window.withProgress(
+		{
+			location: vscode.ProgressLocation.Notification, 
+			title: "Initializing VBA Language Server"
+		}, async progress => {
+			return new Promise<void>((resolve)=>{
+				const listener = client.onNotification("custom/initialized", e => {
+					resolve();
+				});
+				context.subscriptions.push(listener);
+			});
+	  });
+
 	client.start();
 }
 

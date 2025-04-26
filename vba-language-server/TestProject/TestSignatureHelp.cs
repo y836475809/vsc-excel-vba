@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using Xunit;
+using System.Threading.Tasks;
 
 namespace TestProject {
     public class TestSignatureHelp {
@@ -81,7 +82,7 @@ End Module";
 		}
 		
 		[Fact]
-		public void TestMethod() {
+		public async Task TestMethod() {
 			var class1Name = "test_class1.cls";
 			var class1Code = GetClassCode();
 			var mod1Name = "test_module1.bas";
@@ -91,40 +92,30 @@ End Module";
 			vbaca.setSetting(new RewriteSetting());
 			vbaca.AddDocument(class1Name, class1Code);
 			vbaca.AddDocument(mod1Name, mod1Code);
-			var (procLine, procChara, argPosition) = vbaca.GetSignaturePosition(mod1Name, 5, code.Length);
-			var act = vbaca.GetSignatureHelp(mod1Name, procLine, procChara).Result;
-			foreach (var item in act) {
-				item.ActiveParameter = argPosition;
-			}
-			var pre = new List<SignatureHelpItem>() {
-				new SignatureHelpItem {
-					ActiveParameter = 0,
-					DisplayText = "Public Sub Add(Key As String, Item As Variant)",
-					Description = "",
-					ReturnType = "Void",
-					Args = new List<ArgumentItem> {
-						new ArgumentItem("Key", "String"),
-						new ArgumentItem("Item", "Variant"),
-					}
+			var (_, act) = await vbaca.GetSignatureHelp(mod1Name, 5, code.Length);
+			var pre = new List<VBASignatureInfo>() {
+				new() {
+					Label = "Public Sub Add(Key As String, Item As Variant)",
+					Doc = "",
+					ParameterInfos = [
+						new (){Label = "Key", Doc= "String"},
+						new (){Label = "Item", Doc= "Variant"},
+					]
 				},
-				new SignatureHelpItem {
-					ActiveParameter = 0,
-					DisplayText = "Public Sub Add(Key As Long, Item As Variant)",
-					Description = "",
-					ReturnType = "Void",
-					Args = new List<ArgumentItem> {
-						new ArgumentItem("Key", "Long"),
-						new ArgumentItem("Item", "Variant"),
-					}
+				new() {
+					Label = "Public Sub Add(Key As Long, Item As Variant)",
+					Doc = "",
+					ParameterInfos = [
+						new (){Label = "Key", Doc= "Long" },
+						new (){Label = "Item", Doc= "Variant" },
+					]
 				},
-				new SignatureHelpItem {
-					ActiveParameter = 0,
-					DisplayText = "Public Function Add(Key As Long) As Variant",
-					Description = "",
-					ReturnType = "Variant",
-					Args = new List<ArgumentItem> {
-						new ArgumentItem("Key", "Long")
-					}
+				new() {
+					Label = "Public Function Add(Key As Long) As Variant",
+					Doc = "",
+					ParameterInfos = [
+						new (){Label = "Key", Doc= "Long" }
+					]
 				}
 			};
 			Helper.AssertSignatureHelp(pre, act);
@@ -133,46 +124,37 @@ End Module";
 		[Theory]
 		[InlineData("fv(")]
 		[InlineData("lv(")]
-		public void TestFiledLocal(string code) {
+		public async Task TestFiledLocal(string code) {
 			var class1Name = "test_class1.cls";
 			var class1Code = GetClassCode();
 			var mod1Name = "test_module1.bas";
-			//var code = "fv(";
 			var mod1Code = GetTestCode(code);
 			var vbaca = new VBACodeAnalysis.VBACodeAnalysis();
 			vbaca.setSetting(new RewriteSetting());
 			vbaca.AddDocument(class1Name, class1Code);
 			vbaca.AddDocument(mod1Name, mod1Code);
-			var (procLine, procChara, argPosition) = vbaca.GetSignaturePosition(mod1Name, 5, code.Length);
-			var act = vbaca.GetSignatureHelp(mod1Name, procLine, procChara).Result;
-			foreach (var item in act) {
-				item.ActiveParameter = argPosition;
-			}
-			var pre = new List<SignatureHelpItem>() {
-				new SignatureHelpItem {
-					ActiveParameter = 0,
-					DisplayText = "SigTest(Index As Long) As Variant",
-					Description = "",
-					ReturnType = "Variant",
-					Args = new List<ArgumentItem> {
-						new ArgumentItem("Index", "Long")
-					}
+			var (_, act) = await vbaca.GetSignatureHelp(mod1Name, 5, code.Length);
+			var pre = new List<VBASignatureInfo>() {
+				new() {
+					Label = "SigTest(Index As Long) As Variant",
+					Doc = "",
+					ParameterInfos = [
+						new (){Label = "Index", Doc= "Long" }
+					]
 				},
-				new SignatureHelpItem {
-					ActiveParameter = 0,
-					DisplayText = "SigTest(Key As String) As Variant",
-					Description = "",
-					ReturnType = "Variant",
-					Args = new List<ArgumentItem> {
-						new ArgumentItem("Key", "String"),
-					}
+				new() {
+					Label = "SigTest(Key As String) As Variant",
+					Doc = "",
+					ParameterInfos = [
+						new (){Label = "Key", Doc= "String" },
+					]
 				}
 			};
 			Helper.AssertSignatureHelp(pre, act);
 		}
 
 		[Fact]
-		public void TestProp() {
+		public async Task TestProp() {
 			var class1Name = "test_class1.cls";
 			var class1Code = GetClassCode();
 			var class2Name = "test_class2.cls";
@@ -192,29 +174,21 @@ End Module";
 			vbaca.AddDocument(class2Name, class2Code);
 			vbaca.AddDocument(mod1Name, mod1Code);
 			var code = "test.SigTest(";
-			var (procLine, procChara, argPosition) = vbaca.GetSignaturePosition(mod1Name, 3, code.Length);
-			var act = vbaca.GetSignatureHelp(mod1Name, procLine, procChara).Result;
-			foreach (var item in act) {
-				item.ActiveParameter = argPosition;
-			}
-			var pre = new List<SignatureHelpItem>() {
-				new SignatureHelpItem {
-					ActiveParameter = 0,
-					DisplayText = "SigTest(Index As Long) As Variant",
-					Description = "",
-					ReturnType = "Variant",
-					Args = new List<ArgumentItem> {
-						new ArgumentItem("Index", "Long")
-					}
+			var (_, act) = await vbaca.GetSignatureHelp(mod1Name, 3, code.Length);
+			var pre = new List<VBASignatureInfo>() {
+				new() {
+					Label = "SigTest(Index As Long) As Variant",
+					Doc = "",
+					ParameterInfos = [
+						new (){Label = "Index", Doc= "Long" }
+					]
 				},
-				new SignatureHelpItem {
-					ActiveParameter = 0,
-					DisplayText = "SigTest(Key As String) As Variant",
-					Description = "",
-					ReturnType = "Variant",
-					Args = new List<ArgumentItem> {
-						new ArgumentItem("Key", "String"),
-					}
+				new() {
+					Label = "SigTest(Key As String) As Variant",
+					Doc = "",
+					ParameterInfos = [
+						new (){Label = "Key", Doc= "String" },
+					]
 				}
 			};
 			Helper.AssertSignatureHelp(pre, act);

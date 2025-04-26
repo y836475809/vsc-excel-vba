@@ -8,10 +8,10 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace VBACodeAnalysis {
-	public class VBADiagnostic {
-        public List<IgnoreDiagnostic> ignoreDs;
+	public class VBADiagnosticProvider {
+        public List<VBADiagnostic> ignoreDs;
         private Dictionary<string, string> _errorMsgDict;
-        public VBADiagnostic() {
+        public VBADiagnosticProvider() {
             ignoreDs = [];
 			_errorMsgDict = new Dictionary<string, string> {
 				["open"] = Properties.Resources.OpenErrorMsg,
@@ -23,12 +23,12 @@ namespace VBACodeAnalysis {
 			};
 		}
 
-		public async Task<List<DiagnosticItem>> GetDiagnostics(Document doc) {
+		public async Task<List<VBADiagnostic>> GetDiagnostics(Document doc) {
             var codes = new string[] {
                 "BC35000",  // ランタイム ライブラリ関数 が定義されていないため、
                                    // 要求された操作を実行できません。
             };
-            var AddItems = new List<DiagnosticItem>();
+            var AddItems = new List<VBADiagnostic>();
             var node = doc.GetSyntaxRootAsync().Result;
             var result = await doc.GetSemanticModelAsync();
             var diagnostics = result.GetDiagnostics();
@@ -92,9 +92,13 @@ namespace VBACodeAnalysis {
                 var msg = x.GetMessage();
                 var s = x.Location.GetLineSpan().StartLinePosition;
                 var e = x.Location.GetLineSpan().EndLinePosition;
-                return new DiagnosticItem(x.Id, severity, msg,
-                    s.Line, s.Character,
-                    e.Line, e.Character);
+                return new VBADiagnostic {
+                    ID = x.Id,
+                    Severity = severity,
+                    Message = msg,
+                    Start = (s.Line, s.Character),
+                    End =(e.Line, e.Character)
+				};
             }).ToList();
 
             AddMultiArgMethodDiag(node, ref AddItems);
@@ -103,7 +107,7 @@ namespace VBACodeAnalysis {
             return items;
         }
 
-		private void AddMultiArgMethodDiag(SyntaxNode node, ref List<DiagnosticItem> dls) {
+		private void AddMultiArgMethodDiag(SyntaxNode node, ref List<VBADiagnostic> dls) {
             // 引数が複数でCallがないsub, function呼び出しをエラーにする
             var forStmt = node.DescendantNodes().OfType<InvocationExpressionSyntax>();
             foreach (var stmt in forStmt) {
@@ -124,17 +128,18 @@ namespace VBACodeAnalysis {
                     var lineSpan = stmt.GetLocation().GetLineSpan();
                     var startPos = lineSpan.StartLinePosition;
                     var endPos = lineSpan.EndLinePosition;
-                    dls.Add(new DiagnosticItem(
-                        "VBA_call",
-                        DiagnosticSeverity.Error.ToString(),
-                        "Call is required.",
-                        startPos.Line, startPos.Character,
-                        endPos.Line, endPos.Character));
-                }
+					dls.Add(new() {
+						ID = "VBA_call",
+						Severity = DiagnosticSeverity.Error.ToString(),
+						Message = "Call is required.",
+						Start = (startPos.Line, startPos.Character),
+						End = (endPos.Line, endPos.Character)
+					});
+				}
             }
 		}
 
-        private bool IsFileInOutStatement1(Diagnostic x, SyntaxNode node, ref List<DiagnosticItem> dls) {
+        private bool IsFileInOutStatement1(Diagnostic x, SyntaxNode node, ref List<VBADiagnostic> dls) {
             //  BC30451 宣言されていません。アクセスできない保護レベルになっています
             var idefNode = node.FindNode(x.Location.SourceSpan);
             var ss = x.Location.GetLineSpan();
@@ -142,11 +147,11 @@ namespace VBACodeAnalysis {
             var sep = ss.EndLinePosition;
 
 			foreach (var item in ignoreDs) {
-                if(item.Text == idefNode.ToString()
-					&& ssp.Line == item.StartLine
-                    && ssp.Character == item.StartCol
-					&& sep.Line == item.EndLine
-					&& sep.Character == item.EndCol) {
+                if(item.Code == idefNode.ToString()
+					&& ssp.Line == item.Start.Item1
+                    && ssp.Character == item.Start.Item2
+					&& sep.Line == item.End.Item1
+					&& sep.Character == item.End.Item2) {
 					return true;
 				}
 			}
@@ -158,7 +163,7 @@ namespace VBACodeAnalysis {
             return false;
         }
 
-        private bool IsFileInOutStatement2(Diagnostic x, SyntaxNode node, ref List<DiagnosticItem> dls) {
+        private bool IsFileInOutStatement2(Diagnostic x, SyntaxNode node, ref List<VBADiagnostic> dls) {
             // BC30800 メソッドの引数はかっこで囲む必要があります。
             // BC32017 コンマ、')'、または有効な式の継続文字が必要です。
 			var op = node.FindNode(x.Location.SourceSpan).GetFirstToken().GetPreviousToken();
@@ -166,11 +171,11 @@ namespace VBACodeAnalysis {
 			var ssp = ss.StartLinePosition;
 			var sep = ss.EndLinePosition;
 			foreach (var item in ignoreDs) {
-				if (Util.Eq(item.Text, op.Text)
-					&& ssp.Line == item.StartLine
-					&& ssp.Character == item.StartCol
-					&& sep.Line == item.EndLine
-					&& sep.Character == item.EndCol) {
+				if (Util.Eq(item.Code, op.Text)
+					&& ssp.Line == item.Start.Item1
+					&& ssp.Character == item.Start.Item2
+					&& sep.Line == item.End.Item1
+					&& sep.Character == item.End.Item2) {
 					return true;
 				}
 			}
@@ -185,12 +190,13 @@ namespace VBACodeAnalysis {
 				var msg = value;
                 var id = $"VBA_{name}";
 				var endCol = sep.Character;
-                var diagno = new DiagnosticItem(
-					id,
-                    DiagnosticSeverity.Error.ToString(),
-                    msg,
-                    ssp.Line, ssp.Character,
-                    sep.Line, endCol);
+				var diagno = new VBADiagnostic {
+					ID = id,
+					Severity = DiagnosticSeverity.Error.ToString(),
+					Message = msg,
+					Start = (ssp.Line, ssp.Character),
+					End = (sep.Line, endCol)
+				};
 				if (!Contains(dls, diagno)) {
 					dls.Add(diagno);
 				}
@@ -199,7 +205,7 @@ namespace VBACodeAnalysis {
             return false;
         }
 
-        private bool Contains(List<DiagnosticItem> dls, DiagnosticItem d) {
+        private bool Contains(List<VBADiagnostic> dls, VBADiagnostic d) {
             foreach (var item in dls) {
                 if (item.Eq(d)) {
                     return true;

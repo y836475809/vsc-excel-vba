@@ -16,7 +16,7 @@ namespace TestProject {
         public TestDiagMethodSubMultiArgs() {
             errorTypes = new List<string> { "error" };
         }
-        private List<DiagnosticItem> GetDiag(string code) {
+        private List<VBADiagnostic> GetDiag(string code) {
             return Helper.GetDiagnostics(MakeSub(code), errorTypes);
         }
 

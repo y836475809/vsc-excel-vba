@@ -1,15 +1,12 @@
-﻿using Microsoft.VisualStudio.LanguageServer.Protocol;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using VBACodeAnalysis;
 using Xunit;
-using LSP = Microsoft.VisualStudio.LanguageServer.Protocol;
-
 
 namespace TestProject {
 	public class TestDocumentSymbolProvider {
-		private static LSP.DocumentSymbol[] GetDocumentSymbols(string fileName) {
+		private static List<VBADocSymbol> GetDocumentSymbols(string fileName) {
 			var filePath = Helper.getPath(fileName);
 			var vbaCode = Helper.getCode(fileName);
 			var vbaca = new VBACodeAnalysis.VBACodeAnalysis();
@@ -20,8 +17,8 @@ namespace TestProject {
 			return symbols;
 		}
 
-		private static void AssertSymbol(DocumentSymbol[] symbols, List<(string, LSP.SymbolKind)> nameKindList) {
-			Assert.Equal(nameKindList.Count, symbols.Length);
+		private static void AssertSymbol(List<VBADocSymbol> symbols, List<(string, string)> nameKindList) {
+			Assert.Equal(nameKindList.Count, symbols.Count);
 			var symNameKind = symbols.Zip(nameKindList, (first, second) => (first, second.Item1, second.Item2));
 			foreach (var item in symNameKind) {
 				var (symbol, name, kind) = item;
@@ -34,30 +31,30 @@ namespace TestProject {
 		public void TestMethod() {
 			var fileName = "test_document_symbol.bas";
 			var symbols = GetDocumentSymbols(fileName);
-			Assert.Equal(1, symbols.Length);
+			Assert.Single(symbols);
 			var rootSym = symbols[0];
-			Assert.Equal(LSP.SymbolKind.Module, rootSym.Kind);
+			Assert.Equal("Module", rootSym.Kind);
 			Assert.Equal("test_document_symbol", rootSym.Name);
 
-			var rootSymChildren = rootSym.Children.OrderBy(x => x.Range.Start.Line).ToArray();
-			Assert.Equal(11, rootSymChildren.Length);
+			var rootSymChildren = rootSym.Children.OrderBy(x => x.Start.Item1).ToList();
+			Assert.Equal(11, rootSymChildren.Count);
 
 			AssertSymbol(rootSymChildren, [
-				("fieldvar1", LSP.SymbolKind.Field),
-				("fieldvar2", LSP.SymbolKind.Field),
-				("fieldvar3", LSP.SymbolKind.Field),
+				("fieldvar1", "Field"),
+				("fieldvar2", "Field"),
+				("fieldvar3", "Field"),
 
-				("testEnum", LSP.SymbolKind.Enum),
+				("testEnum", "Enum"),
 
-				("type1", LSP.SymbolKind.Struct),
-				("type2", LSP.SymbolKind.Struct),
-				("type3", LSP.SymbolKind.Struct),
+				("type1", "Struct"),
+				("type2", "Struct"),
+				("type3", "Struct"),
 
-				("Get prop_get1", LSP.SymbolKind.Property),
-				("Let prop_let1", LSP.SymbolKind.Property),
-				("Set prop_set1", LSP.SymbolKind.Property),
+				("Get prop_get1", "Property"),
+				("Let prop_let1", "Property"),
+				("Set prop_set1", "Property"),
 
-				("Main", LSP.SymbolKind.Method),
+				("Main", "Method"),
 			]);
 
 			var enumSym = rootSymChildren[3];
@@ -70,36 +67,36 @@ namespace TestProject {
 			var methodSym = rootSymChildren[10];
 
 			AssertSymbol(enumSym.Children, [
-				("e1", LSP.SymbolKind.EnumMember),
-				("e2", LSP.SymbolKind.EnumMember),
-				("e3", LSP.SymbolKind.EnumMember),
+				("e1", "EnumMember"),
+				("e2", "EnumMember"),
+				("e3", "EnumMember"),
 			]);
 
 			AssertSymbol(type1Sym.Children, [
-				("num1", LSP.SymbolKind.Variable),
-				("name1", LSP.SymbolKind.Variable),
-				("utc1()", LSP.SymbolKind.Variable),
+				("num1", "Variable"),
+				("name1", "Variable"),
+				("utc1()", "Variable"),
 			]);
 
 			AssertSymbol(type2Sym.Children, [
-				("num2", LSP.SymbolKind.Variable),
-				("name2", LSP.SymbolKind.Variable),
+				("num2", "Variable"),
+				("name2", "Variable"),
 			]);
 
 			AssertSymbol(type3Sym.Children, [
-				("num3", LSP.SymbolKind.Variable),
-				("name3", LSP.SymbolKind.Variable),
+				("num3", "Variable"),
+				("name3", "Variable"),
 			]);
 
-			Assert.Null(prop1Sym.Children);
-			Assert.Null(prop2Sym.Children);
-			Assert.Null(prop3Sym.Children);
+			Assert.Empty(prop1Sym.Children);
+			Assert.Empty(prop2Sym.Children);
+			Assert.Empty(prop3Sym.Children);
 
 			AssertSymbol(methodSym.Children, [
-				("num1", LSP.SymbolKind.Variable),
-				("name1", LSP.SymbolKind.Variable),
-				("End_Row", LSP.SymbolKind.Variable),
-				("End_Col", LSP.SymbolKind.Variable),
+				("num1","Variable"),
+				("name1","Variable"),
+				("End_Row", "Variable"),
+				("End_Col","Variable"),
 			]);
 		}
 	}

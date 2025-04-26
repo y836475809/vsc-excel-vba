@@ -10,7 +10,10 @@ using System.Linq;
 using Microsoft.CodeAnalysis.Completion;
 using Microsoft.CodeAnalysis.VisualBasic;
 using Microsoft.CodeAnalysis.VisualBasic.Syntax;
-using LSP = Microsoft.VisualStudio.LanguageServer.Protocol;
+using Antlr4.Runtime.Misc;
+using System.Reflection.Emit;
+using Microsoft.CodeAnalysis.Elfie.Model;
+using Microsoft.VisualBasic;
 
 namespace VBACodeAnalysis {
     public class VBACodeAnalysis {
@@ -18,7 +21,7 @@ namespace VBACodeAnalysis {
         private Project project;
         private Dictionary<string, DocumentId> doc_id_dict;
 		private PreprocVBA _preprocVBA;
-		private VBADiagnostic vbaDiagnostic;
+		private VBADiagnosticProvider vbaDiagnosticProvider;
 
         public VBACodeAnalysis() {
             var host = MefHostServices.Create(MefHostServices.DefaultAssemblies);
@@ -35,7 +38,7 @@ namespace VBACodeAnalysis {
 
 		public void setSetting(RewriteSetting rewriteSetting) {
             _preprocVBA = new PreprocVBA();
-			vbaDiagnostic = new VBADiagnostic();
+			vbaDiagnosticProvider = new VBADiagnosticProvider();
         }
 
         public string Rewrite(string name, string vbaCode) {
@@ -116,122 +119,138 @@ namespace VBACodeAnalysis {
             return colShift;
 		}
 
-        public async Task<List<CompletionItem>> GetCompletions(string name, string text, int line, int chara) {
-			var completions = new List<CompletionItem>();
-            if (!doc_id_dict.TryGetValue(name, out DocumentId docId)) {
-                return completions;
+        public async Task<List<VBACompletionItem>> GetCompletions(string name, int line, int chara) {
+			if (!doc_id_dict.TryGetValue(name, out DocumentId docId)) {
+                return [];
             }
             var doc = workspace.CurrentSolution.GetDocument(docId);
-
-            var position = GetPosition(doc, line, chara);
+			var adjChara = GetCharaDiff(name, line, chara) + chara;
+			var position = GetPosition(doc, line, adjChara);
             if(position < 0) {
-                return completions;
+                return [];
             }
-            var symbols = await Recommender.GetRecommendedSymbolsAtPositionAsync(doc, position);
-            foreach (var symbol in symbols) {
-                if (!IsCompletionItem(symbol)) {
-                    continue;
-                }
-                var completionItem = new CompletionItem();
-                completionItem.DisplayText = symbol.MetadataName;
-                completionItem.CompletionText = symbol.ToDisplayString();
-                completionItem.Description = symbol.GetDocumentationCommentXml();
-                completionItem.Kind = symbol.Kind.ToString();
-                if (symbol is INamedTypeSymbol namedType) {
-                    if (namedType.TypeKind == TypeKind.Class) {
-                        completionItem.Kind = TypeKind.Class.ToString();
-                    }
-                }   
-                completionItem.ReturnType = "";
-                if (symbol.Kind == SymbolKind.Method) {
-                    var methodSymbol = symbol as IMethodSymbol;
-                    completionItem.ReturnType = methodSymbol.ReturnType.ToDisplayString();
-                }
-                completions.Add(completionItem);
-            }
+            var completionItems = new List<VBACompletionItem>();
+			var symbols = await Recommender.GetRecommendedSymbolsAtPositionAsync(doc, position);
+			var items = symbols.Where(x => IsCompletionItem(x)).Select(y => {
+				var label = y.MetadataName;
+				var display = y.ToDisplayString();
+				var docment = y.GetDocumentationCommentXml();
+				var kind = y.Kind.ToString();
+				if (y is INamedTypeSymbol namedType) {
+					if (namedType.TypeKind == Microsoft.CodeAnalysis.TypeKind.Class) {
+						kind = Microsoft.CodeAnalysis.TypeKind.Class.ToString();
+					}
+				}
+                return new VBACompletionItem {
+                    Label = label,
+                    Display = display,
+                    Doc = docment,
+                    Kind = kind
+                };
+				//return label;
+			}).ToList();
+            completionItems.AddRange(items);
 
-            var completionService = CompletionService.GetService(doc);
-            var results = await completionService.GetCompletionsAsync(doc, position);
-            if (results.ItemsList.Any()) {
-                var items = results.ItemsList.Where(x => {
+			var completionService = CompletionService.GetService(doc);
+            var completions = await completionService.GetCompletionsAsync(doc, position);
+            if (completions.ItemsList.Any()) {
+                var results = completions.ItemsList.Where(x => {
                     return x.Tags.Contains("Keyword")
-                        && !(completions.Exists(y => y.DisplayText == x.DisplayText));
+                        && !(items.Exists(y => y.Display == x.DisplayText));
                 }).Select(x => {
-                    var compItem = new CompletionItem {
-                        DisplayText = x.DisplayText,
-                        CompletionText = x.DisplayText,
-                        Description = x.Properties.Values.ToString(),
-                        Kind = "Keyword"
-                    };
-                    return compItem;
-                });
-                if (items.Any()) {
-                    completions.AddRange(items);
-                    completions.Add(new CompletionItem {
-                        DisplayText = "Variant",
-                        CompletionText = "Variant",
-                        Description = "Variant",
+					var label = x.DisplayText;
+					var display = x.DisplayText;
+					var docment = x.Properties.Values.ToString();
+					var kind = "Keyword";
+					return new VBACompletionItem {
+						Label = x.DisplayText,
+						Display = x.DisplayText,
+						Doc = x.Properties.Values.ToString(),
+						Kind = kind
+					};
+				});
+				completionItems.AddRange(results);
+
+				if (results.Any()) {
+                    completionItems.Add(new() {
+                        Label = "Variant",
+                        Display = "Variant",
+                        Doc = "Variant",
                         Kind = "Keyword"
                     });
+				}
+            }
+            return completionItems;
+		}
+
+        public async Task<List<VBALocation>> GetDefinitions(string name, int line, int chara) {
+			if (!doc_id_dict.TryGetValue(name, out DocumentId docId)) {
+                return [];
+            }
+            if (!workspace.CurrentSolution.ContainsDocument(docId)) {
+				return [];
+			}
+
+			var doc = workspace.CurrentSolution.GetDocument(docId);
+            var model = await doc.GetSemanticModelAsync();
+			var adjChara = GetCharaDiff(name, line, chara) + chara;
+			var position = GetPosition(doc, line, adjChara);
+            if (position < 0) {
+                return [];
+            }
+            var symbol = await SymbolFinder.FindSymbolAtPositionAsync(model, position, workspace);
+            if (symbol == null) {
+                return [];
+            }
+
+			bool isClass = false;
+            if (symbol is INamedTypeSymbol namedType) {
+                if (namedType.TypeKind == TypeKind.Class) {
+                    isClass = true;
                 }
             }
-            return completions;
-        }
-
-        public async Task<List<DefinitionItem>> GetDefinitions(string name, string text, int line, int chara) {
-            var items = new List<DefinitionItem>();
-            if (!doc_id_dict.TryGetValue(name, out DocumentId docId)) {
-                return items;
-            }
-            if (workspace.CurrentSolution.ContainsDocument(docId)) {
-                var doc = workspace.CurrentSolution.GetDocument(docId);
-                var model = await doc.GetSemanticModelAsync();
-
-                var position = GetPosition(doc, line, chara);
-                if (position < 0) {
-                    return items;
-                }
-
-                var symbol = await SymbolFinder.FindSymbolAtPositionAsync(model, position, workspace);
-                if (symbol == null) {
-                    return items;
-                }
-                bool isClass = false;
-                if (symbol is INamedTypeSymbol namedType) {
-                    if (namedType.TypeKind == TypeKind.Class) {
-                        isClass = true;
-                    }
-                }
-                if(symbol is IMethodSymbol methodTypel) {
-                    if (methodTypel.MethodKind == MethodKind.Constructor) {
-                        isClass = true;
-                    }
-                }
-                foreach (var loc in symbol.Locations) {
-                    var span = loc?.SourceSpan;
-                    var tree = loc?.SourceTree;
-                    if (span != null && tree != null) {
-                        var start = tree.GetLineSpan(span.Value).StartLinePosition;
-                        var end = tree.GetLineSpan(span.Value).EndLinePosition;
-                        var mapLineIndex = _preprocVBA.GetReMapLineIndex(tree.FilePath, start.Line);
-                        if(mapLineIndex >= 0) {
-                            items.Add(new DefinitionItem(
-                                tree.FilePath,
-                                new Location(span.Value.Start, mapLineIndex, 0),
-                                new Location(span.Value.End, mapLineIndex, 0),
-                                isClass));
-						} else {
-                            items.Add(new DefinitionItem(
-                                tree.FilePath,
-                                new Location(span.Value.Start, start.Line, start.Character),
-                                new Location(span.Value.End, end.Line, end.Character),
-                                isClass));
-                        }
-                    }
+            if(symbol is IMethodSymbol methodTypel) {
+                if (methodTypel.MethodKind == MethodKind.Constructor) {
+                    isClass = true;
                 }
             }
-            return items;
-        }
+
+            var vbaLocations = new List<VBALocation>();
+			foreach (var loc in symbol.Locations) {
+                var span = loc?.SourceSpan;
+                var tree = loc?.SourceTree;
+                if (span == null || tree == null) {
+                    continue;
+                }
+                if (isClass) {
+                    vbaLocations.Add(new() {
+						Uri = new Uri(tree.FilePath),
+						Start = (0, 0),
+						End = (0, 0)
+					});
+                    continue;
+				}
+				var startLinePos = tree.GetLineSpan(span.Value).StartLinePosition;
+                var endLinePos = tree.GetLineSpan(span.Value).EndLinePosition;
+                var mapLineIndex = _preprocVBA.GetReMapLineIndex(tree.FilePath, startLinePos.Line);
+                if (mapLineIndex >= 0) {
+					vbaLocations.Add(new() {
+						Uri = new Uri(tree.FilePath),
+						Start = (mapLineIndex, 0),
+						End = (mapLineIndex, 0)
+					});
+				} else {
+					var adjStart = AdjustPosition(tree.FilePath, startLinePos.Line, startLinePos.Character);
+					var adjEnd = AdjustPosition(tree.FilePath, endLinePos.Line, endLinePos.Character);
+					vbaLocations.Add(new() {
+						Uri = new Uri(tree.FilePath),
+						Start = adjStart,
+						End = adjEnd
+					});
+				}
+			}
+            return vbaLocations;
+		}
 
         public (int, int, int) GetSignaturePosition(string name, int line, int chara) {
             var non = (-1, -1, -1);
@@ -291,76 +310,83 @@ namespace VBACodeAnalysis {
 			return (procSp.Line, procSp.Character, argPosition);
 		}
 
-        public async Task<List<SignatureHelpItem>> GetSignatureHelp(string name, int line, int chara) {
-            var items = new List<SignatureHelpItem>();
-
+        public async Task<(int, List<VBASignatureInfo>)> GetSignatureHelp(
+			string name, int line, int chara) {
+			var adjChara = GetCharaDiff(name, line, chara) + chara;
+			var (sigLine, sigChara, argPosition) = GetSignaturePosition(name, line, adjChara);
+            if (sigLine < 0) {
+                return (-1, []);
+            }
             if (!doc_id_dict.TryGetValue(name, out DocumentId docId)) {
-                return items;
-            }
+                return (-1, []);
+			}
             if (!workspace.CurrentSolution.ContainsDocument(docId)) {
-                return items;
-            }
+                return (-1, []);
+			}
 
             var doc = workspace.CurrentSolution.GetDocument(docId);
-
-            var position = GetPosition(doc, line, chara);
+            var position = GetPosition(doc, sigLine, sigChara);
             if (position < 0) {
-                return items;
-            }
-
+                return (-1, []);
+			}
             var model = await doc.GetSemanticModelAsync();
             var symbol = await SymbolFinder.FindSymbolAtPositionAsync(model, position, workspace);
             if (symbol == null) {
-                return items;
-            }
+                return (-1, []);
+			}
 
-            if (symbol.Kind == SymbolKind.Method) {
+            var vbaSignatureInfos = new List<VBASignatureInfo>();
+			if (symbol.Kind == SymbolKind.Method) {
                 var menbers = symbol.ContainingType.GetMembers(symbol.Name);
                 foreach (var menber in menbers) {
-                    var item = new SignatureHelpItem();
-                    var methodSymbol = menber as IMethodSymbol;
+					var parameters = new List<VBAParameterInfo>();
+					var methodSymbol = menber as IMethodSymbol;
                     foreach (var param in methodSymbol.Parameters) {
-                        item.Args.Add(new ArgumentItem(
-                            param.Name, ConvKind(param.Type.Name)));
+                        parameters.Add(new() {
+                            Label = param.Name, 
+                            Doc = ConvKind(param.Type.Name)
+                        });
                     }
                     var displayText = string.Join("", methodSymbol.ToDisplayParts().Select(x => {
                         return ConvKind(x.ToString());
                     }));
-                    item.DisplayText = displayText;
-                    item.Description = methodSymbol.GetDocumentationCommentXml();
-                    item.Kind = methodSymbol.Kind.ToString();
-                    item.ReturnType = ConvKind(methodSymbol.ReturnType.Name);
-                    items.Add(item);
-                }
+                    vbaSignatureInfos.Add(new() {
+                        Label = displayText,
+                        Doc = methodSymbol.GetDocumentationCommentXml(),
+                        ParameterInfos = parameters
+					});
+				}
             }
             if (symbol is ILocalSymbol localSymbol) {
-                items = GetPropSignatureHelpItems(
-                    localSymbol.Type.Name, localSymbol.Type.GetMembers());
+				vbaSignatureInfos.AddRange(GetPropSignatureHelpItems(
+					localSymbol.Type.Name, localSymbol.Type.GetMembers()));
             }
             if (symbol is IFieldSymbol filedSymbol) {
-                items = GetPropSignatureHelpItems(
-                    filedSymbol.Type.Name, filedSymbol.Type.GetMembers());
+				vbaSignatureInfos.AddRange(GetPropSignatureHelpItems(
+                    filedSymbol.Type.Name, filedSymbol.Type.GetMembers()));
             }
             if (symbol is IPropertySymbol propSymbol) {
-                items = GetPropSignatureHelpItems(
-                    propSymbol.Type.Name, propSymbol.Type.GetMembers());
+                vbaSignatureInfos.AddRange(GetPropSignatureHelpItems(
+                    propSymbol.Type.Name, propSymbol.Type.GetMembers()));
             }
-            return items;
-        }
+            return (argPosition, vbaSignatureInfos);
+		}
 
-        private List<SignatureHelpItem> GetPropSignatureHelpItems(string symbolTypeName, IEnumerable<ISymbol> members) {
-            var items = new List<SignatureHelpItem>();
-
-            var menberSymbols = members.Where(x => {
+        private List<VBASignatureInfo> GetPropSignatureHelpItems(
+			string symbolTypeName, IEnumerable<ISymbol> members) {
+			var vbaSignatureInfos = new List<VBASignatureInfo>();
+			var menberSymbols = members.Where(x => {
                 return (x.Kind == SymbolKind.Property) && (x as IPropertySymbol).IsDefault();
             });
             foreach (var symbol in menberSymbols) {
-                var item = new SignatureHelpItem();
-                var propSymbol = symbol as IPropertySymbol;
+				var parameters = new List<VBAParameterInfo>();
+				var propSymbol = symbol as IPropertySymbol;
                 foreach (var param in propSymbol.Parameters) {
-                    item.Args.Add(new ArgumentItem(
-                        param.Name, ConvKind(param.Type.Name)));
-                }
+					parameters.Add(new() {
+						Label = param.Name,
+						Doc = ConvKind(param.Type.Name)
+					});
+				}
                 var displayText = string.Join("", propSymbol.ToDisplayParts().Select(x => {
                     return ConvKind(x.ToString());
                 }));
@@ -368,117 +394,138 @@ namespace VBACodeAnalysis {
                 if (index >= 0) {
                     displayText = $"{symbolTypeName}{displayText[index..]}";
                 }
-                item.DisplayText = displayText;
-                item.Description = propSymbol.GetDocumentationCommentXml();
-                item.Kind = propSymbol.Kind.ToString();
-                item.ReturnType = ConvKind(propSymbol.GetMethod.ReturnType.Name);
-                items.Add(item);
-            }
-            return items;
-        }
+				vbaSignatureInfos.Add(new() {
+					Label = displayText,
+					Doc = propSymbol.GetDocumentationCommentXml(),
+					ParameterInfos = parameters
+				});
+			}
+            return vbaSignatureInfos;
+		}
 
-        public async Task<List<CompletionItem>> GetHover(string name, int line, int chara) {
-            var items = new List<CompletionItem>();
+        public async Task<VBAHover> GetHover(string name, int line, int chara) {
             if (!doc_id_dict.TryGetValue(name, out DocumentId docId)) {
-                return items;
+                return null;
             }
             if (!workspace.CurrentSolution.ContainsDocument(docId)) {
-                return items;
+                return null;
             }
 
             var doc = workspace.CurrentSolution.GetDocument(docId);
             var model = await doc.GetSemanticModelAsync();
-
-            var position = GetPosition(doc, line, chara);
+			var adjChara = GetCharaDiff(name, line, chara) + chara;
+			var position = GetPosition(doc, line, adjChara);
             if (position < 0) {
-                return items;
+                return null;
             }
-
             var symbol = await SymbolFinder.FindSymbolAtPositionAsync(model, position, workspace);
             if (symbol == null) {
-                return items;
+                return null;
             }
-			var item = new CompletionItem {
-				DisplayText = symbol.ToDisplayString(),
-				CompletionText = symbol.MetadataName,
-				Description = symbol.GetDocumentationCommentXml(),
-				Kind = symbol.Kind.ToString(),
-				ReturnType = ""
-			};
+
+			string label = "";
+			string description = "";
+			string returnType = "";
+			string kind = "";
 			if (symbol.Kind == SymbolKind.Method) {
                 var methodSymbol = symbol as IMethodSymbol;
                 if(methodSymbol.MethodKind == MethodKind.Constructor) {
-                    item.DisplayText = $"Class {methodSymbol.ContainingType.Name}";
-                    item.Kind = TypeKind.Class.ToString();
+					label = $"Class {methodSymbol.ContainingType.Name}";
+					kind = TypeKind.Class.ToString();
 				} else {
-                    item.DisplayText = string.Join("", methodSymbol.ToDisplayParts().Select(x => {
-                        return ConvKind(x.ToString());
-                    }));
-                }
-                item.ReturnType = ConvKind(methodSymbol.ReturnType.Name);
+					label = string.Join("", methodSymbol.ToDisplayParts().Select(x => {
+						return ConvKind(x.ToString());
+					}));
+				}
+				returnType = ConvKind(methodSymbol.ReturnType.Name);
 
-                var menbersNum = symbol.ContainingType.GetMembers(symbol.Name).Length;
+				var menbersNum = symbol.ContainingType.GetMembers(symbol.Name).Length;
                 if(menbersNum > 1) {
-                    item.DisplayText = $"{item.DisplayText} (+{menbersNum - 1} overloads)";
-                }
-            }
-            if (symbol is IPropertySymbol propSymbol) {
-                item.DisplayText = string.Join("", propSymbol.ToDisplayParts().Select(x => {
-                    return ConvKind(x.ToString());
-                }));
-                item.ReturnType = ConvKind(propSymbol.Type.Name);
-            }
-            if (symbol is INamedTypeSymbol namedType) {
-                if (namedType.TypeKind == TypeKind.Class) {
-                    item.DisplayText = $"Class {symbol.MetadataName}";
-                    item.Kind = TypeKind.Class.ToString();
+					label = $"{label} (+{menbersNum - 1} overloads)";
 				}
             }
-            if (symbol is IFieldSymbol fieldSymbol) {
-                SetVariableItem(symbol, ref item);
+            if (symbol is IPropertySymbol propSymbol) {
+				label = string.Join("", propSymbol.ToDisplayParts().Select(x => {
+					return ConvKind(x.ToString());
+				}));
+				returnType = ConvKind(propSymbol.Type.Name);
+			}
+            if (symbol is INamedTypeSymbol namedType) {
+                if (namedType.TypeKind == TypeKind.Class) {
+					label = $"Class {symbol.MetadataName}";
+					kind = TypeKind.Class.ToString();
+				}
             }
-            if (symbol is ILocalSymbol localSymbol) {
-                SetVariableItem(symbol, ref item);
-            }
+			if (symbol is IFieldSymbol fieldSymbol || symbol is ILocalSymbol localSymbol) {
+                SetVariableItem(symbol, ref label, ref description, ref returnType, ref kind);
+			}
 
-            items.Add(item);
-            return items;
-        }
+            var contents = new List<VBContent>();
+			if (description != "") {
+                contents.Add(new() {
+					Language = "xml",
+                    Value = description,
+				});
+			}
+			if (label != "") {
+				contents.Add(new() {
+					Language = "vb",
+					Value = label,
+				});
+			}
+			if (returnType != "") {
+				contents.Add(new() {
+					Language = "vb",
+					Value = $"@return {returnType}",
+				});
+			}
+			if (kind != "") {
+				contents.Add(new() {
+					Language = "vb",
+					Value = $"@kind {kind}",
+				});
+			}
 
-        private void SetVariableItem(ISymbol symbol, ref CompletionItem item) {
-            string symbolName = "";
-            string typeName = "";
-            string accessibility = "";
-            bool isConst = false;
-            object constValue = null;
-            if (symbol is IFieldSymbol fieldSymbol) {
-                symbolName = fieldSymbol.Name;
-                typeName = ConvKind(fieldSymbol.Type.Name);
-                accessibility = fieldSymbol.DeclaredAccessibility.ToString();
-                isConst = fieldSymbol.IsConst;
-                constValue = fieldSymbol.ConstantValue;
-            }
-            if (symbol is ILocalSymbol localSymbol) {
-                symbolName = localSymbol.Name;
-                typeName = ConvKind(localSymbol.Type.Name);
-                accessibility = "Local";
-                isConst = localSymbol.IsConst;
-                constValue = localSymbol.ConstantValue;
-            }
-            var dispText = $"{accessibility} {symbolName} As {typeName}";
-            if (isConst) {
-                if (Util.Eq(typeName, "string")) {
-                    constValue = @$"""{constValue}""";
-                }
-                dispText = $"{accessibility} Const {symbolName} As {typeName} = {constValue}";
-            }
+			var hover = new VBAHover {
+				Start = (line, chara),
+				Contents = contents
+			};
+            return hover;
+		}
 
-            item.DisplayText = dispText;
-            item.CompletionText = typeName;
-            item.Description = symbol.GetDocumentationCommentXml();
-            item.Kind = symbol.Kind.ToString();
-            item.ReturnType = typeName;
-        }
+		private void SetVariableItem(ISymbol symbol, ref string label, ref string description, ref string returnType, ref string kind) {
+			string symbolName = "";
+			string typeName = "";
+			string accessibility = "";
+			bool isConst = false;
+			object constValue = null;
+			if (symbol is IFieldSymbol fieldSymbol) {
+				symbolName = fieldSymbol.Name;
+				typeName = ConvKind(fieldSymbol.Type.Name);
+				accessibility = fieldSymbol.DeclaredAccessibility.ToString();
+				isConst = fieldSymbol.IsConst;
+				constValue = fieldSymbol.ConstantValue;
+			}
+			if (symbol is ILocalSymbol localSymbol) {
+				symbolName = localSymbol.Name;
+				typeName = ConvKind(localSymbol.Type.Name);
+				accessibility = "Local";
+				isConst = localSymbol.IsConst;
+				constValue = localSymbol.ConstantValue;
+			}
+			var dispText = $"{accessibility} {symbolName} As {typeName}";
+			if (isConst) {
+				if (Util.Eq(typeName, "string")) {
+					constValue = @$"""{constValue}""";
+				}
+				dispText = $"{accessibility} Const {symbolName} As {typeName} = {constValue}";
+			}
+
+			label = dispText;
+			description = symbol.GetDocumentationCommentXml();
+			kind = symbol.Kind.ToString();
+			returnType = typeName;
+		}
 
         private string ConvKind(string typeName) {
             var convTypeName = typeName;
@@ -497,48 +544,56 @@ namespace VBACodeAnalysis {
             return convTypeName;
         }
 
-        public async Task<List<DiagnosticItem>> GetDiagnostics(string name) {
+        public async Task<List<VBADiagnostic>> GetDiagnostics(string name) {
 			if (!doc_id_dict.TryGetValue(name, out DocumentId docId)) {
 				return [];
 			}
 			var doc = workspace.CurrentSolution.GetDocument(docId);
-			vbaDiagnostic.ignoreDs = _preprocVBA.GetIgnoreDiagnostics(name);
+			vbaDiagnosticProvider.ignoreDs = _preprocVBA.GetIgnoreDiagnostics(name);
             var prepDiagnosticList = _preprocVBA.GetDiagnostics(name);
-			var diagnosticList = await vbaDiagnostic.GetDiagnostics(doc);
-            return [.. diagnosticList.Concat(prepDiagnosticList)];
-         }
+			var diagnosticList = await vbaDiagnosticProvider.GetDiagnostics(doc);
+            var items = diagnosticList.Concat(prepDiagnosticList);
+            return [..items];
+		}
 
-        public async Task<List<ReferenceItem>> GetReferences(string name, int line, int chara) {
-            var items = new List<ReferenceItem>();
+        public async Task<List<VBALocation>> GetReferences(
+			string name, int line, int chara) {
             if (!doc_id_dict.TryGetValue(name, out DocumentId value)) {
-                return items;
+                return [];
             }
             var docId = value;
             if (!workspace.CurrentSolution.ContainsDocument(docId)) {
-                return items;
+                return [];
             }
 
             var doc = workspace.CurrentSolution.GetDocument(docId);
-
-            var position = GetPosition(doc, line, chara);
+			var adjChara = GetCharaDiff(name, line, chara) + chara;
+			var position = GetPosition(doc, line, adjChara);
             if (position < 0) {
-                return items;
+                return [];
             }
 
             var model = await doc.GetSemanticModelAsync();
             var symbol = await SymbolFinder.FindSymbolAtPositionAsync(model, position, workspace);
             if (symbol == null) {
-                return items;
+                return [];
             }
+
+            var vbaLocations = new List<VBALocation>();
 			if (symbol.IsDefinition) {
                 foreach (var loc in symbol.Locations) {
                     var filePath = loc.SourceTree.FilePath;
                     var start = loc.GetLineSpan().StartLinePosition;
                     var end = loc.GetLineSpan().EndLinePosition;
-                    var startLoc = new Location(0, start.Line, start.Character);
-                    var endLoc = new Location(0, end.Line, end.Character);
-                    items.Add(new ReferenceItem(filePath, startLoc, endLoc));
-                }
+					var adjStart = AdjustPosition(filePath, start.Line, start.Character);
+					var adjEnd = AdjustPosition(filePath, end.Line, end.Character);
+					var uri = new Uri(filePath);
+                    vbaLocations.Add(new() {
+                        Uri = uri,
+                        Start = adjStart,
+                        End = adjEnd
+					});
+				}
             }
 
             var refItems = SymbolFinder.FindReferencesAsync(symbol, workspace.CurrentSolution).Result;
@@ -547,15 +602,20 @@ namespace VBACodeAnalysis {
                     var filePath = loc.Document.FilePath;
                     var start = loc.Location.GetLineSpan().StartLinePosition;
                     var end = loc.Location.GetLineSpan().EndLinePosition;
-                    var startLoc = new Location(0, start.Line, start.Character);
-                    var endLoc = new Location(0, end.Line, end.Character);
-                    items.Add(new ReferenceItem(filePath, startLoc, endLoc));
-                }
+					var adjStart = AdjustPosition(filePath, start.Line, start.Character);
+					var adjEnd = AdjustPosition(filePath, end.Line, end.Character);
+					var uri = new Uri(filePath);
+					vbaLocations.Add(new() {
+						Uri = uri,
+						Start = adjStart,
+						End = adjEnd
+					});
+				}
             }
-            return items;
+            return vbaLocations;
         }
 
-        public LSP.DocumentSymbol[] GetDocumentSymbols(string name, Uri uri) {
+        public List<VBADocSymbol> GetDocumentSymbols(string name, Uri uri) {
 			if (!doc_id_dict.TryGetValue(name, out DocumentId docId)) {
 				return [];
 			}
@@ -581,5 +641,18 @@ namespace VBACodeAnalysis {
             var position = lines.GetPosition(new LinePosition(line, chara));
             return position;
         }
-    }
+
+		private (int, int) AdjustPosition(string filePath, int vbaLine, int vbaChara) {
+			var charaDiff = GetCharaDiff(filePath, vbaLine, vbaChara);
+			var line = vbaLine;
+			var chara = vbaChara - charaDiff;
+			if (line < 0) {
+				line = 0;
+			}
+			if (chara < 0) {
+				chara = 0;
+			}
+			return (line, chara);
+		}
+	}
 }

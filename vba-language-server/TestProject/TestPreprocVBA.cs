@@ -6,9 +6,7 @@ using VBACodeAnalysis;
 using Xunit;
 
 namespace TestPreprocVBA {
-	using static System.Runtime.CompilerServices.RuntimeHelpers;
 	using ColumnShiftDict = Dictionary<int, List<ColumnShift>>;
-	using DiagoItemList = List<DiagnosticItem>;
 	using LineReMapDict = Dictionary<int, int>;
 
 	class TestPreprocVBA : PreprocVBA {

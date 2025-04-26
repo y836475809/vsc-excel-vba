@@ -1,41 +1,39 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Elfie.Model;
+using Microsoft.CodeAnalysis.VisualBasic;
 using Microsoft.CodeAnalysis.VisualBasic.Syntax;
-using Microsoft.VisualStudio.LanguageServer.Protocol;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Xml.Linq;
-using LSP = Microsoft.VisualStudio.LanguageServer.Protocol;
-using CAVB = Microsoft.CodeAnalysis.VisualBasic;
 
 namespace VBACodeAnalysis {
 	class DocumentSymbolProvider {
-		public static DocumentSymbol[] GetDocumentSymbols(SyntaxNode node, Uri uri, Func<int, (bool, string, string)> propMapFunc) {
-			var children = new List<DocumentSymbol>();
-			children.AddRange(GetVarSymbols(node, LSP.SymbolKind.Field, true));
+		public static List<VBADocSymbol> GetDocumentSymbols(
+			SyntaxNode node, Uri uri, 
+			Func<int, (bool, string, string)> propMapFunc) {
+			var children = new List<VBADocSymbol>();
+			children.AddRange(GetVarSymbols(node, "Field", true));
 			children.AddRange(GetMethodSymbols(node, propMapFunc));
 			children.AddRange(GetTypeSymbols(node));
 			children.AddRange(GetEnumSymbols(node));
 
 			var symbolName = Path.GetFileNameWithoutExtension(uri.LocalPath);
 			var ext = Path.GetExtension(uri.LocalPath);
-			LSP.SymbolKind kind;
+			string kind = "Module";
 			if (ext == ".bas") {
-				kind = LSP.SymbolKind.Module;
+				kind = "Module";
 			} else if (ext == ".cls") {
-				kind = LSP.SymbolKind.Class;
-			} else {
-				kind = LSP.SymbolKind.Module;
+				kind = "Class";
 			}
 			var rootSymbol = GetSymbol(node, symbolName, kind);
 			rootSymbol.Children = [.. children];
 			return [rootSymbol];
 		}
 
-		private static List<DocumentSymbol> GetMethodSymbols(SyntaxNode node, Func<int, (bool, string, string)> propMapFunc) {
-			var symbols = new List<DocumentSymbol>();
+		private static List<VBADocSymbol> GetMethodSymbols(SyntaxNode node, Func<int, (bool, string, string)> propMapFunc) {
+			var symbols = new List<VBADocSymbol>();
 			var methodSyntaxes = node.DescendantNodes().OfType<MethodBlockSyntax>();
 			foreach (var syntax in methodSyntaxes) {
 				var stmt = syntax.SubOrFunctionStatement;
@@ -45,9 +43,9 @@ namespace VBACodeAnalysis {
 				var (isPorp, prefix, propName) = propMapFunc(sp.Line);
 				if (isPorp) {
 					name = $"{prefix} {propName}";
-					symbols.Add(GetSymbol(stmt, name, LSP.SymbolKind.Property));
+					symbols.Add(GetSymbol(stmt, name, "Property"));
 				} else {
-					var methodSymbol = GetSymbol(stmt, name, LSP.SymbolKind.Method);
+					var methodSymbol = GetSymbol(stmt, name, "Method");
 					methodSymbol.Children = [.. GetLocalVarSymbols(syntax)];
 					symbols.Add(methodSymbol);
 				}
@@ -55,19 +53,19 @@ namespace VBACodeAnalysis {
 			return symbols;
 		}
 
-		private static List<DocumentSymbol> GetVarSymbols(SyntaxNode node, LSP.SymbolKind kind, bool root) {
-			var symbols = new List<DocumentSymbol>();
+		private static List<VBADocSymbol> GetVarSymbols(SyntaxNode node, string kind, bool root) {
+			var symbols = new List<VBADocSymbol>();
 			var varSyntaxes = node.DescendantNodes().OfType<FieldDeclarationSyntax>();
 			foreach (var syntax in varSyntaxes) {
 				if (root) {
-					if (syntax.Parent != null && syntax.Parent.IsKind(CAVB.SyntaxKind.StructureBlock)) {
+					if (syntax.Parent != null && syntax.Parent.IsKind(SyntaxKind.StructureBlock)) {
 						continue;
 					}
 				} else {
-					if (node.IsKind(CAVB.SyntaxKind.ModuleBlock)) {
+					if (node.IsKind(SyntaxKind.ModuleBlock)) {
 						continue;
 					}
-					if (node.IsKind(CAVB.SyntaxKind.ClassBlock)) {
+					if (node.IsKind(SyntaxKind.ClassBlock)) {
 						continue;
 					}
 				}
@@ -79,68 +77,61 @@ namespace VBACodeAnalysis {
 			return symbols;
 		}
 
-		private static List<DocumentSymbol> GetTypeSymbols(SyntaxNode node) {
-			var symbols = new List<DocumentSymbol>();
+		private static List<VBADocSymbol> GetTypeSymbols(SyntaxNode node) {
 			var structureSyntaxes = node.DescendantNodes().OfType<StructureBlockSyntax>();
-			foreach (var syntax in structureSyntaxes) {
-				var stmt = syntax.StructureStatement;
+			var symbols = structureSyntaxes.Select(x => {
+				var stmt = x.StructureStatement;
 				var name = stmt.Identifier.Text;
-				var typeSymbol = GetSymbol(stmt, name, LSP.SymbolKind.Struct);
-				typeSymbol.Children = [.. GetVarSymbols(stmt.Parent, LSP.SymbolKind.Variable, false)];
-				symbols.Add(typeSymbol);
-			}
-			return symbols;
+				var typeSymbol = GetSymbol(stmt, name, "Struct");
+				typeSymbol.Children = GetVarSymbols(stmt.Parent, "Variable", false);
+				return typeSymbol;
+			});
+			return [.. symbols];
 		}
 
-		private static List<DocumentSymbol> GetEnumSymbols(SyntaxNode node) {
-			var symbols = new List<DocumentSymbol>();
+		private static List<VBADocSymbol> GetEnumSymbols(SyntaxNode node) {
 			var enumSyntaxes = node.DescendantNodes().OfType<EnumBlockSyntax>();
-			foreach (var syntax in enumSyntaxes) {
-				var stmt = syntax.EnumStatement;
+			var symbols = enumSyntaxes.Select(x => {
+				var stmt = x.EnumStatement;
 				var name = stmt.Identifier.Text;
-				var enumSymbol = GetSymbol(stmt, name, LSP.SymbolKind.Enum);
-				enumSymbol.Children = [..GetEnumVarSymbols(stmt.Parent)];
-				symbols.Add(enumSymbol);
-			}
-			return symbols;
+				var enumSymbol = GetSymbol(stmt, name, "Enum");
+				enumSymbol.Children = GetEnumVarSymbols(stmt.Parent);
+				return enumSymbol;
+			});
+			return [..symbols];
 		}
 
-		private static List<DocumentSymbol> GetLocalVarSymbols(SyntaxNode node) {
-			var symbols = new List<DocumentSymbol>();
+		private static List<VBADocSymbol> GetLocalVarSymbols(SyntaxNode node) {
 			var varSyntaxes = node.DescendantNodes().OfType<LocalDeclarationStatementSyntax>();
+			var symbols = new List<VBADocSymbol>();
 			foreach (var syntax in varSyntaxes) {
 				foreach (var declarator in syntax.Declarators) {
 					var name = declarator.Names.ToFullString();
-					symbols.Add(GetSymbol(syntax, name, LSP.SymbolKind.Variable));
+					symbols.Add(GetSymbol(syntax, name, "Variable"));
 				}
 			}
 			return symbols;
 		}
 
-		private static List<DocumentSymbol> GetEnumVarSymbols(SyntaxNode node) {
-			var symbols = new List<DocumentSymbol>();
+		private static List<VBADocSymbol> GetEnumVarSymbols(SyntaxNode node) {
 			var varSyntaxes = node.DescendantNodes().OfType<EnumMemberDeclarationSyntax>();
-			foreach (var syntax in varSyntaxes) {
-				var name = syntax.Identifier.Text;
-				symbols.Add(GetSymbol(node, name, LSP.SymbolKind.EnumMember));
-			}
-			return symbols;
+			var symbols = varSyntaxes.Select(x => {
+				var name = x.Identifier.Text;
+				return GetSymbol(node, name, "EnumMember");
+			});
+			return [..symbols];
 		}
 
-		private static DocumentSymbol GetSymbol(SyntaxNode node, string name, LSP.SymbolKind kind) {
+		private static VBADocSymbol GetSymbol(SyntaxNode node, string name, string kind) {
 			var spen = node.GetLocation().GetLineSpan();
 			var sp = spen.StartLinePosition;
 			var ep = spen.EndLinePosition;
-			var range = new LSP.Range {
-				Start = new Position { Line = sp.Line, Character = 0 },
-				End = new Position { Line = ep.Line, Character = ep.Character },
-			};
-			return new DocumentSymbol {
+			return new() {
 				Name = name.Trim(),
 				Kind = kind,
-				Deprecated = false,
-				Range = range,
-				SelectionRange = range
+				Start = (sp.Line, 0),
+				End = (ep.Line, ep.Character),
+				Children = []
 			};
 		}
 	}

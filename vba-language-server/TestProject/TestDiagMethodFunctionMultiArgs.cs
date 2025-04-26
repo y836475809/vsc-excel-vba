@@ -20,7 +20,7 @@ namespace TestProject {
         public TestDiagMethodFunctionMUltiArgs() {
             errorTypes = new List<string> { "error" };
         }
-        private List<DiagnosticItem> GetDiag(string code) {
+        private List<VBADiagnostic> GetDiag(string code) {
             return Helper.GetDiagnostics(MakeFunc(code), errorTypes);
         }
 

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-//using System.Reflection.Metadata;
 using System.Runtime.CompilerServices;
 using VBACodeAnalysis;
 using Microsoft.CodeAnalysis;
@@ -11,10 +10,7 @@ using Xunit;
 using System.Linq;
 
 namespace TestProject {
-	using ChangeDict = Dictionary<int, List<ChangeVBA>>;
 	using ColumnShiftDict = Dictionary<int, List<ColumnShift>>;
-	using LineReMapDict = Dictionary<int, int>;
-	using DiagoItem = DiagnosticItem;
 
 	class Helper {
         public static string getPath(string fileName, [CallerFilePath] string filePath = "") {
@@ -42,31 +38,38 @@ namespace TestProject {
                 project.Id, name, SourceText.From(code));
         }
 
-        public static List<DiagnosticItem> GetDiagnostics(string code, List<string> errorTypes) {
-            var vbaDiagnostic = new VBADiagnostic();
+        public static List<VBADiagnostic> GetDiagnostics(string code, List<string> errorTypes) {
+            var provider = new VBADiagnosticProvider();
             var doc = MakeDoc(code);
-            var items = vbaDiagnostic.GetDiagnostics(doc).Result;
+            var items = provider.GetDiagnostics(doc).Result;
             items.Sort((a, b) => {
-                if (a.StartLine != b.StartLine) {
-                    return a.StartLine - b.StartLine;
+                if (a.Start.Item1 != b.Start.Item1) {
+                    return a.Start.Item1 - b.Start.Item1;
                 }
-                return a.StartChara - b.EndChara;
+                return a.Start.Item2 - b.End.Item2;
             });
             return items.FindAll(x => errorTypes.Contains(x.Severity.ToLower()));
         }
 
-		public static void AssertDiagnoList(List<DiagoItem> pre, List<DiagoItem> act) {
-            var comp = (DiagoItem a, DiagoItem b) => {
-				if (a.StartLine != b.StartLine) {
-					return a.StartLine - b.StartLine;
+		public static void AssertDiagnostics(List<VBADiagnostic> pre, List<VBADiagnostic> act) {
+            var comp = (VBADiagnostic a, VBADiagnostic b) => {
+				if (a.Start.Item1 != b.Start.Item1) {
+					return a.Start.Item1 - b.Start.Item1;
 				}
-				return a.StartChara - b.EndChara;
+				return a.Start.Item2 - b.End.Item2;
 			};
             pre.Sort((a, b) => { return comp(a, b); });
 			act.Sort((a, b) => { return comp(a, b); });
 			
-			foreach ((DiagoItem prItem, DiagoItem actItem) in pre.Zip(act)) {
-				Assert.True(prItem.Eq(actItem));
+			foreach ((VBADiagnostic prItem, VBADiagnostic actItem) in pre.Zip(act)) {
+				Assert.Equal(prItem.ID, actItem.ID);
+				Assert.Equal(prItem.Code, actItem.Code);
+				Assert.Equal(prItem.Severity, actItem.Severity);
+				//Assert.Equal(prItem.Message, actItem.Message);
+				Assert.Equal(prItem.Start.Item1, actItem.Start.Item1);
+				Assert.Equal(prItem.Start.Item2, actItem.Start.Item2);
+				Assert.Equal(prItem.End.Item1, actItem.End.Item1);
+				Assert.Equal(prItem.End.Item2, actItem.End.Item2);
 			}
 		}
 
@@ -79,20 +82,27 @@ namespace TestProject {
             }
         }
 
-        public static void AssertSignatureHelp(List<SignatureHelpItem> pre, List<SignatureHelpItem> act) {
+        public static void AssertSignatureHelp(List<VBASignatureInfo> pre, List<VBASignatureInfo> act) {
             Assert.Equal(pre.Count, act.Count);
             foreach (var (First, Second) in pre.Zip(act)) {
-                Assert.Equal(First.ActiveParameter, Second.ActiveParameter);
-                Assert.Equal(First.DisplayText, Second.DisplayText);
-                Assert.Equal(First.Description, Second.Description);
-                Assert.Equal(First.ReturnType, Second.ReturnType);
-
-                Assert.Equal(First.Args.Count, Second.Args.Count);
-                foreach (var (FirstArg, SecondArg) in First.Args.Zip(Second.Args)) { 
-                    Assert.Equal(FirstArg.Name, SecondArg.Name);
-                    Assert.Equal(FirstArg.AsType, SecondArg.AsType);
+                Assert.Equal(First.Label, Second.Label);
+                Assert.Equal(First.Doc, Second.Doc);
+                Assert.Equal(First.ParameterInfos.Count, Second.ParameterInfos.Count);
+                foreach (var (firstParam, secondParam) in First.ParameterInfos.Zip(Second.ParameterInfos)) { 
+                    Assert.Equal(firstParam.Label, secondParam.Label);
+                    Assert.Equal(firstParam.Doc, secondParam.Doc);
                 }
             }
+        }
+
+        public static void AssertCompletionItem(List<VBACompletionItem> pre, List<VBACompletionItem> act) {
+			Assert.Equal(pre.Count, act.Count);
+			foreach (var (first, second) in pre.Zip(act)) {
+                Assert.Equal(first.Label, second.Label);
+				Assert.Equal(first.Display, second.Display);
+				Assert.Equal(first.Doc, second.Doc);
+				Assert.Equal(first.Kind, second.Kind);
+			}
         }
 
 		public static void AssertColumnShiftDict(ColumnShiftDict pre, ColumnShiftDict act) {

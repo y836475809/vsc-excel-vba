@@ -18,7 +18,7 @@ namespace TestProject {
         public TestDiagMethodSub() {
             errorTypes = new List<string> { "error" };
         }
-        private List<DiagnosticItem> GetDiag(string code) {
+        private List<VBADiagnostic> GetDiag(string code) {
             return Helper.GetDiagnostics(MakeSub(code), errorTypes);
         }
 
@@ -71,18 +71,18 @@ End Module";
             Assert.Equal(2, items.Count);
             {
                 var item = items[0];
-                Assert.Equal(preLine, item.StartLine);
-                Assert.Equal(13, item.StartChara);
-                Assert.Equal(preLine, item.EndLine);
-                Assert.Equal(21, item.EndChara);
-            }
+                Assert.Equal(preLine, item.Start.Item1);
+                Assert.Equal(13, item.Start.Item2);
+                Assert.Equal(preLine, item.End.Item1);
+                Assert.Equal(21, item.End.Item2);
+			}
             {
                 var item = items[1];
-                Assert.Equal(preLine, item.StartLine);
-                Assert.Equal(22, item.StartChara);
-                Assert.Equal(preLine, item.EndLine);
-                Assert.Equal(25, item.EndChara);
-            }
+                Assert.Equal(preLine, item.Start.Item1);
+				Assert.Equal(22, item.Start.Item2);
+                Assert.Equal(preLine, item.End.Item1);
+                Assert.Equal(25, item.End.Item2);
+			}
         }
     }
 }

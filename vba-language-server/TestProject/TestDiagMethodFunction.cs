@@ -23,7 +23,7 @@ namespace TestProject {
         public TestDiagMethodFunction() {
             errorTypes = new List<string> { "error" };
         }
-        private List<DiagnosticItem> GetDiag(string code) {
+        private List<VBADiagnostic> GetDiag(string code) {
             return Helper.GetDiagnostics(MakeFunc(code), errorTypes);
         }
 
@@ -78,18 +78,18 @@ End Module";
             Assert.Equal(2, items.Count);
             {
                 var item = items[0];
-                Assert.Equal(preLine, item.StartLine);
-                Assert.Equal(13, item.StartChara);
-                Assert.Equal(preLine, item.EndLine);
-                Assert.Equal(21, item.EndChara);
+                Assert.Equal(preLine, item.Start.Item1);
+                Assert.Equal(13, item.Start.Item2);
+                Assert.Equal(preLine, item.End.Item1);
+                Assert.Equal(21, item.End.Item2);
             }
             {
                 var item = items[1];
-                Assert.Equal(preLine, item.StartLine);
-                Assert.Equal(22, item.StartChara);
-                Assert.Equal(preLine, item.EndLine);
-                Assert.Equal(25, item.EndChara);
-            }
+                Assert.Equal(preLine, item.Start.Item1);
+				Assert.Equal(22, item.Start.Item2);
+				Assert.Equal(preLine, item.End.Item1);
+				Assert.Equal(25, item.End.Item2);
+			}
         }
 
         [Fact]
@@ -103,10 +103,10 @@ End Module";
             
             Assert.Single(items);
             var item = items[0];
-            Assert.Equal(preLine, item.StartLine);
-            Assert.Equal(12, item.StartChara);
-            Assert.Equal(preLine, item.EndLine);
-            Assert.Equal(12, item.EndChara);
+            Assert.Equal(preLine, item.Start.Item1);
+			Assert.Equal(12, item.Start.Item2);
+			Assert.Equal(preLine, item.End.Item1);
+            Assert.Equal(12, item.End.Item2);
         }
         [Fact]
         public void TestDiagnosticCallFuncRet3() {
@@ -115,18 +115,18 @@ End Module";
             Assert.Equal(2, items.Count);
             {
                 var item = items[0];
-                Assert.Equal(preLine, item.StartLine);
-                Assert.Equal(12, item.StartChara);
-                Assert.Equal(preLine, item.EndLine);
-                Assert.Equal(20, item.EndChara);
-            }
+                Assert.Equal(preLine, item.Start.Item1);
+				Assert.Equal(12, item.Start.Item2);
+				Assert.Equal(preLine, item.End.Item1);
+                Assert.Equal(20, item.End.Item2);
+			}
             {
                 var item = items[1];
-                Assert.Equal(preLine, item.StartLine);
-                Assert.Equal(21, item.StartChara);
-                Assert.Equal(preLine, item.EndLine);
-                Assert.Equal(24, item.EndChara);
-            }
+                Assert.Equal(preLine, item.Start.Item1);
+				Assert.Equal(21, item.Start.Item2);
+				Assert.Equal(preLine, item.End.Item1);
+				Assert.Equal(24, item.End.Item2);
+			}
         }
         [Fact]
         public void TestDiagnosticCallFuncRet4() {
@@ -139,22 +139,22 @@ End Module";
             
             Assert.Single(items);
             var item = items[0];
-            Assert.Equal(preLine, item.StartLine);
-            Assert.Equal(12, item.StartChara);
-            Assert.Equal(preLine, item.EndLine);
-            Assert.Equal(12, item.EndChara);
-        }
+            Assert.Equal(preLine, item.Start.Item1);
+			Assert.Equal(12, item.Start.Item2);
+			Assert.Equal(preLine, item.End.Item1);
+			Assert.Equal(12, item.End.Item2);
+		}
         [Fact]
         public void TestDiagnosticCallFuncRet6() {
             var items = GetDiag("ret=Call testArgs(123)");
             
             Assert.Single(items);
             var item = items[0];
-            Assert.Equal(preLine, item.StartLine);
-            Assert.Equal(12, item.StartChara);
-            Assert.Equal(preLine, item.EndLine);
-            Assert.Equal(12, item.EndChara);
-        }
+            Assert.Equal(preLine, item.Start.Item1);
+			Assert.Equal(12, item.Start.Item2);
+			Assert.Equal(preLine, item.End.Item1);
+			Assert.Equal(12, item.End.Item2);
+		}
 
         [Fact]
         public void TestDiagnosticCallFuncIf() {

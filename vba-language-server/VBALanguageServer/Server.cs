@@ -11,12 +11,6 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using VBACodeAnalysis;
-using System.Diagnostics;
-using System.Reflection.Emit;
-using static System.Formats.Asn1.AsnWriter;
-using SharpCompress.Common;
-using Microsoft.CodeAnalysis.VisualBasic.Syntax;
-
 
 namespace VBALanguageServer {
 	internal class CurrentTextDocument {
@@ -93,7 +87,7 @@ namespace VBALanguageServer {
 				TextDocumentSync = new TextDocumentSyncOptions {
 					OpenClose = true,
 					Change = TextDocumentSyncKind.Full,
-					Save = new SaveOptions {
+					Save = new LSP.SaveOptions {
 						IncludeText = false,
 					}
 				},
@@ -221,37 +215,23 @@ namespace VBALanguageServer {
 
 		public void SendDiagnostics(Uri uri) {
 			var fp = this.GetFsPath(uri);
-			var items = this.vbaca.GetDiagnostics(fp).Result;
-			var parameter = new PublishDiagnosticParams();
-			var diagnostics = new List<LSP.Diagnostic>();
-			foreach (var item in items) {
-				var charDiff = this.vbaca.GetCharaDiff(fp, item.StartLine, item.StartChara);
-				item.StartChara -= charDiff;
-				item.EndChara -= charDiff;
-
-				var diagnostic = new LSP.Diagnostic();
-				diagnostic.Message = item.Message;
-				var severity = LSP.DiagnosticSeverity.Information;
-				if (item.Severity.ToLower() == "info") {
-					severity = LSP.DiagnosticSeverity.Information;
-				}
-				if (item.Severity.ToLower() == "warning") {
-					severity = LSP.DiagnosticSeverity.Warning;
-				}
-				if (item.Severity.ToLower() == "error") {
-					severity = LSP.DiagnosticSeverity.Error;
-				}
-				diagnostic.Severity = severity;
-				diagnostic.Range = new LSP.Range {
-					Start = new Position(item.StartLine, item.StartChara),
-					End = new Position(item.EndLine, item.EndChara)
+			var vbaDiagnostics = this.vbaca.GetDiagnostics(fp).Result;
+			var diagnostics = vbaDiagnostics.Select(x => {
+				return new LSP.Diagnostic {
+					Code = x.ID,
+					Severity = Util.ToSeverity(x.Severity),
+					Message =x.Message,
+					Range = new() {
+						Start = new() { Line = x.Start.Item1, Character = x.Start.Item2 },
+						End = new() { Line = x.End.Item1, Character = x.End.Item2 }
+					}
 				};
-				diagnostics.Add(diagnostic);
-			}
-
-			parameter.Uri = uri;
-			parameter.Diagnostics = [.. diagnostics];
-			this.SendNotificationAsync(Methods.TextDocumentPublishDiagnostics, parameter);
+			});
+			var diagnosticParams = new LSP.PublishDiagnosticParams {
+				Uri = uri,
+				Diagnostics = [..diagnostics]
+			};
+			this.SendNotificationAsync(Methods.TextDocumentPublishDiagnostics, diagnosticParams);
 		}
 
 		[JsonRpcMethod(Methods.TextDocumentHoverName)]
@@ -268,45 +248,29 @@ namespace VBALanguageServer {
 				Logger.Info($"HoverReq, non: {Path.GetFileName(fp)}");
 				return null;
 			}
-			var adjChara = vbaca.GetCharaDiff(fp, line, chara) + chara;
-			var items = vbaca.GetHover(fp, line, adjChara).Result;
-			if(items.Count == 0) {
+
+			var vbaHover = vbaca.GetHover(fp, line, chara).Result;
+			if(vbaHover == null) {
 				return null;
 			}
-			var item = items[0];
-			var msList = new List<SumType<string, MarkedString>>();
-			if (item.Description != "") {
-				msList.Add(new MarkedString{
-					Language = "xml",
-					Value = item.Description
+			var contents = new List<LSP.SumType<string, LSP.MarkedString>>();
+			foreach (var content in vbaHover.Contents){
+				contents.Add(new LSP.MarkedString {
+					Language = content.Language,
+					Value = content.Value
 				});
 			}
-			if (item.DisplayText != "") {
-				msList.Add(new MarkedString {
-					Language = "vb",
-					Value = item.DisplayText
-				});
+			if (contents.Count == 0) {
+				return null;
 			}
-			if (item.ReturnType != "") {
-				msList.Add(new MarkedString {
-					Language = MarkupKind.PlainText.ToString(),
-					Value = $"@return {item.ReturnType}"
-				});
-			}
-			if (item.Kind != "") {
-				msList.Add(new MarkedString {
-					Language = MarkupKind.PlainText.ToString(),
-					Value = $"@kind {item.Kind}"
-				});
-			}
-			var result = new Hover() {
-				Contents = msList.ToArray(),
+			var hover = new Hover() {
+				Contents = contents.ToArray(),
 				Range = new LSP.Range() {
-					Start = new Position(line, adjChara),
-					End = new Position(line, adjChara),
+					Start = new(vbaHover.Start.Item1, vbaHover.Start.Item2),
+					End = new(vbaHover.Start.Item1, vbaHover.Start.Item1),
 				},
 			};
-			return result;
+			return hover;
 		}
 
 		[JsonRpcMethod(Methods.TextDocumentReferencesName)]
@@ -324,22 +288,19 @@ namespace VBALanguageServer {
 				Logger.Info($"DefinitionReq, line={line}: {Path.GetFileName(fp)}");
 				return [];
 			}
-			var locations = new List<LSP.Location>();
-			var adjChara = vbaca.GetCharaDiff(fp, line, chara) + chara;
-			var items = vbaca.GetReferences(fp, line, adjChara).Result;
-			foreach (var item in items) {
-				var start = AdjustPosition(item.FilePath, item.Start.Line, item.Start.Character);
-				var end = AdjustPosition(item.FilePath, item.End.Line, item.End.Character);
-				var loc = new LSP.Location {
-					Uri = new Uri(item.FilePath),
-					Range = new LSP.Range {
-						Start = start,
-						End = end,
-					}
+
+			var vbaLocations = vbaca.GetReferences(fp, line, chara).Result;
+			var locations = vbaLocations.Select(x => {
+				return new LSP.Location {
+					Uri = x.Uri,
+					Range = new() {
+						Start = new() { Line = x.Start.Item1, Character = x.Start.Item2 },
+						End = new() { Line = x.End.Item1, Character = x.End.Item2 }
+					},
 				};
-				locations.Add(loc);
-			}
-			return locations.ToArray();
+			});
+			
+			return [..locations];
 		}
 
 		[JsonRpcMethod(Methods.TextDocumentDefinitionName)]
@@ -358,32 +319,17 @@ namespace VBALanguageServer {
 				Logger.Info($"DefinitionReq, line={line}: {Path.GetFileName(fp)}");
 				return [];
 			}
-			var locations = new List<LSP.Location>();
-			var adjChara = vbaca.GetCharaDiff(fp, line, chara) + chara;
-			var Items = vbaca.GetDefinitions(fp, vbCode, line, adjChara).Result;
-			foreach (var item in Items) {
-				if (item.IsKindClass()) {
-					var loc = new LSP.Location {
-						Uri = new Uri(item.FilePath),
-						Range = new LSP.Range {
-							Start = new Position(0, 0),
-							End = new Position(0, 0),
-						}
-					};
-					locations.Add(loc);
-				} else {
-					var start = AdjustPosition(item.FilePath, item.Start.Line, item.Start.Character);
-					var end = AdjustPosition(item.FilePath, item.End.Line, item.End.Character);
-					var loc = new LSP.Location {
-						Uri = new Uri(item.FilePath),
-						Range = new LSP.Range {
-							Start = start,
-							End = end,
-						}
-					};
-					locations.Add(loc);
-				}
-			}
+			
+			var vbaLocations = vbaca.GetDefinitions(fp, line, chara).Result;
+			var locations = vbaLocations.Select(x => {
+				return new LSP.Location {
+					Uri = x.Uri,
+					Range = new() {
+						Start = new() { Line = x.Start.Item1, Character = x.Start.Item2 },
+						End = new() { Line = x.End.Item1, Character = x.End.Item2 }
+					},
+				};
+			});
 			return [.. locations];
 		}
 
@@ -414,31 +360,24 @@ namespace VBALanguageServer {
 				}
 			}
 
-			List<LSP.CompletionItem> compItems = new List<LSP.CompletionItem>();
-			var adjChara = vbaca.GetCharaDiff(fp, line, chara) + chara;
-			var items = vbaca.GetCompletions(fp, vbCode, line, adjChara).Result;
+			var items = vbaca.GetCompletions(fp, line, chara).Result;
+			var completionItems = items.Select(item => {
+				return new LSP.CompletionItem {
+					Label = item.Label,
+					Data = item.Display,
+					Documentation = item.Doc,
+					Kind = Util.ToKind(item.Kind)
+				};
+			});
 			foreach (var item in items) {
-				var compItem = new LSP.CompletionItem();
-				compItem.Data = item.CompletionText;
-				this.CompletionResolveDict[item.CompletionText] = item.Description;
-
-				compItem.Label = item.DisplayText;
-				var kind = item.Kind.ToLower();
-				var compItemKind = CompletionItemKind.Text;
-				if (kind == "method") { compItemKind = CompletionItemKind.Method; }
-				if (kind == "field") { compItemKind = CompletionItemKind.Field; }
-				if (kind == "property") { compItemKind = CompletionItemKind.Property; }
-				if (kind == "local") { compItemKind = CompletionItemKind.Variable; }
-				if (kind == "class") { compItemKind = CompletionItemKind.Class; }
-				if (kind == "keyword") { compItemKind = CompletionItemKind.Keyword; }
-				compItem.Kind = compItemKind;
-				compItems.Add(compItem);
+				this.CompletionResolveDict[Convert.ToString(item.Display)] = Convert.ToString(item.Doc);
 			}
-			var list = new CompletionList() {
-				IsIncomplete =false,
-				Items = [.. compItems],
+
+			var completionList = new CompletionList() {
+				IsIncomplete = false,
+				Items = [.. completionItems],
 			};
-			return list;
+			return completionList;
 		}
 
 		[JsonRpcMethod(Methods.TextDocumentCompletionResolveName)]
@@ -471,10 +410,10 @@ namespace VBALanguageServer {
 				Logger.Info($"CompletionReq, line={line}: {Path.GetFileName(fp)}");
 				return null;
 			}
-			
 			if (!this.vbCache.TryGetValue(fp, out string vbCode)) {
 				return null;
 			}
+
 			if (this.currentTextDocument.TryGetText(@params.TextDocument.Uri, out string currentText)) {
 				if (currentText != vbCode) {
 					var currentvVBCode = vbaca.Rewrite(fp, currentText);
@@ -482,40 +421,36 @@ namespace VBALanguageServer {
 				}
 			}
 
-			var adjChara = vbaca.GetCharaDiff(fp, line, chara) + chara;
-			var (procLine, procCharaPos, argPosition) = vbaca.GetSignaturePosition(fp, line, adjChara);
-			if (procLine < 0) {
-				Logger.Info($"Sigine < 0: {Path.GetFileName(fp)}");
+			var (argPosition, items) = vbaca.GetSignatureHelp(fp, line, chara).Result;
+			if(argPosition < 0) {
 				return null;
 			}
 
-			var items = vbaca.GetSignatureHelp(fp, procLine, procCharaPos).Result;
-			if (!items.Any()) {
-				Logger.Info($"items == 0: {Path.GetFileName(fp)}");
-				return null;
-			}
-
-			var signatures = new List<SignatureInformation>();
+			var ret = new List<LSP.SignatureInformation>();
 			foreach (var item in items) {
-				signatures.Add(new SignatureInformation {
-					Label = item.DisplayText,
-					Documentation = new MarkupContent {
-						Kind = MarkupKind.PlainText,
-						Value = item.Description,
+				var paramInfos = item.ParameterInfos.Select(x => {
+					return new LSP.ParameterInformation {
+						Label = x.Label,
+						Documentation = x.Doc
+					};
+				});
+				ret.Add(new LSP.SignatureInformation {
+					Label = item.Label,
+					Documentation = new LSP.MarkupContent {
+						Kind = LSP.MarkupKind.Markdown,
+						Value = $"```xml\n{item.Doc}\n```"
 					},
-					Parameters = item.Args.Select(args => {
-						return new ParameterInformation {
-							Label = args.Name,
-							Documentation = args.AsType
-						};
-					}).ToArray()
+					Parameters = [.. paramInfos]
 				});
 			}
-			var resultl = new SignatureHelp {
+			var signatureHelp = new LSP.SignatureHelp {
 				ActiveParameter = argPosition,
-				Signatures = [..signatures]
+				Signatures = [..ret]
 			};
-			return resultl;
+			if (signatureHelp.Signatures.Length == 0) {
+				return null;
+			}
+			return signatureHelp;
 		}
 
 		[JsonRpcMethod(Methods.TextDocumentDocumentSymbolName)]
@@ -527,8 +462,40 @@ namespace VBALanguageServer {
 			var @params = arg.ToObject<DocumentSymbolParams>();
 			var uri = @params.TextDocument.Uri;
 			var fp = this.GetFsPath(@params.TextDocument.Uri);
-			var docSymbols = this.vbaca.GetDocumentSymbols(fp, uri);
-			return docSymbols;
+			var vbaDocSymbols = this.vbaca.GetDocumentSymbols(fp, uri);
+			var docSymbols = vbaDocSymbols.Select(vbaSymbol => {
+				var start = vbaSymbol.Start;
+				var end = vbaSymbol.End;
+				var range = new LSP.Range {
+					Start = new() { Line = start.Item1, Character = start.Item2 },
+					End = new() { Line = end.Item1, Character = end.Item2 }
+				};
+				var docSymbol = new DocumentSymbol {
+					Name = vbaSymbol.Name,
+					Kind = Util.ToSymbolKind(vbaSymbol.Kind),
+					Deprecated = false,
+					Range = range,
+					SelectionRange = range
+				};
+				var children = vbaSymbol.Children.Select(child => {
+					var childStart = child.Start;
+					var childEnd = child.End;
+					var childRange = new LSP.Range {
+						Start = new() { Line = childStart.Item1, Character = childStart.Item2 },
+						End = new() { Line = childEnd.Item1, Character = childEnd.Item2 }
+					};
+					return new DocumentSymbol {
+						Name = child.Name,
+						Kind = Util.ToSymbolKind(child.Kind),
+						Deprecated = false,
+						Range = childRange,
+						SelectionRange = childRange
+					};
+				});
+				docSymbol.Children = [..children];
+				return docSymbol;
+			});	
+			return [..docSymbols];
 		}
 
 		private Task SendNotificationAsync<TIn>(LspNotification<TIn> method, TIn param) {
@@ -539,18 +506,6 @@ namespace VBALanguageServer {
 			return this.rpc.NotifyWithParameterObjectAsync(method);
 		}
 
-		private Position AdjustPosition(string filePath, int vbaLine, int vbaChara) {
-			var charaDiff = vbaca.GetCharaDiff(filePath, vbaLine, vbaChara);
-			var line = vbaLine;
-			var chara = vbaChara - charaDiff;
-			if (line < 0) {
-				line = 0;
-			}
-			if (chara < 0) {
-				chara = 0;
-			}
-			return new LSP.Position(line, chara);
-		}
 		private Settings LoadSettings() {
 			var settings = new Settings();
 			var assembly = Assembly.GetEntryAssembly();

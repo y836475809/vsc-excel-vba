@@ -92,19 +92,11 @@ namespace VBACodeAnalysis {
 			}
 		}
 	}
-	public class IgnoreDiagnostic(int startLine, int startCol,
-		int endLine, int endCol, string text) {
-		public string Text = text;
-		public int StartLine = startLine;
-		public int StartCol = startCol;
-		public int EndLine = endLine;
-		public int EndCol = endCol;
-	}
 
 	public class RewriteVBA : IRewriteVBA {
 		private ChangeDict _changeDict;
 		private Dictionary<string, PropertyName> _propertyNameDict;
-		private List<IgnoreDiagnostic> _ignoreDiagnosticList;
+		private List<VBADiagnostic> _ignoreDiagnosticList;
 
 		private string _code;
 		private ColumnShiftDict _colShiftDict;
@@ -129,7 +121,7 @@ namespace VBACodeAnalysis {
 			get { return _propertyDict; }
 		}
 
-		public List<DiagnosticItem> GetAttributeDiagnosticList(string name) {
+		public List<VBADiagnostic> GetAttributeDiagnosticList(string name) {
 			if (_attributeVBName == null) {
 				return [];
 			}
@@ -138,14 +130,17 @@ namespace VBACodeAnalysis {
 			}
 			var attr = _attributeVBName;
 			return [
-				new DiagnosticItem(
-					"CS0103", "Error",
-					$"File name is {name}, module name is {attr.VBAName}",
-					attr.Line, attr.StartChara, attr.Line, attr.EndChara)
+				new(){
+					ID = "CS0103",
+					Severity = "Error",
+					Message = $"File name is {name}, module name is {attr.VBAName}",
+					Start = (attr.Line, attr.StartChara),
+					End = (attr.Line, attr.EndChara)
+				}
 			];
 		}
 
-		public List<IgnoreDiagnostic> IgnoreDiagnosticList {
+		public List<VBADiagnostic> IgnoreDiagnosticList {
 			get { return _ignoreDiagnosticList; }
 		}
 
@@ -201,10 +196,11 @@ namespace VBACodeAnalysis {
 		public void AddIgnoreDiagnostic((int, int) start, (int, int) end, string text) {
 			var (startLinel, startCol) = start;
 			var (endLinel, endCol) = end;
-			var item = new IgnoreDiagnostic(
-						startLinel, startCol,
-						endLinel, endCol, text);
-			_ignoreDiagnosticList.Add(item);
+			_ignoreDiagnosticList.Add(new() {
+				Code = text,
+				Start = (startLinel, startCol),
+				End = (endLinel, endCol)
+			});
 		}
 
 		public void ApplyChange(string code) {
@@ -289,8 +285,8 @@ namespace VBACodeAnalysis {
 		protected Dictionary<string, ColumnShiftDict> _fileColShiftDict;
 		protected Dictionary<string, LineReMapDict> _fileLineReMapDict;
 		protected Dictionary<string, PropertyDict> _filePropertyDict;
-		protected Dictionary<string, List<DiagnosticItem>> _fileDiagnosticDict;
-		protected Dictionary<string, List<IgnoreDiagnostic>> _fileIgnoreDiagnosticDict;
+		protected Dictionary<string, List<VBADiagnostic>> _fileDiagnosticDict;
+		protected Dictionary<string, List<VBADiagnostic>> _fileIgnoreDiagnosticDict;
 
 		public PreprocVBA() {
 			_fileColShiftDict = [];
@@ -335,15 +331,15 @@ namespace VBACodeAnalysis {
 			return true;
 		}
 
-		public List<DiagnosticItem> GetDiagnostics(string name) {
-			if (!_fileDiagnosticDict.TryGetValue(name, out List<DiagnosticItem> value)) {
+		public List<VBADiagnostic> GetDiagnostics(string name) {
+			if (!_fileDiagnosticDict.TryGetValue(name, out List<VBADiagnostic> value)) {
 				return [];
 			}
 			return value;
 		}
 
-		public List<IgnoreDiagnostic> GetIgnoreDiagnostics(string name) {
-			if (!_fileIgnoreDiagnosticDict.TryGetValue(name, out List<IgnoreDiagnostic> value)) {
+		public List<VBADiagnostic> GetIgnoreDiagnostics(string name) {
+			if (!_fileIgnoreDiagnosticDict.TryGetValue(name, out List<VBADiagnostic> value)) {
 				return [];
 			}
 			return value;

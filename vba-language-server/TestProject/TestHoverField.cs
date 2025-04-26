@@ -1,10 +1,11 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using VBACodeAnalysis;
 using Xunit;
 
 namespace TestProject {
 	public class TestHoverField {
-        private List<CompletionItem> GetItem(string code, int chara) {
+        private VBAHover GetItem(string code, int chara) {
             var vbaca = new VBACodeAnalysis.VBACodeAnalysis();
             vbaca.setSetting(new RewriteSetting());
             vbaca.AddDocument("m0", MakeModule());
@@ -41,41 +42,49 @@ End Module";
         [Fact]
         public void TestModuleConstNum() {
             var code = MakeCode("local_num=pub_const_num+1");
-            var items = GetItem(code, "local_num=".Length + 1);
-            Assert.Single(items);
-            Assert.Equal(
-                "Public Const pub_const_num As Integer = 10",
-                items[0].DisplayText);
-        }
+            var hover = GetItem(code, "local_num=".Length + 1);
+			Assert.Equal(3, hover.Contents.Count);
+			var act = hover.Contents.Select(x => x.Value);
+			Assert.Equal(
+				["Public Const pub_const_num As Integer = 10", "@return Integer", "@kind Field"],
+				[.. act]
+			 );
+		}
 
         [Fact]
         public void TestModuleNum() {
             var code = MakeCode("local_num=pub_num+1");
-            var items = GetItem(code, "local_num=".Length + 1);
-            Assert.Single(items);
-            Assert.Equal(
-                "Public pub_num As Long",
-                items[0].DisplayText);
-        }
+            var hover = GetItem(code, "local_num=".Length + 1);
+			Assert.Equal(3, hover.Contents.Count);
+			var act = hover.Contents.Select(x => x.Value);
+			Assert.Equal(
+				["Public pub_num As Long", "@return Long", "@kind Field"],
+				[.. act]
+			 );
+		}
 
         [Fact]
         public void TestClassConstNum() {
             var code = MakeCode("local_num=c.pub_const_num+1");
-            var items = GetItem(code, "local_num=c.".Length + 1);
-            Assert.Single(items);
-            Assert.Equal(
-                "Public Const pub_const_num As Integer = 10",
-                items[0].DisplayText);
+            var hover = GetItem(code, "local_num=c.".Length + 1);
+			Assert.Equal(3, hover.Contents.Count);
+			var act = hover.Contents.Select(x => x.Value);
+			Assert.Equal(
+				["Public Const pub_const_num As Integer = 10", "@return Integer", "@kind Field"],
+				[.. act]
+			 );
         }
 
         [Fact]
         public void TestClassNum() {
             var code = MakeCode("local_num=c.pub_num+1");
-            var items = GetItem(code, "local_num=c.".Length + 1);
-            Assert.Single(items);
+            var hover = GetItem(code, "local_num=c.".Length + 1);
+			Assert.Equal(3, hover.Contents.Count);
+			var act = hover.Contents.Select(x => x.Value);
             Assert.Equal(
-                "Public pub_num As Long",
-                items[0].DisplayText);
-        }
+                ["Public pub_num As Long", "@return Long", "@kind Field"],
+				[..act]
+			 );
+		}
     }
 }

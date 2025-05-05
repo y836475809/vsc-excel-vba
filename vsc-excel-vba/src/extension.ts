@@ -4,11 +4,11 @@ import * as vscode from 'vscode';
 import {
 	LanguageClient,
 } from 'vscode-languageclient/node';
-import { VBACommands } from './vba-commands';
+import { VBACommands } from './commands';
 import { Project } from './project';
 import { Logger } from "./logger";
-import { vbaRegister } from "./vba-register";
-import { vbaClient } from "./vba-client";
+import { vbaRegister } from "./register";
+import { vbaClient } from "./client";
 
 let client: LanguageClient;
 let outputChannel: vscode.OutputChannel;

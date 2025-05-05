@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from "path";
 import * as fs from "fs";
-import { VBAObjectNameValidation } from "./vba-object-name-validation";
+import { VBAObjectNameValidation } from "./file-name-validation";
 
 export class VBACreateFile {
     private objectType: VEV.VBAObjectType;

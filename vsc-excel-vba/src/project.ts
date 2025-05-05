@@ -67,19 +67,6 @@ export class Project {
         return uris;
     }
 
-    getDefinitionFileUris(context: vscode.ExtensionContext): vscode.Uri[] {
-        const dirPath = context.asAbsolutePath("d.vb");
-        if(!fs.existsSync(dirPath)){
-            return [];
-        }
-        const fsPaths = fs.readdirSync(dirPath, { withFileTypes: true })
-        .filter(dirent => {
-            return dirent.isFile() && (dirent.name.endsWith(".d.vb"));
-        }).map(dirent => path.join(dirPath, dirent.name));
-        const uris = fsPaths.map(fp => vscode.Uri.file(fp));
-        return uris;
-    }
-
     hasProject(): boolean{
         const wsPath = this.getWorkspacePath();
         if(!wsPath){

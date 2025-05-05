@@ -1,8 +1,8 @@
 
 import * as vscode from 'vscode';
-import { VBACommands } from './vba-commands';
+import { VBACommands } from './commands';
 import { Project } from './project';
-import { VBACreateFile } from "./vba-create-file";
+import { VBACreateFile } from "./create-file";
 import { SheetTreeDataProvider } from "./sheet-treedata-provider";
 
 

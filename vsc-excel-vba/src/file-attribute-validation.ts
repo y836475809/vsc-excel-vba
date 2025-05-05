@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import * as path from 'path';
-import { VBAObjectNameValidation } from "./vba-object-name-validation";
+import { VBAObjectNameValidation } from "./file-name-validation";
 
 export class VbaAttributeError extends Error {
     line: number;

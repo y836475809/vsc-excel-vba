@@ -1,13 +1,11 @@
 {
-    "editor.quickSuggestions": {
-        "other": "on",
-        "comments": "off",
-        "strings": "off"
-    },
     "[vb]": {
         "files.encoding": "shiftjis",
-        "files.autoGuessEncoding": true
     },
-    "vsc-excel-vba.loadDefinitionFiles": true,
+    "files.autoGuessEncoding": true,
+    "files.associations": {
+        "*.bas": "vb",
+        "*.cls": "vb"
+    },
     "vsc-excel-vba.LSFilename": "VBALanguageServer.exe",
 }

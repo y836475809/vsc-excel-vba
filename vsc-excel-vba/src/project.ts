@@ -22,7 +22,13 @@ export class Project {
         await config.update(
             "[vb]", { 
                 "files.encoding": "shiftjis",
-                "files.autoGuessEncoding": false
+            }, false);
+        await config.update(
+            "files.autoGuessEncoding", true, false);
+        await config.update(
+            "files.associations", {
+                "*.bas": "vb",
+                "*.cls": "vb"
             }, false);
     }
 

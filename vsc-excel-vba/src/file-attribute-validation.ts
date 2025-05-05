@@ -1,8 +1,8 @@
 import * as vscode from "vscode";
 import * as path from 'path';
-import { VBAObjectNameValidation } from "./file-name-validation";
+import { FileNameValidation } from "./file-name-validation";
 
-export class VbaAttributeError extends Error {
+export class FileAttributeError extends Error {
     line: number;
     endpos: number;
     constructor(message: string, line: number, endpos: number){
@@ -12,7 +12,7 @@ export class VbaAttributeError extends Error {
     }
 }
 
-export function makeAttributeDiagnostics(errors: VbaAttributeError[]){
+export function makeAttributeDiagnostics(errors: FileAttributeError[]){
     return errors.map(x => {
         const msg = x.message;
         const line = x.line;
@@ -29,7 +29,7 @@ export function makeAttributeDiagnostics(errors: VbaAttributeError[]){
     });
 }
 
-export class VbaAttributeValidation {
+export class FileAttributeValidation {
     validate(uri: vscode.Uri, text: string){
         const fp = path.parse(uri.fsPath);
         const name = fp.name;
@@ -45,32 +45,32 @@ export class VbaAttributeValidation {
         }
     }
 
-    private validateObjectName(line: string, lineNum: number, lineLen: number): VbaAttributeError[] {
-        const errors: VbaAttributeError[] = [];
+    private validateObjectName(line: string, lineNum: number, lineLen: number): FileAttributeError[] {
+        const errors: FileAttributeError[] = [];
 
-        const validate = new VBAObjectNameValidation();
+        const validate = new FileNameValidation();
         const objectName = line.split("=")[1].trim().replace(/^"|"$/g, "");
         if(!validate.prefix(objectName)){
             const msg = `VB_Name = "${objectName}" contains illegal prefix`;
-            errors.push(new VbaAttributeError(msg, lineNum, lineLen)); 
+            errors.push(new FileAttributeError(msg, lineNum, lineLen)); 
         }
         if(!validate.symbol(objectName)){
             const msg = `VB_Name = "${objectName}" contains illegal symbols`;
-            errors.push(new VbaAttributeError(msg, lineNum, lineLen)); 
+            errors.push(new FileAttributeError(msg, lineNum, lineLen)); 
         }
         if(!validate.len(objectName)){
             const msg = `VB_Name = "${objectName}" is too long`;
-            errors.push(new VbaAttributeError(msg, lineNum, lineLen)); 
+            errors.push(new FileAttributeError(msg, lineNum, lineLen)); 
         }
         return errors;
     }
 
     private validateBAS(name: string, lines: string[]) {
-        const errors: VbaAttributeError[] = [];
+        const errors: FileAttributeError[] = [];
 
         if(lines.length < 1){
             const msg = "Not enough Attribute";
-            errors.push(new VbaAttributeError(msg, 0, 0));
+            errors.push(new FileAttributeError(msg, 0, 0));
         }
         if(errors.length){
             throw errors;
@@ -81,7 +81,7 @@ export class VbaAttributeValidation {
         const reg = new RegExp(`Attribute\\s+VB_Name\\s*=\\s*"${name}"`);
         if(!reg.test(lines[0])){
             const msg = `Correct is Attribute VB_Name = "${name}"`;
-            errors.push(new VbaAttributeError(msg, lineNum, len-1));
+            errors.push(new FileAttributeError(msg, lineNum, len-1));
         }
         errors.push(...this.validateObjectName(lines[lineNum], lineNum, len-1));
         
@@ -91,11 +91,11 @@ export class VbaAttributeValidation {
     }
 
     private validateCLS(name: string, lines: string[]){
-        const errors: VbaAttributeError[] = [];
+        const errors: FileAttributeError[] = [];
 
         if(lines.length < 9){
             const msg = "Not enough Attribute";
-            errors.push(new VbaAttributeError(msg, 0, 0));
+            errors.push(new FileAttributeError(msg, 0, 0));
         }
         if(errors.length){
             throw errors;
@@ -111,57 +111,57 @@ export class VbaAttributeValidation {
         let [line, endpos] = getLineEndpos(linenum);
         if(!/VERSION\s+1.0\s+CLASS/.test(line)){
             const msg = `Correct is VERSION 1.0 CLASS`;
-            errors.push(new VbaAttributeError(msg, linenum, endpos));
+            errors.push(new FileAttributeError(msg, linenum, endpos));
         }
 
         [line, endpos] = getLineEndpos(++linenum);
         if(line !== "BEGIN"){
             const msg = `Correct is BEGIN`;
-            errors.push(new VbaAttributeError(msg, linenum, endpos));
+            errors.push(new FileAttributeError(msg, linenum, endpos));
         }
 
         [line, endpos] = getLineEndpos(++linenum);
         if(!/MultiUse\s+=\s+-1/.test(line)){
             const msg = `Correct is MultiUse = -1`;
-            errors.push(new VbaAttributeError(msg, linenum, endpos));
+            errors.push(new FileAttributeError(msg, linenum, endpos));
         }
 
         [line, endpos] = getLineEndpos(++linenum);
         if(line !== "END"){
             const msg = `Correct is END`;
-            errors.push(new VbaAttributeError(msg, linenum, endpos));
+            errors.push(new FileAttributeError(msg, linenum, endpos));
         }
 
         [line, endpos] = getLineEndpos(++linenum);
         const reg = new RegExp(`Attribute\\s+VB_Name\\s*=\\s*"${name}"`);
         if(!reg.test(line)){
             const msg = `Correct is Attribute VB_Name = "${name}"`;
-            errors.push(new VbaAttributeError(msg, linenum, endpos));
+            errors.push(new FileAttributeError(msg, linenum, endpos));
         }
         errors.push(...this.validateObjectName(line, linenum, endpos));
 
         [line, endpos] = getLineEndpos(++linenum);
         if(!/Attribute\s+VB_GlobalNameSpace\s+=\s+(True|False)/.test(line)){
             const msg = `Correct is Attribute VB_GlobalNameSpace = True|False`;
-            errors.push(new VbaAttributeError(msg, linenum, endpos));
+            errors.push(new FileAttributeError(msg, linenum, endpos));
         }
 
         [line, endpos] = getLineEndpos(++linenum);
         if(!/Attribute\s+VB_Creatable\s+=\s+(True|False)/.test(line)){
             const msg = `Correct is Attribute VB_Creatable = True|False`;
-            errors.push(new VbaAttributeError(msg, linenum, endpos));
+            errors.push(new FileAttributeError(msg, linenum, endpos));
         }
 
         [line, endpos] = getLineEndpos(++linenum);
         if(!/Attribute\s+VB_PredeclaredId\s+=\s+(True|False)/.test(line)){
             const msg = `Correct is Attribute VB_PredeclaredId = True|False`;
-            errors.push(new VbaAttributeError(msg, linenum, endpos));
+            errors.push(new FileAttributeError(msg, linenum, endpos));
         }
 
         [line, endpos] = getLineEndpos(++linenum);
         if(!/Attribute\s+VB_Exposed\s+=\s+(True|False)/.test(line)){
             const msg = `Correct is Attribute VB_Exposed = True|False`;
-            errors.push(new VbaAttributeError(msg, linenum, endpos));
+            errors.push(new FileAttributeError(msg, linenum, endpos));
         }
 
         if(errors.length){

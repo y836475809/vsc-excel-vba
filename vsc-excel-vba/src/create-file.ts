@@ -1,9 +1,9 @@
 import * as vscode from 'vscode';
 import * as path from "path";
 import * as fs from "fs";
-import { VBAObjectNameValidation } from "./file-name-validation";
+import { FileNameValidation } from "./file-name-validation";
 
-export class VBACreateFile {
+export class CreateFile {
     private objectType: VEV.VBAObjectType;
 
     constructor(){
@@ -12,7 +12,7 @@ export class VBACreateFile {
 
     async create(distUri: vscode.Uri, objectType: VEV.VBAObjectType) {
         this.objectType = objectType;
-        const validate = new VBAObjectNameValidation();
+        const validate = new FileNameValidation();
         const result = await vscode.window.showInputBox({
             prompt: `Input ${this.objectType} name`,
             value: `${this.objectType}1`,

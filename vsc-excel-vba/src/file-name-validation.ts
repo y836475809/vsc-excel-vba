@@ -1,5 +1,5 @@
 
-export class VBAObjectNameValidation {
+export class FileNameValidation {
     prefix(objectName: string): boolean {
         const name = this.replaceZenkakuSymbol(objectName);
         const reg = /^[\d_０-９]/;

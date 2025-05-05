@@ -3,7 +3,7 @@ import * as vscode from "vscode";
 import { spawn } from "child_process";
 import { Project } from "./project";
 
-type VBAResponse = {
+type Response = {
     code: string; // ok, error
     message: string;
     data: string; // json(str)
@@ -12,7 +12,7 @@ type VBAResponse = {
 const basLineOffset = 1;
 const clsLineOffset = 9;
 
-export class VBACommands {
+export class Commands {
     private cmd: string;
     private scriptDirPath: string;
     private xlsmFileName: string;
@@ -224,13 +224,13 @@ export class VBACommands {
         return sheetNames;
     }
 
-    private async run(scriptFileName: string, args: string[]): Promise<VBAResponse> {
+    private async run(scriptFileName: string, args: string[]): Promise<Response> {
         const scriptFilePath = path.join(this.scriptDirPath, scriptFileName);
         const ret = await this.spawnAsync(this.cmd, 
             ["-NoProfile", "-ExecutionPolicy", "Unrestricted", 
             `"${scriptFilePath}"`, this.xlsmFileName, ...args]);
         
-        const res: VBAResponse = JSON.parse(ret);
+        const res: Response = JSON.parse(ret);
         if(res.code === "error"){
             const msg = res.message;
             throw new Error(msg);

@@ -8,7 +8,7 @@ import {
 } from 'vscode-languageclient/node';
 
 
-export function vbaClient(context: vscode.ExtensionContext, srcDir: string): LanguageClient {
+export function createClient(context: vscode.ExtensionContext, srcDir: string): LanguageClient {
     const srcDirName = path.basename(srcDir);
     const config = vscode.workspace.getConfiguration();
     const lspFilename = config.get("vsc-excel-vba.LSFilename") as string;

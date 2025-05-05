@@ -4,11 +4,11 @@ import * as vscode from 'vscode';
 import {
 	LanguageClient,
 } from 'vscode-languageclient/node';
-import { VBACommands } from './commands';
+import { Commands } from './commands';
 import { Project } from './project';
 import { Logger } from "./logger";
-import { vbaRegister } from "./register";
-import { vbaClient } from "./client";
+import { register } from "./register";
+import { createClient } from "./client";
 
 let client: LanguageClient;
 let outputChannel: vscode.OutputChannel;
@@ -26,7 +26,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	});
 
 	const project = new Project("vbaproject.json");
-	const vbaCommand = new VBACommands(context.asAbsolutePath("scripts"));
+	const commands = new Commands(context.asAbsolutePath("scripts"));
 
 	context.subscriptions.push(vscode.commands.registerCommand("vsc-excel-vba.createProject", async (args) => {
 		try {
@@ -38,12 +38,11 @@ export async function activate(context: vscode.ExtensionContext) {
 				}
 			}else{
 				const targetFilePath = args.fsPath;		
-				await project.setupConfig();
 				await project.createProject(targetFilePath);
 				vscode.window.showInformationMessage(`Create ${project.projectFileName}`);
 				await project.readProject();
-				vbaRegister(context, project, vbaCommand);
-				client = vbaClient(context, project.srcDir);
+				register(context, project, commands);
+				client = createClient(context, project.srcDir);
 				client.start();
 			}
 		} catch (error: unknown) {
@@ -56,8 +55,8 @@ export async function activate(context: vscode.ExtensionContext) {
 	}));
 	if(project.hasProject()){
 		await project.readProject();
-		vbaRegister(context, project, vbaCommand);
-		client = vbaClient(context, project.srcDir);
+		register(context, project, commands);
+		client = createClient(context, project.srcDir);
 		client.start();
 	}
 }

@@ -2,7 +2,6 @@ import * as vscode from "vscode";
 import * as path from "path";
 import * as fs from "fs";
 
- 
 
 export class Project {
     srcDir: string;
@@ -17,23 +16,9 @@ export class Project {
         };
     }
 
-    async setupConfig() {
-        const config = vscode.workspace.getConfiguration();
-        await config.update(
-            "[vb]", { 
-                "files.encoding": "shiftjis",
-            }, false);
-        await config.update(
-            "files.autoGuessEncoding", true, false);
-        await config.update(
-            "files.associations", {
-                "*.bas": "vb",
-                "*.cls": "vb"
-            }, false);
-    }
-
     async createProject(targetFilePath: string){
-        // const filename = targetFilePath.replace(wsPath, "");
+        await this.createSetting();
+
 		const filename = path.basename(targetFilePath);
 		const projectFp = path.join(path.dirname(targetFilePath), this.projectFileName);
 		const data: VEV.ProjectData = {
@@ -78,6 +63,21 @@ export class Project {
 
     existSrcDir(): boolean {
         return fs.existsSync(this.srcDir);
+    }
+
+    private async createSetting() {
+        const config = vscode.workspace.getConfiguration();
+        await config.update(
+            "[vb]", { 
+                "files.encoding": "shiftjis",
+            }, false);
+        await config.update(
+            "files.autoGuessEncoding", true, false);
+        await config.update(
+            "files.associations", {
+                "*.bas": "vb",
+                "*.cls": "vb"
+            }, false);
     }
 
     private getWorkspacePath(): string | undefined{

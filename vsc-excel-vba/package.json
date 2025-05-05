@@ -16,6 +16,7 @@
     "Other"
   ],
   "activationEvents": [
+    "workspaceContains:*.xlsm",
     "workspaceContains:vbaproject.json"
   ],
   "main": "./out/extension.js",
@@ -33,15 +34,7 @@
     "languages": [
       {
         "id": "vb",
-        "extensions": [
-          ".bas"
-        ]
-      },
-      {
-        "id": "vb",
-        "extensions": [
-          ".cls"
-        ]
+        "extensions": [".bas", ".cls"]
       }
     ],
     "commands": [

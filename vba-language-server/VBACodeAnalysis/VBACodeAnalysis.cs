@@ -443,7 +443,9 @@ namespace VBACodeAnalysis {
                 if(menbersNum > 1) {
 					label = $"{label} (+{menbersNum - 1} overloads)";
 				}
-            }
+
+                description = symbol.GetDocumentationCommentXml();
+			}
             if (symbol is IPropertySymbol propSymbol) {
 				label = string.Join("", propSymbol.ToDisplayParts().Select(x => {
 					return ConvKind(x.ToString());

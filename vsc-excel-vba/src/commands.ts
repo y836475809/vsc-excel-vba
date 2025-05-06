@@ -191,22 +191,16 @@ export class Commands {
                 return;
             }
             const targetSymbols = symbols[0].children.filter(x => {
-                return x.kind === vscode.SymbolKind.Function 
+                return (x.kind === vscode.SymbolKind.Function || x.kind === vscode.SymbolKind.Method) 
                     && x.range.start.line <= sel.start.line 
                     && sel.end.line <= x.range.end.line;
             });
             if(!targetSymbols.length){
                 return;
             }
-            const objectName = path.parse(uri.fsPath).name;;
-            const symName = targetSymbols[0].detail;
-            const mt = symName.match(/(Sub|Function)\s+(.+)\(\s*\)/);
-            if(mt && mt.length > 2){
-                const procName = mt[2];
-                await this.run("run-vba-proc.ps1", [`${objectName}.${procName}`]);
-            }else{
-                throw new Error(`Can't run "${symName}"`);
-            }
+            const objectName = path.parse(uri.fsPath).name;
+            const procName = targetSymbols[0].name;
+            await this.run("run-vba-proc.ps1", [`${objectName}.${procName}`]);
         });
     }
 

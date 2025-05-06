@@ -45,7 +45,7 @@ namespace VBACodeAnalysis {
 					name = $"{prefix} {propName}";
 					symbols.Add(GetSymbol(stmt, name, "Property"));
 				} else {
-					var methodSymbol = GetSymbol(stmt, name, "Method");
+					var methodSymbol = GetSymbol(syntax, name, "Method");
 					methodSymbol.Children = [.. GetLocalVarSymbols(syntax)];
 					symbols.Add(methodSymbol);
 				}

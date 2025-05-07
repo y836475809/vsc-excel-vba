@@ -148,9 +148,6 @@ namespace VBAAntlr {
 			var elems = context.blockLetSetStmt();
 			var end_stm = context.endPropertyStmt();
 
-			var ii = name.Stop.TokenIndex;
-			var ai = context.asTypeClause()?.Stop.TokenIndex;
-
 			if (GetVariant(context.asTypeClause()?.identifier())) {
 				asType = "Object";
 			} 

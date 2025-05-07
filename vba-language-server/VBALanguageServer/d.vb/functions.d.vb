@@ -58,6 +58,9 @@ Public Module ExcelVBAFunctions
     Public Function LenB(Str As String) As Long
     End Function
 
+    Public Function LCase(Str As String) As String
+    End Function
+
     Public Function UCase(Str As String) As String
     End Function
 

@@ -38,6 +38,9 @@ namespace VBACodeAnalysis {
 			foreach (var syntax in methodSyntaxes) {
 				var stmt = syntax.SubOrFunctionStatement;
 				var name = stmt.Identifier.Text;
+				if(name == "") {
+					continue;
+				}
 				var lineSpan = stmt.GetLocation().GetLineSpan();
 				var sp = lineSpan.StartLinePosition;
 				var (isPorp, prefix, propName) = propMapFunc(sp.Line);
@@ -71,6 +74,9 @@ namespace VBACodeAnalysis {
 				}
 				foreach (var declarator in syntax.Declarators) {
 					var name = declarator.Names.ToFullString();
+					if (name == "") {
+						continue;
+					}
 					symbols.Add(GetSymbol(syntax, name, kind));
 				}
 			}
@@ -82,11 +88,14 @@ namespace VBACodeAnalysis {
 			var symbols = structureSyntaxes.Select(x => {
 				var stmt = x.StructureStatement;
 				var name = stmt.Identifier.Text;
+				if(name == "") {
+					return null;
+				}
 				var typeSymbol = GetSymbol(stmt, name, "Struct");
 				typeSymbol.Children = GetVarSymbols(stmt.Parent, "Variable", false);
 				return typeSymbol;
 			});
-			return [.. symbols];
+			return [..symbols.Where(x => x!=null)];
 		}
 
 		private static List<VBADocSymbol> GetEnumSymbols(SyntaxNode node) {
@@ -94,11 +103,14 @@ namespace VBACodeAnalysis {
 			var symbols = enumSyntaxes.Select(x => {
 				var stmt = x.EnumStatement;
 				var name = stmt.Identifier.Text;
+				if (name == "") {
+					return null;
+				}
 				var enumSymbol = GetSymbol(stmt, name, "Enum");
 				enumSymbol.Children = GetEnumVarSymbols(stmt.Parent);
 				return enumSymbol;
 			});
-			return [..symbols];
+			return [..symbols.Where(x => x != null)];
 		}
 
 		private static List<VBADocSymbol> GetLocalVarSymbols(SyntaxNode node) {
@@ -107,6 +119,9 @@ namespace VBACodeAnalysis {
 			foreach (var syntax in varSyntaxes) {
 				foreach (var declarator in syntax.Declarators) {
 					var name = declarator.Names.ToFullString();
+					if (name == "") {
+						continue;
+					}
 					symbols.Add(GetSymbol(syntax, name, "Variable"));
 				}
 			}
@@ -117,9 +132,12 @@ namespace VBACodeAnalysis {
 			var varSyntaxes = node.DescendantNodes().OfType<EnumMemberDeclarationSyntax>();
 			var symbols = varSyntaxes.Select(x => {
 				var name = x.Identifier.Text;
+				if (name == "") {
+					return null;
+				}
 				return GetSymbol(node, name, "EnumMember");
 			});
-			return [..symbols];
+			return [..symbols.Where(x => x != null)];
 		}
 
 		private static VBADocSymbol GetSymbol(SyntaxNode node, string name, string kind) {

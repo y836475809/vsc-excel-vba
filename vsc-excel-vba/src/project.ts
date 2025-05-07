@@ -2,42 +2,58 @@ import * as vscode from "vscode";
 import * as path from "path";
 import * as fs from "fs";
 
+const PROJECT_FILENAME: string = "vbaproject.json";
+const SRC_DIRNAME: string = "src";
 
 export class Project {
     srcDir: string;
     projectData: VEV.ProjectData; 
-    projectFileName: string;
-    constructor(projectFileName: string){
+    excelFilePath: string;
+
+    constructor(){
         this.srcDir = "";
-        this.projectFileName = projectFileName;
+        this.excelFilePath = "";
         this.projectData = {
-            excelfilename:"",
-            srcdir: ""
+            excelfilename:""
         };
     }
 
-    async createProject(targetFilePath: string){
-        await this.createSetting();
+    get projectFileName(){
+        return PROJECT_FILENAME;
+    }
 
-		const filename = path.basename(targetFilePath);
-		const projectFp = path.join(path.dirname(targetFilePath), this.projectFileName);
+    async createProject(excelFilePath: string){
+        this.excelFilePath = excelFilePath;
+        await this.createSetting();
+        const dirPath = path.dirname(excelFilePath);
+		const filename = path.basename(excelFilePath);
+
+		const projectFp = path.join(dirPath, PROJECT_FILENAME);
 		const data: VEV.ProjectData = {
-			excelfilename: filename,
-			srcdir: "src"
+			excelfilename: filename
 		};
 		await fs.promises.writeFile(projectFp, JSON.stringify(data, null, 4));
+
+        this.srcDir = path.join(dirPath, SRC_DIRNAME);
+        if(!fs.existsSync(this.srcDir)){
+            await fs.promises.mkdir(this.srcDir);
+        }
     }
 
     async readProject(): Promise<void> {
         const wsPath = this.getWorkspacePath();
         if(!wsPath){
-			const msg = `Not find ${this.projectFileName}`;
+			const msg = `Not find ${PROJECT_FILENAME}`;
 			throw new Error(msg);
 		}
-        const projectFp = path.join(wsPath,this.projectFileName);
+        const projectFp = path.join(wsPath, PROJECT_FILENAME);
         const json = await fs.promises.readFile(projectFp);
         this.projectData = JSON.parse(json.toString()) as VEV.ProjectData;
-        this.srcDir = path.join(wsPath,this.projectData.srcdir);
+        this.excelFilePath = path.join(wsPath, this.projectData.excelfilename);
+        this.srcDir = path.join(wsPath, SRC_DIRNAME);
+        if(!fs.existsSync(this.srcDir)){
+            await fs.promises.mkdir(this.srcDir);
+        }
     }
 
     async getSrcFileUris(): Promise<vscode.Uri[]> {
@@ -57,7 +73,7 @@ export class Project {
         if(!wsPath){
             throw new Error(`Not find workspace Folders`);
         }
-        const pfs = path.join(wsPath, this.projectFileName);
+        const pfs = path.join(wsPath, PROJECT_FILENAME);
         return fs.existsSync(pfs);
     }
 

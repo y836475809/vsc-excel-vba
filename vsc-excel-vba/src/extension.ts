@@ -25,7 +25,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		outputChannel.appendLine(msg);
 	});
 
-	const project = new Project("vbaproject.json");
+	const project = new Project();
 	const commands = new Commands(context.asAbsolutePath("scripts"));
 
 	context.subscriptions.push(vscode.commands.registerCommand("vsc-excel-vba.createProject", async (args) => {
@@ -49,7 +49,7 @@ export async function activate(context: vscode.ExtensionContext) {
 			if(error instanceof Error){
 				vscode.window.showErrorMessage(error.message);
 			}else{
-				vscode.window.showErrorMessage("Fail create vba project");
+				vscode.window.showErrorMessage("Unknown error");
 			}
 		}
 	}));

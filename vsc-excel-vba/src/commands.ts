@@ -67,6 +67,9 @@ export class Commands {
             if(cmd === "export"){
                 await this.export(project.srcDir);
             }
+            if(cmd === "openExport"){
+                await this.openExport(project.excelFilePath, project.srcDir);
+            }
             if(cmd === "compile"){
                 await this.compile();
             }
@@ -147,6 +150,10 @@ export class Commands {
 
     async export(distDir: string){
         await this.run("export.ps1", [`'${distDir}'`]);
+    }
+
+    async openExport(excelFilePath:string, distDir: string){
+        await this.run("open-export.ps1", [`'${excelFilePath}'`, `'${distDir}'`]);
     }
 
     async compile(){

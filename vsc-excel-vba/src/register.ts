@@ -1,4 +1,3 @@
-
 import * as vscode from 'vscode';
 import { Commands } from './commands';
 import { Project } from './project';
@@ -7,6 +6,20 @@ import { SheetTreeDataProvider } from "./sheet-treedata-provider";
 
 
 let sheetTDProvider: SheetTreeDataProvider;
+
+async function checkExport(project: Project): Promise<boolean> {
+    if(await vscode.window.showInformationMessage(
+        `Export?`, "Yes", "No") === "No"){
+        return false;
+    }
+    if(project.existSrcDir()){
+        if(await vscode.window.showInformationMessage(
+            `${project.srcDir} exists. Overwrite?`, "Yes", "No") === "No"){
+            return false;
+        }
+    }
+    return true;
+}
 
 export function register(context: vscode.ExtensionContext, project: Project, commands: Commands) {
     sheetTDProvider = new SheetTreeDataProvider("sheetView");
@@ -24,19 +37,28 @@ export function register(context: vscode.ExtensionContext, project: Project, com
         await commands.exceue(project, "importAndCompile");
     }));
     context.subscriptions.push(vscode.commands.registerCommand("vsc-excel-vba.export", async () => {
-        if(await vscode.window.showInformationMessage(
-            `Export?`, "Yes", "No") === "No"){
+        if(!await checkExport(project)){
             return;
-        }
-        if(project.existSrcDir()){
-            if(await vscode.window.showInformationMessage(
-                `${project.srcDir} exists. Overwrite?`, "Yes", "No") === "No"){
-                return;
-            }
         }
         if(await commands.exceue(project, "export")){
             vscode.window.showInformationMessage(`Success export to ${project.srcDir}`);
         }
+    }));
+    context.subscriptions.push(vscode.commands.registerCommand("vsc-excel-vba.openExport", async () => {
+        if(!await checkExport(project)){
+            return;
+        }
+        vscode.window.withProgress({
+            location: vscode.ProgressLocation.Notification, 
+            title: "Export files"
+        }, async progress => {
+            return new Promise<void>(async (resolve)=>{
+                if(await commands.exceue(project, "openExport")){
+                    vscode.window.showInformationMessage(`Success export to ${project.srcDir}`);
+                }
+                resolve();
+            });
+        });
     }));
     context.subscriptions.push(vscode.commands.registerCommand("vsc-excel-vba.compile", async () => {
         await commands.exceue(project, "compile");

@@ -3,23 +3,28 @@
 $vbext_ct_StdModule = 1
 $vbext_ct_ClassModule = 2
 
-$filename = $Args[0]
+$bookName = $Args[0]
 $path = $Args[1]
 $distdir = $Args[2]
 
 try {
-    $excelApp = New-Object -ComObject "Excel.Application"
-    $bk = $excelApp.Workbooks.Open($path)
-    $excelApp.Visible = $true
+    $bk = getWorkBooks($bookName)
 } catch {
-    $excelApp.Quit()
-    $excelApp = $null
-    $bk = $null
-    [GC]::Collect()
-    $jsonStr = getResJson "error" $_.Exception.Message ""
-    Write-Output $jsonStr
-    exit
+    try {
+        $excelApp = New-Object -ComObject "Excel.Application"
+        $bk = $excelApp.Workbooks.Open($path)
+        $excelApp.Visible = $true
+    } catch {
+        $excelApp.Quit()
+        $excelApp = $null
+        $bk = $null
+        [GC]::Collect()
+        $jsonStr = getResJson "error" $_.Exception.Message ""
+        Write-Output $jsonStr
+        exit
+    }
 }
+
 try {
     $null = New-Item $distdir -ItemType Directory -Force 
     foreach($vbcmp in $bk.VBProject.VBComponents){

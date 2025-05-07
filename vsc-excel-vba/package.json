@@ -33,8 +33,16 @@
     },
     "languages": [
       {
-        "id": "vb",
-        "extensions": [".bas", ".cls"]
+        "id": "vba",
+        "extensions": [".bas", ".cls"],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "vba",
+        "scopeName": "source.vba",
+        "path": "./syntaxes/vba.tmLanguage.json"
       }
     ],
     "commands": [
@@ -111,7 +119,7 @@
     ],
     "breakpoints": [
       {
-        "language": "vb"
+        "language": "vba"
       }
     ],
     "views": {

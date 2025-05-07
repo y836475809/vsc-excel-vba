@@ -4,8 +4,8 @@
     },
     "files.autoGuessEncoding": true,
     "files.associations": {
-        "*.bas": "vb",
-        "*.cls": "vb"
+        "*.bas": "vba",
+        "*.cls": "vba"
     },
     "vsc-excel-vba.LSFilename": "VBALanguageServer.exe",
 }

@@ -26,7 +26,7 @@ export function createClient(context: vscode.ExtensionContext, srcDir: string): 
      };
 
     const clientOptions: LanguageClientOptions = {
-        documentSelector: [{ scheme: 'file', language: 'vb' }],
+        documentSelector: [{ scheme: "file", language: "vba" }],
         synchronize: {
             fileEvents: vscode.workspace.createFileSystemWatcher(`${srcDir}/*.{bas,cls}`)
         },

@@ -1,0 +1,13 @@
+{
+    "name": "vba",
+    "scopeName": "source.vba",
+    "patterns": [
+        {
+            "match": "(?i:\\s*\\b(Property|Enum|Type|End Enum|End Type)\\b\\s*)",
+            "name": "storage.type.asp"
+        },
+		{
+			"include": "source.asp.vb.net"
+		}
+	]
+}

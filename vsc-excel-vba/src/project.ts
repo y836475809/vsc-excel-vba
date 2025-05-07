@@ -91,8 +91,8 @@ export class Project {
             "files.autoGuessEncoding", true, false);
         await config.update(
             "files.associations", {
-                "*.bas": "vb",
-                "*.cls": "vb"
+                "*.bas": "vba",
+                "*.cls": "vba"
             }, false);
     }
 

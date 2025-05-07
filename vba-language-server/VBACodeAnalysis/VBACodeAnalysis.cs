@@ -133,7 +133,12 @@ namespace VBACodeAnalysis {
 			var symbols = await Recommender.GetRecommendedSymbolsAtPositionAsync(doc, position);
 			var items = symbols.Where(x => IsCompletionItem(x)).Select(y => {
 				var label = y.MetadataName;
-				var display = y.ToDisplayString();
+                var display = y.ToDisplayString();
+                if(label.ToLower() == "structure"){
+                    label = "Type";
+                    display = "Type";
+                }
+				
 				var docment = y.GetDocumentationCommentXml();
 				var kind = y.Kind.ToString();
 				if (y is INamedTypeSymbol namedType) {
@@ -160,12 +165,16 @@ namespace VBACodeAnalysis {
                 }).Select(x => {
 					var label = x.DisplayText;
 					var display = x.DisplayText;
+                    if(label.ToLower() == "structure"){
+                        label = "Type";
+                        display = "Type";
+                    }
 					var docment = x.Properties.Values.ToString();
 					var kind = "Keyword";
 					return new VBACompletionItem {
-						Label = x.DisplayText,
-						Display = x.DisplayText,
-						Doc = x.Properties.Values.ToString(),
+						Label = label,
+						Display = display,
+						Doc = docment,
 						Kind = kind
 					};
 				});

@@ -84,7 +84,7 @@ export class Project {
     private async createSetting() {
         const config = vscode.workspace.getConfiguration();
         await config.update(
-            "[vb]", { 
+            "[vba]", { 
                 "files.encoding": "shiftjis",
             }, false);
         await config.update(

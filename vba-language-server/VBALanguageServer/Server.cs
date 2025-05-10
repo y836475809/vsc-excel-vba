@@ -52,7 +52,7 @@ namespace VBALanguageServer {
 		}
 
 		private void InitVBACodeAnalysis(string work_dir, string[] exts) {
-			Logger.Info($"work_dir={work_dir}");
+			Logger.Info($"Working dir: {work_dir}");
 
 			this.didTextChangeDebounce = new DebounceDispatcher(300);
 			this.currentTextDocument = new CurrentTextDocument();
@@ -66,7 +66,7 @@ namespace VBALanguageServer {
 				fps = fps.Concat(Directory.GetFiles(work_dir, ext));
 			}
 			fps = fps.Concat(GetVBDefineFiles());
-			Logger.Info($"fps={fps.Count()}");
+			Logger.Info($"Number of loaded VBA files: {fps.Count()}");
 			foreach (var fp in fps) {
 				try {
 					var vbCode = this.vbaca.Rewrite(fp, Util.GetCode(fp));
@@ -247,13 +247,13 @@ namespace VBALanguageServer {
 			var @params = arg.ToObject<TextDocumentPositionParams>();
 			var fp = this.GetFsPath(@params.TextDocument.Uri);
 			if (!this.vbCache.ContainsKey(fp)) {
-				Logger.Info($"{Path.GetFileName(fp)}");
+				Logger.Info($"Hover none, no cache: {Path.GetFileName(fp)}");
 				return null;
 			}
 			var line = @params.Position.Line;
 			var chara = @params.Position.Character;
 			if (line < 0) {
-				Logger.Info($"HoverReq, non: {Path.GetFileName(fp)}");
+				Logger.Info($"Hover none, line<0: {Path.GetFileName(fp)}");
 				return null;
 			}
 
@@ -287,13 +287,13 @@ namespace VBALanguageServer {
 			var @params = arg.ToObject<ReferenceParams>();
 			var fp = this.GetFsPath(@params.TextDocument.Uri);
 			if (!this.vbCache.ContainsKey(fp)) {
-				Logger.Info($"ReferencesReq, non: {Path.GetFileName(fp)}");
+				Logger.Info($"References none, no cache: {Path.GetFileName(fp)}");
 				return [];
 			}
 			var line = @params.Position.Line;
 			var chara = @params.Position.Character;
 			if (line < 0) {
-				Logger.Info($"DefinitionReq, line={line}: {Path.GetFileName(fp)}");
+				Logger.Info($"Definition none, line<0: {Path.GetFileName(fp)}");
 				return [];
 			}
 
@@ -317,14 +317,14 @@ namespace VBALanguageServer {
 			var @params = arg.ToObject<TextDocumentPositionParams>();
 			var fp = this.GetFsPath(@params.TextDocument.Uri);
 			if (!this.vbCache.TryGetValue(fp, out string vbCode)) {
-				Logger.Info($"DefinitionReq, non: {Path.GetFileName(fp)}");
+				Logger.Info($"Definition none, no cache: {Path.GetFileName(fp)}");
 				return [];
 			}
 
 			var line = @params.Position.Line;
 			var chara = @params.Position.Character;
 			if (line < 0) {
-				Logger.Info($"DefinitionReq, line={line}: {Path.GetFileName(fp)}");
+				Logger.Info($"Definition none, line<0: {Path.GetFileName(fp)}");
 				return [];
 			}
 			
@@ -353,12 +353,12 @@ namespace VBALanguageServer {
 			var line = @params.Position.Line;
 			var chara = @params.Position.Character;
 			if (line < 0) {
-				Logger.Info($"CompletionReq, line={line}: {Path.GetFileName(fp)}");
+				Logger.Info($"Completion none, line<0: {Path.GetFileName(fp)}");
 				return null;
 			}
 
 			if (!this.vbCache.TryGetValue(fp, out string vbCode)) {
-				Logger.Info($"CompletionReq, non: {Path.GetFileName(fp)}");
+				Logger.Info($"Completion none , no cache: {Path.GetFileName(fp)}");
 				return null;
 			}
 			if (this.currentTextDocument.TryGetText(@params.TextDocument.Uri, out string currentText)) {
@@ -415,10 +415,11 @@ namespace VBALanguageServer {
 			var line = @params.Position.Line;
 			var chara = @params.Position.Character;
 			if (line < 0) {
-				Logger.Info($"CompletionReq, line={line}: {Path.GetFileName(fp)}");
+				Logger.Info($"Completion none, line<0: {Path.GetFileName(fp)}");
 				return null;
 			}
 			if (!this.vbCache.TryGetValue(fp, out string vbCode)) {
+				Logger.Info($"Completion none, , no cache: {Path.GetFileName(fp)}");
 				return null;
 			}
 

@@ -44,7 +44,7 @@ Sub Main()
   Dim num1 as Long
   Dim name1 As string
 
-  Debug.Print "ƒeƒXƒg"
+  Debug.Print "?e?X?g"
 
   Dim End_Row As Long, End_Col As Long
   End_Row = Cells(Rows.Count, 2).End(xlUp).Row

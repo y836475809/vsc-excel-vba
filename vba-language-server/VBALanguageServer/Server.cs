@@ -68,9 +68,17 @@ namespace VBALanguageServer {
 			fps = fps.Concat(GetVBDefineFiles());
 			Logger.Info($"fps={fps.Count()}");
 			foreach (var fp in fps) {
-				var vbCode = this.vbaca.Rewrite(fp, Util.GetCode(fp));
-				this.vbCache[fp] = vbCode;
-				this.vbaca.AddDocument(fp, vbCode, true);
+				try {
+					var vbCode = this.vbaca.Rewrite(fp, Util.GetCode(fp));
+					this.vbCache[fp] = vbCode;
+					this.vbaca.AddDocument(fp, vbCode, true);
+				} catch (Exception ex) {
+#if DEBUG
+					Logger.Error($"{Path.GetFileName(fp)}: {ex.Message}, {ex.StackTrace}");
+#else
+					Logger.Error($"{Path.GetFileName(fp)}: {ex.Message}");
+#endif
+				}
 			}
 			//this.vbaca.ApplyChanges([.. fps]);
 		}

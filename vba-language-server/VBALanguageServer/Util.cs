@@ -4,7 +4,7 @@ using System.Text.Json;
 using LSP = Microsoft.VisualStudio.LanguageServer.Protocol;
 
 namespace VBALanguageServer {
-    class Util {
+    public class Util {
         public static string GetCode(string filePath) {
             var enc = Encoding.GetEncoding("shift_jis");
             using (var sr = new StreamReader(filePath, enc)) {

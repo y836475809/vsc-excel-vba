@@ -1,5 +1,5 @@
 ''' <summary>
-'''  繝�繧ｹ繝医Γ繝�繧ｻ繝ｼ繧ｸ
+'''  テストメッセージ
 ''' </summary>
 ''' <returns></returns>
 Sub Sample1()

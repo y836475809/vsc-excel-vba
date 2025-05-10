@@ -8,6 +8,7 @@ using Microsoft.CodeAnalysis.Host.Mef;
 using Microsoft.CodeAnalysis.Text;
 using Xunit;
 using System.Linq;
+using System.Text;
 
 namespace TestProject {
 	using ColumnShiftDict = Dictionary<int, List<ColumnShift>>;
@@ -20,10 +21,9 @@ namespace TestProject {
             return code.LastIndexOf(target) + target.Length;
         }
         public static string getCode(string fileName) {
-            var filePath = Helper.getPath(fileName);
-            using (var sr = new StreamReader(filePath)) {
-                return sr.ReadToEnd();
-            }
+			Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+			var filePath = Helper.getPath(fileName);
+            return VBALanguageServer.Util.GetCode(filePath);
         }
         public static Document MakeDoc(string code, string name = "testcode") {
             var host = MefHostServices.Create(MefHostServices.DefaultAssemblies);

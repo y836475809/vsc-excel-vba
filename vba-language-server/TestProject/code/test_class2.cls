@@ -1,13 +1,13 @@
 Option Explicit On
 
 Public Class Person
-    ' 繝｡繝ｳ繝仙､画焚
+    ' メンバ変数
     Public Name As String
     Private Age As Long
     Public Mother As Person
 
     ''' <summary>
-    '''  繝�繧ｹ繝医Γ繝�繧ｻ繝ｼ繧ｸ
+    '''  テストメッセージ
     ''' </summary>
     ''' <param name='val1'></param>
     ''' <param name='val2'></param>

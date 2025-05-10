@@ -8,7 +8,11 @@ namespace VBALanguageServer {
             Write("Info", msg);
         }
 
-        private static void Write(string Level, string msg) {
+		public static void Error(string msg) {
+			Write("Error", msg);
+		}
+
+		private static void Write(string Level, string msg) {
             var date = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
             Console.Error.WriteLine($"[{date}][{Level}] {msg}");
 		}

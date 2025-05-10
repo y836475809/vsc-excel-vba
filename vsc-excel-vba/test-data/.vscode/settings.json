@@ -6,6 +6,5 @@
     "files.associations": {
         "*.bas": "vba",
         "*.cls": "vba"
-    },
-    "vsc-excel-vba.LSFilename": "VBALanguageServer.exe",
+    }
 }

@@ -8,18 +8,16 @@ import {
 } from 'vscode-languageclient/node';
 
 
-export function createClient(context: vscode.ExtensionContext, srcDir: string): LanguageClient {
+export function createClient(context: vscode.ExtensionContext, serverPath: string, srcDir: string): LanguageClient {
     const srcDirName = path.basename(srcDir);
-    const config = vscode.workspace.getConfiguration();
-    const lspFilename = config.get("vsc-excel-vba.LSFilename") as string;
     const serverOptions: ServerOptions = {
         run: {
-            command: path.join(context.asAbsolutePath("bin"), "Release", lspFilename),
+            command: serverPath,
             args: [`--src_dir_name=${srcDirName}`],
             transport: TransportKind.stdio,
         },
         debug: {
-            command: path.join(context.asAbsolutePath("bin"), "Debug", lspFilename),
+            command: serverPath,
             args: [`--src_dir_name=${srcDirName}`],
             transport: TransportKind.stdio,
         }	

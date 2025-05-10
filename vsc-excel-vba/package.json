@@ -24,10 +24,15 @@
     "configuration": {
       "title": "vsc-excel-vba",
       "properties": {
-        "vsc-excel-vba.LSFilename": {
-          "type": ["string"],
-          "default": "VBALanguageServer.exe",
-          "description": "VBA language server executable file name"
+        "vsc-excel-vba.languageServer.enable": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enables or disables VBA language server."
+        },
+        "vsc-excel-vba.languageServer.path": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "VBA language server path."
         }
       }
     },

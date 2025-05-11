@@ -64,10 +64,6 @@
         "title": "Export VBA code"
       },
       {
-        "command": "vsc-excel-vba.openExport",
-        "title": "Open excel and export VBA code"
-      },
-      {
         "command": "vsc-excel-vba.compile",
         "title": "Run VBA compile"
       },
@@ -152,10 +148,6 @@
           "when": "false"
         },
         {
-          "command": "vsc-excel-vba.openExport",
-          "when": "false"
-        },
-        {
           "command": "vsc-excel-vba.compile",
           "when": "false"
         },
@@ -196,7 +188,7 @@
         },
         {
           "when": "resourceExtname == .xlsm",
-          "command": "vsc-excel-vba.openExport",
+          "command": "vsc-excel-vba.export",
           "group": "vevGroup"
         },
         {

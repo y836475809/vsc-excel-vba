@@ -4,11 +4,12 @@ $vbext_vm_Run = 0
 $vbext_vm_Break = 1
 $vbext_vm_Design = 2
 
-$bookname = $Args[0]
+$filepath = $Args[0]
 $srcdir = $Args[1]
+$bookname = getFileName $filepath
 
 try {
-    $bk = getWorkBooks $bookname
+    $bk = getWorkBooks $filepath
 } catch {
     $jsonStr = getResJson "error" $_.Exception.Message ""
     Write-Output $jsonStr

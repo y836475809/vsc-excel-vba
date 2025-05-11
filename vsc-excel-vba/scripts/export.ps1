@@ -3,11 +3,11 @@
 $vbext_ct_StdModule = 1
 $vbext_ct_ClassModule = 2
 
-$bookname = $Args[0]
+$filepath = $Args[0]
 $distdir = $Args[1]
 
 try {
-    $bk = getWorkBooks $bookname
+    $bk = getWorkBooks $filepath
 } catch {
     $jsonStr = getResJson "error" $_.Exception.Message ""
     Write-Output $jsonStr

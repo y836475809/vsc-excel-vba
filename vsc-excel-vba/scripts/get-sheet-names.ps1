@@ -1,9 +1,9 @@
 . "$PSScriptRoot\functions.ps1"
 
-$BookName = $Args[0]
+$filepath = $Args[0]
 
 try {
-    $bk = getWorkBooks $bookname $false
+    $bk = getWorkBooks $filepath $false
 
     $shtNames = @()
     foreach($sht in $bk.Sheets){

@@ -3,11 +3,11 @@
 $fmtCSV = 6
 $fmtXLSM = 52
 
-try {    
-    $bookname = $Args[0]
-    $distdir = $Args[1]
+$filepath = $Args[0]
+$distdir = $Args[1]
 
-    $bk = getWorkBooks $bookname $false
+try {
+    $bk = getWorkBooks $filepath $false
     $app = $bk.Application
 
     $app.ScreenUpdating = $false

@@ -1,12 +1,12 @@
 . "$PSScriptRoot\functions.ps1"
 
-$BookName = $Args[0]
-
 $vbext_ct_StdModule = 1
 $vbext_ct_ClassModule = 2
 
+$filepath = $Args[0]
+
 try {
-    $bk = getWorkBooks($bookname)
+    $bk = getWorkBooks $filepath
 } catch {
     $jsonStr = getResJson "error" $_.Exception.Message ""
     Write-Output $jsonStr

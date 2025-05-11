@@ -40,20 +40,12 @@ export function register(context: vscode.ExtensionContext, project: Project, com
         if(!await checkExport(project)){
             return;
         }
-        if(await commands.exceue(project, "export")){
-            vscode.window.showInformationMessage(`Success export to ${project.srcDir}`);
-        }
-    }));
-    context.subscriptions.push(vscode.commands.registerCommand("vsc-excel-vba.openExport", async () => {
-        if(!await checkExport(project)){
-            return;
-        }
         vscode.window.withProgress({
             location: vscode.ProgressLocation.Notification, 
             title: "Export files"
         }, async progress => {
             return new Promise<void>(async (resolve)=>{
-                if(await commands.exceue(project, "openExport")){
+                if(await commands.exceue(project, "export")){
                     vscode.window.showInformationMessage(`Success export to ${project.srcDir}`);
                 }
                 resolve();
@@ -71,12 +63,10 @@ export function register(context: vscode.ExtensionContext, project: Project, com
     }));
 
     context.subscriptions.push(vscode.commands.registerCommand("vsc-excel-vba.openSheet", async (args) => {	
-        const xlsmFileName = project.projectData.excelfilename;
-        await commands.openSheet(xlsmFileName, args.sheetName);
+        await commands.openSheet(args.sheetName);
     }));
     context.subscriptions.push(vscode.commands.registerCommand("vsc-excel-vba.getSheetNames", async (args) => {	
-        const xlsmFileName = project.projectData.excelfilename;
-        const sheetNames = await commands.getSheetNames(xlsmFileName);
+        const sheetNames = await commands.getSheetNames();
         sheetTDProvider.refresh(sheetNames);
     }));
     context.subscriptions.push(vscode.commands.registerCommand("vsc-excel-vba.newClassFile", async (uri: vscode.Uri) => {	

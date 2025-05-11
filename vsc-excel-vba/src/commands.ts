@@ -15,11 +15,12 @@ const clsLineOffset = 9;
 export class Commands {
     private cmd: string;
     private scriptDirPath: string;
-    private xlsmFileName: string;
+    private excelFilePath: string;
+
     constructor(scriptDirPath: string){
         this.cmd = "powershell";
         this.scriptDirPath = scriptDirPath;
-        this.xlsmFileName = "";
+        this.excelFilePath = "";
     }
 
     async tryCatch(cmd: string, func: ()=>Promise<void>): Promise<boolean>{
@@ -33,7 +34,7 @@ export class Commands {
             }
             vscode.window.showErrorMessage(msg);
             vscode.window.showErrorMessage(
-                `Open excel file or Enable 'Trust Access to Visual Basic Project'
+                `Enable 'Trust Access to Visual Basic Project'
                 (File > Options > Trust Center > Trust Center Settings > Macro Settings)`);
             return false;
         } 
@@ -41,10 +42,10 @@ export class Commands {
 
     async exceue(project: Project, cmd: string): Promise<boolean>{
         return await this.tryCatch(cmd, async () => {
-            this.xlsmFileName = project.projectData.excelfilename;
-            if(!this.xlsmFileName){
+            this.excelFilePath = project.excelFilePath;
+            if(!this.excelFilePath){
                 throw new Error(
-                    "Excel file name is empty");
+                    "Excel file path is empty");
             }
     
             if(cmd === "gotoVSCode"){
@@ -66,9 +67,6 @@ export class Commands {
             }
             if(cmd === "export"){
                 await this.export(project.srcDir);
-            }
-            if(cmd === "openExport"){
-                await this.openExport(project.excelFilePath, project.srcDir);
             }
             if(cmd === "compile"){
                 await this.compile();
@@ -152,10 +150,6 @@ export class Commands {
         await this.run("export.ps1", [`'${distDir}'`]);
     }
 
-    async openExport(excelFilePath:string, distDir: string){
-        await this.run("open-export.ps1", [`'${excelFilePath}'`, `'${distDir}'`]);
-    }
-
     async compile(){
         await this.run("compile.ps1", []);
     }
@@ -211,15 +205,13 @@ export class Commands {
         });
     }
 
-    async openSheet(xlsmFileName: string, sheetName: string){
+    async openSheet(sheetName: string){
         await this.tryCatch("openSheet", async () => {
-            this.xlsmFileName = xlsmFileName;
             await this.run("open-sheet.ps1", [sheetName]);
         });
     }
 
-    async getSheetNames(xlsmFileName: string): Promise<string[]> {
-        this.xlsmFileName = xlsmFileName;
+    async getSheetNames(): Promise<string[]> {
         const ret = await this.run("get-sheet-names.ps1", []);
         const sheetNames: string[] = JSON.parse(ret.data);
         return sheetNames;
@@ -229,7 +221,7 @@ export class Commands {
         const scriptFilePath = path.join(this.scriptDirPath, scriptFileName);
         const ret = await this.spawnAsync(this.cmd, 
             ["-NoProfile", "-ExecutionPolicy", "Unrestricted", 
-            `"${scriptFilePath}"`, this.xlsmFileName, ...args]);
+            `"${scriptFilePath}"`, `"${this.excelFilePath}"`, ...args]);
         
         const res: Response = JSON.parse(ret);
         if(res.code === "error"){

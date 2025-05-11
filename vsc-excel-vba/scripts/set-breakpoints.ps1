@@ -1,6 +1,7 @@
 . "$PSScriptRoot\functions.ps1"
 
-$bookname = $Args[0]
+$filepath = $Args[0]
+
 $bplocs = $null
 if($Args.Length -gt 1){
     $bplocs = $Args[1..($Args.Length-1)]
@@ -8,7 +9,7 @@ if($Args.Length -gt 1){
 # bplocs m1:1-2-3 m2:2
 
 try {
-    $bk = getWorkBooks($bookname)
+    $bk = getWorkBooks $filepath
     $debugItems = $bk.Application.VBE.CommandBars(1).Controls(6)
     $clearbp = $debugItems.Controls(10)
     $clearbp.Execute()

@@ -1,8 +1,9 @@
 . "$PSScriptRoot\functions.ps1"
 
-$bookName = $Args[0]
+$filepath = $Args[0]
+
 try {
-    $bk = getWorkBooks($bookName)
+    $bk = getWorkBooks $filepath
 } catch {
     $jsonStr = getResJson "error" $_.Exception.Message ""
     Write-Output $jsonStr

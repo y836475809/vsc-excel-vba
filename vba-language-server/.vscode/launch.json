@@ -5,6 +5,16 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Debug antlr",
+            "type": "antlr-debug",
+            "request": "launch",
+            "input": "${file}",
+            "grammar": "./VBAAntlr/VBA.g4",
+            "startRule": "startRule",
+            "printParseTree": true,
+            "visualParseTree": true
+        },
+        {
             "name": "Debug type",
             "type": "antlr-debug",
             "request": "launch",

@@ -51,6 +51,21 @@ namespace VBAAntlr {
 		public VBAListener(IRewriteVBA rewriteVBA) {
 			this.rewriteVBA = rewriteVBA;
 		}
+		public override void ExitDimStmt([NotNull] VBAParser.DimStmtContext context) {
+			var p = context.Parent;
+			for (int i = 0; i < p.ChildCount; i++) {
+				var c = p.GetChild(i);
+				if(c is CommonToken ct) {
+					if(ct.TokenIndex == VBALexer.FUNCTION) {
+						var line = ct.Line;
+					}
+					if (ct.TokenIndex == VBALexer.END_FUNCTION) {
+						var line = ct.Line;
+					}
+				}
+			}
+			base.ExitDimStmt(context);
+		}
 
 		public override void ExitStartRule([NotNull] VBAParser.StartRuleContext context) {
 			base.ExitStartRule(context);

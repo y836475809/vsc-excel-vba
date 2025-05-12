@@ -12,17 +12,17 @@ startRule
     | inputStmt | lineInputStmt
     // | setStmt | letStmt
     | dimStmt | redimStmt
-    // | subStmt 
-    // | functionStmt
+    | subStmt | endSubStmt
+    | functionStmt | endFunctionStmt
     | .)*?
     EOF
     ;
-startFileIoRule
-    : (openStmt |  outputStmt | closeStmt 
-    | inputStmt | lineInputStmt
-    | .)*?
-    EOF
-    ;
+// startFileIoRule
+//     : (openStmt |  outputStmt | closeStmt 
+//     | inputStmt | lineInputStmt
+//     | .)*?
+//     EOF
+//     ;
 moduleAttributes
     : (attributeStmt endOfLine+)+
     ;
@@ -38,11 +38,16 @@ moduleOption
 dimStmt
     // : DIM WS identifier (WS? argList)? (WS asTypeClause)?
     : DIM WS identifier WS? LPAREN WS? RPAREN (WS asTypeClause)?
-    
     ;
 redimStmt
     // : (DIM | REDIM) WS identifier (WS? argList)? (WS asTypeClause)?
-    : REDIM WS (PRESERVE WS)? identifier (WS? argList)? (WS asTypeClause)?
+    : REDIM WS (PRESERVE WS)? identifier (WS? redimArgList)? (WS asTypeClause)?
+    ;
+redimArgList
+    : LPAREN (WS? redimArg (WS? ',' WS? redimArg)*)? WS? RPAREN
+    ;
+redimArg
+    : identifier WS REDIMTO WS identifier
     ;
 DIM
     : 'DIM'
@@ -53,27 +58,38 @@ REDIM
 PRESERVE
     : 'PRESERVE'
     ;
-// subStmt
-//     // : (visibility WS)? SUB WS identifier WS? LPAREN WS? RPAREN WS? endOfStatement (redimStmt | .)*? END_SUB
-//     // : (visibility WS)? SUB WS identifier WS? .*? END_SUB
-//     : (visibility WS)? SUB WS identifier WS? LPAREN WS? RPAREN WS? endOfStatement (redimStmt | .)*? END_SUB
-//     ;
-// functionStmt
-//     // : (visibility WS)? FUNCTION WS identifier argList? (WS? asTypeClause)? endOfStatement (.*?) END_FUNCTION
-//     : (visibility WS)? FUNCTION WS identifier argList? (WS? asTypeClause)? endOfStatement (redimStmt | .)*? END_FUNCTION
-//     ;
+REDIMTO
+    : 'TO'
+    ;
+subStmt
+    // : (visibility WS)? SUB WS identifier WS? LPAREN WS? RPAREN WS? endOfStatement (redimStmt | .)*? END_SUB
+    // : (visibility WS)? SUB WS identifier WS? .*? END_SUB
+    // : (visibility WS)? 'SUB' WS identifier WS? LPAREN WS? RPAREN WS? endOfStatement
+    : (visibility WS)? SUB WS identifier WS? LPAREN
+    ;
+functionStmt
+    // : (visibility WS)? FUNCTION WS identifier argList? (WS? asTypeClause)? endOfStatement (.*?) END_FUNCTION
+    // : (visibility WS)? 'FUNCTION' WS identifier argList? (WS? asTypeClause)? endOfStatement
+    : (visibility WS)? FUNCTION WS identifier WS? LPAREN
+    ;
+endSubStmt
+    : 'END' WS 'SUB'
+    ;
+endFunctionStmt
+    : 'END' WS 'FUNCTION'
+    ;
 SUB
     : 'SUB'
     ;
-END_SUB
-    : 'END' WS 'SUB'
-    ;
+// END_SUB
+//     : 'END' WS 'SUB'
+//     ;
 FUNCTION
     : 'FUNCTION'
     ;
-END_FUNCTION
-    : 'END' WS 'FUNCTION'
-    ;
+// END_FUNCTION
+//     : 'END' WS 'FUNCTION'
+//     ;
 // Option Explicit
 // fileIoModule
 //     : comment

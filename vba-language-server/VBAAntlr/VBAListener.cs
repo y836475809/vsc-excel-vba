@@ -47,24 +47,35 @@ namespace VBAAntlr {
 
 	public class VBAListener : VBABaseListener {
 		public IRewriteVBA rewriteVBA;
+		private RewriteDynamicArray rewriteDynamicArray;
 
 		public VBAListener(IRewriteVBA rewriteVBA) {
 			this.rewriteVBA = rewriteVBA;
+			rewriteDynamicArray = new();
 		}
 		public override void ExitDimStmt([NotNull] VBAParser.DimStmtContext context) {
-			var p = context.Parent;
-			for (int i = 0; i < p.ChildCount; i++) {
-				var c = p.GetChild(i);
-				if(c is CommonToken ct) {
-					if(ct.TokenIndex == VBALexer.FUNCTION) {
-						var line = ct.Line;
-					}
-					if (ct.TokenIndex == VBALexer.END_FUNCTION) {
-						var line = ct.Line;
-					}
-				}
-			}
-			base.ExitDimStmt(context);
+			rewriteDynamicArray.Add(context);
+		}
+
+		public override void ExitRedimStmt([NotNull] VBAParser.RedimStmtContext context) {
+			rewriteDynamicArray.Add(context);
+		}
+
+		public override void ExitSubStmt([NotNull] VBAParser.SubStmtContext context) {
+			var name = context.identifier()?.GetText();
+			rewriteDynamicArray.AddMethodStart(name, context.Start.Line);
+		}
+
+		public override void ExitEndSubStmt([NotNull] VBAParser.EndSubStmtContext context) {
+			rewriteDynamicArray.AddMethodEnd(context.Start.Line);
+		}
+
+		public override void ExitFunctionStmt([NotNull] VBAParser.FunctionStmtContext context) {
+			rewriteDynamicArray.AddMethodEnd(context.Start.Line);
+		}
+
+		public override void ExitEndFunctionStmt([NotNull] VBAParser.EndFunctionStmtContext context) {
+			rewriteDynamicArray.AddMethodEnd(context.Start.Line);
 		}
 
 		public override void ExitStartRule([NotNull] VBAParser.StartRuleContext context) {
@@ -77,6 +88,8 @@ namespace VBAAntlr {
 			GetPredefined(context.children);
 			GetFilenumber(context);
 			GetVariant(context);
+
+			rewriteDynamicArray.Rewrite(rewriteVBA);
 		}
 		public override void ExitModuleAttributes([NotNull] VBAParser.ModuleAttributesContext context) {
 			var attrs = context.attributeStmt();

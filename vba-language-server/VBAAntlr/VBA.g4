@@ -41,13 +41,16 @@ dimStmt
     ;
 redimStmt
     // : (DIM | REDIM) WS identifier (WS? argList)? (WS asTypeClause)?
-    : REDIM WS (PRESERVE WS)? identifier (WS? redimArgList)? (WS asTypeClause)?
+    : REDIM WS (PRESERVE WS)? identifier (WS? redimToArgList | redimArgList)? (WS asTypeClause)?
+    ;
+redimToArgList
+    : LPAREN (WS? redimToArg (WS? ',' WS? redimToArg)*)? WS? RPAREN
+    ;
+redimToArg
+    : identifier WS REDIMTO WS identifier
     ;
 redimArgList
-    : LPAREN (WS? redimArg (WS? ',' WS? redimArg)*)? WS? RPAREN
-    ;
-redimArg
-    : identifier WS REDIMTO WS identifier
+    : LPAREN (WS? identifier (WS? ',' WS? identifier)*)? WS? RPAREN
     ;
 DIM
     : 'DIM'

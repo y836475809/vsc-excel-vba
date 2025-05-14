@@ -21,57 +21,113 @@ namespace TestPreprocVBAReDim {
 		[Fact]
 		public void TestReDimNotDim() {
 			var code = @"
+Sub sub1()
 ReDim ary(2)
+End Sub
 ";
 			var pp = new TestPreprocVBA();
 			var actCode = pp.Rewrite("test", code);
-			var preCode = "\r\nDim ary() : ReDim ary(2)\r\n";
+			var preCode = string.Join("\r\n", [
+				"",
+				"Sub sub1()", 
+				"Dim ary():ReDim ary(2)", 
+				"End Sub",
+				"",
+			]);
 			Helper.AssertCode(preCode, actCode);
+
+			var cs = pp.GetColShift("test", 2, 0);
+			Assert.Equal("Dim ary():".Length, cs);
 		}
 
 		[Fact]
 		public void TestReDimNotDim2() {
 			var code = @"
+Sub sub1()
 ReDim ary(2, 2)
+End Sub
 ";
 			var pp = new TestPreprocVBA();
 			var actCode = pp.Rewrite("test", code);
-			var preCode = "\r\nDim ary(,) : ReDim ary(2, 2)\r\n";
+			var preCode = string.Join("\r\n", [
+				"",
+				"Sub sub1()",
+				"Dim ary(,):ReDim ary(2, 2)",
+				"End Sub",
+				"",
+			]);
 			Helper.AssertCode(preCode, actCode);
+
+			var cs = pp.GetColShift("test", 2, 0);
+			Assert.Equal("Dim ary(,):".Length, cs);
 		}
 
 		[Fact]
 		public void TestReDimAsNotDim() {
 			var code = @"
+Sub sub1()
 ReDim ary(2) As Long
+End Sub
 ";
 			var pp = new TestPreprocVBA();
 			var actCode = pp.Rewrite("test", code);
-			var preCode = "\r\nDim ary() As Long: ReDim ary(2)\r\n";
+			var preCode = string.Join("\r\n", [
+				"",
+				"Sub sub1()",
+				$"Dim ary() As Long:ReDim ary(2) {new string(' ', "As Long".Length)}",
+				"End Sub",
+				"",
+			]);
 			Helper.AssertCode(preCode, actCode);
+
+			var cs = pp.GetColShift("test", 2, 0);
+			Assert.Equal("Dim ary() As Long:".Length, cs);
 		}
 
 		[Fact]
 		public void TestReDimAsNotDim2() {
 			var code = @"
+Sub sub1()
 ReDim ary(2, 3) As Long
+End Sub
 ";
 			var pp = new TestPreprocVBA();
 			var actCode = pp.Rewrite("test", code);
-			var preCode = "\r\nDim ary(,) As Long: ReDim ary(2, 3)\r\n";
+			var preCode = string.Join("\r\n", [
+				"",
+				"Sub sub1()",
+				$"Dim ary(,) As Long:ReDim ary(2, 3) {new string(' ', "As Long".Length)}",
+				"End Sub",
+				"",
+			]);
 			Helper.AssertCode(preCode, actCode);
+
+			var cs = pp.GetColShift("test", 2, 0);
+			Assert.Equal("Dim ary(,) As Long:".Length, cs);
 		}
 
 		[Fact]
 		public void TestReDimDimension() {
 			var code = @"
+Sub sub1()
 Dim ary() As Long
 ReDim ary(1 To 2, 1 To 3)
+End Sub
 ";
 			var pp = new TestPreprocVBA();
 			var actCode = pp.Rewrite("test", code);
-			var preCode = "\r\nDim ary(,)\r\nReDim ary(0 To 2, 0 To 3)\r\n";
+			var preCode = string.Join("\r\n", [
+				"",
+				"Sub sub1()",
+				"Dim ary(,) As Long",
+				"ReDim ary(1 To 2, 1 To 3)",
+				"End Sub",
+				"",
+			]);
 			Helper.AssertCode(preCode, actCode);
+
+			var cs = pp.GetColShift("test", 2, "Dim ary(,".Length);
+			Assert.Equal(1, cs);
 		}
 	}
 }

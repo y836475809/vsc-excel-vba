@@ -5,7 +5,7 @@ using TestProject;
 using VBACodeAnalysis;
 using Xunit;
 
-namespace TestPreprocVBAReDim {
+namespace TestPreprocVBADynamicArray {
 	using ColumnShiftDict = Dictionary<int, List<ColumnShift>>;
 	using LineReMapDict = Dictionary<int, int>;
 
@@ -17,7 +17,8 @@ namespace TestPreprocVBAReDim {
 			get { return _fileLineReMapDict; }
 		}
 	}
-	public class TestRewriteVBA {
+
+	public class TestRewriteDynamicArray {
 		[Fact]
 		public void TestReDimNotDim() {
 			var code = @"

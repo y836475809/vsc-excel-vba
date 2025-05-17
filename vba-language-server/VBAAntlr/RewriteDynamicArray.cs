@@ -131,7 +131,7 @@ namespace VBAAntlr {
 						c = new string(',', redimArgs.Length - 1);
 					}
 					if (redimToArgs != null && redimToArgs.Length > 1) {
-						c = new string(',', redimArgs.Length - 1);
+						c = new string(',', redimToArgs.Length - 1);
 					}
 					var asTypeClause = "";
 					var asType = reDimStmt.asTypeClause()?.GetText();

@@ -8,6 +8,8 @@ using System.Threading.Tasks;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Misc;
 using Antlr4.Runtime.Tree;
+using AntlrTemplate;
+using static VBAAntlr.VBAParser;
 
 
 namespace VBAAntlr {
@@ -48,10 +50,12 @@ namespace VBAAntlr {
 	public class VBAListener : VBABaseListener {
 		public IRewriteVBA rewriteVBA;
 		private RewriteDynamicArray rewriteDynamicArray;
+		private RewriteGetProperty rewriteGetProperty;
 
 		public VBAListener(IRewriteVBA rewriteVBA) {
 			this.rewriteVBA = rewriteVBA;
 			rewriteDynamicArray = new();
+			rewriteGetProperty = new();
 		}
 		public override void ExitDimStmt([NotNull] VBAParser.DimStmtContext context) {
 			rewriteDynamicArray.Add(context);
@@ -89,6 +93,8 @@ namespace VBAAntlr {
 			GetFilenumber(context);
 			GetVariant(context);
 
+			//rewriteGetProperty.Rewrite(rewriteVBA, [..tokens]);
+			rewriteGetProperty.Rewrite(rewriteVBA);
 			rewriteDynamicArray.Rewrite(rewriteVBA);
 		}
 		public override void ExitModuleAttributes([NotNull] VBAParser.ModuleAttributesContext context) {
@@ -165,16 +171,16 @@ namespace VBAAntlr {
 		}
 
 		public override void ExitPropertyGetStmt([NotNull] VBAParser.PropertyGetStmtContext context) {
-            base.ExitPropertyGetStmt(context);
-			GetVBAFunction(context.children);
-			GetPredefined(context.children);
-			GetFilenumber(context);
-			GetVariant(context);
+            //base.ExitPropertyGetStmt(context);
+			//GetVBAFunction(context.children);
+			//GetPredefined(context.children);
+			//GetFilenumber(context);
+			//GetVariant(context);
 
 			var name = context.identifier();
 			var asType = context.asTypeClause()?.identifier()?.GetText();
-			var elems = context.blockLetSetStmt();
-			var end_stm = context.endPropertyStmt();
+			//var elems = context.blockLetSetStmt();
+			//var end_stm = context.endPropertyStmt();
 
 			if (GetVariant(context.asTypeClause()?.identifier())) {
 				asType = "Object";
@@ -182,118 +188,143 @@ namespace VBAAntlr {
 
 			rewriteVBA.AddPropertyName(name.Start.Line - 1, "Get", name.GetText(), asType);
 
-			foreach ( var e in elems) {
-				var let_stmt = e.letStmt();
-				if ( let_stmt != null && let_stmt.identifier().Length > 0) {
-					var idens = let_stmt.identifier();
-					GetFilenumber(idens[1]);
-					var iden = idens[0];
-					if (name.GetText() != iden.GetText()) {
-						if (let_stmt.LET() != null) {
-							var sym = let_stmt.LET().Symbol;
-							var lineIndex = sym.Line - 1;
-							var sym_s = sym.Column;
-							var sym_e = sym_s + sym.Text.Length;
-							rewriteVBA.AddChange(lineIndex, (sym_s, sym_e), new string(' ', sym_e - sym_s), sym_e);
-						}
-						continue;
-					}
-					var s = iden.Start;
-					rewriteVBA.AddChange(
-						s.Line - 1, (s.Column, s.Column), 
-						"Get", s.Column);
-				}
-				var set_stmt = e.setStmt();
-				if (set_stmt != null && set_stmt.identifier().Length > 0) {
-					var idens = set_stmt.identifier();
-					GetFilenumber(idens[1]);
-					var iden = idens[0];
-					if (set_stmt.SET() != null) {
-						var sym = set_stmt.SET().Symbol;
-						var lineIndex = sym.Line - 1;
-						var sym_s = sym.Column;
-						var sym_e = sym_s + sym.Text.Length;
-						rewriteVBA.AddChange(lineIndex, (sym_s, sym_e), new string(' ', sym_e - sym_s), sym_e);
-					}
-					if (name.GetText() != iden.GetText()) {
-						continue;
-					}
-					var s = iden.Start;
-					rewriteVBA.AddChange(
-						s.Line - 1, (s.Column, s.Column),
-						"Get", s.Column);
-				}
-			}
+			//var fnTokens = context.children
+			//	.Where(x => x.Payload is CommonToken { Type: VBAParser.IDENTIFIER })
+			//	.Where(x => x.GetText().ToLower() == name.GetText().ToLower())
+			//	.Select(x => x.Payload as CommonToken);
+			////.Where(x => x.Payload);
+			//var w = fnTokens.ToList()[0].TokenSource.NextToken;
+			//foreach (var e in context.children) { 
+			//}
+
+			//foreach ( var e in elems) {
+			//	var let_stmt = e.letStmt();
+			//	if ( let_stmt != null && let_stmt.identifier().Length > 0) {
+			//		var idens = let_stmt.identifier();
+			//		GetFilenumber(idens[1]);
+			//		var iden = idens[0];
+			//		if (name.GetText() != iden.GetText()) {
+			//			if (let_stmt.LET() != null) {
+			//				var sym = let_stmt.LET().Symbol;
+			//				var lineIndex = sym.Line - 1;
+			//				var sym_s = sym.Column;
+			//				var sym_e = sym_s + sym.Text.Length;
+			//				rewriteVBA.AddChange(lineIndex, (sym_s, sym_e), new string(' ', sym_e - sym_s), sym_e);
+			//			}
+			//			continue;
+			//		}
+			//		var s = iden.Start;
+			//		rewriteVBA.AddChange(
+			//			s.Line - 1, (s.Column, s.Column), 
+			//			"Get", s.Column);
+			//	}
+			//	var set_stmt = e.setStmt();
+			//	if (set_stmt != null && set_stmt.identifier().Length > 0) {
+			//		var idens = set_stmt.identifier();
+			//		GetFilenumber(idens[1]);
+			//		var iden = idens[0];
+			//		if (set_stmt.SET() != null) {
+			//			var sym = set_stmt.SET().Symbol;
+			//			var lineIndex = sym.Line - 1;
+			//			var sym_s = sym.Column;
+			//			var sym_e = sym_s + sym.Text.Length;
+			//			rewriteVBA.AddChange(lineIndex, (sym_s, sym_e), new string(' ', sym_e - sym_s), sym_e);
+			//		}
+			//		if (name.GetText() != iden.GetText()) {
+			//			continue;
+			//		}
+			//		var s = iden.Start;
+			//		rewriteVBA.AddChange(
+			//			s.Line - 1, (s.Column, s.Column),
+			//			"Get", s.Column);
+			//	}
+			//}
 
 			var name_s = name.Start;
 			rewriteVBA.AddChange(name_s.Line - 1, (0, name_s.Column), 
 				"Private Function Get", name_s.Column);
 
-			var end_s = end_stm.Start;
-			rewriteVBA.AddChange(end_s.Line - 1, "End Function");
+			rewriteGetProperty.AddProperty(PropertyType.Get, context);
+			rewriteDynamicArray.AddMethodStart($"get_prop_{name.GetText()}",  context.Start.Line);
+			//var end_s = end_stm.Start;
+			//rewriteVBA.AddChange(end_s.Line - 1, "End Function");
 		}
 
-		public override void ExitPropertyLetStmt([NotNull] VBAParser.PropertyLetStmtContext context) {
-			var setTokens = context.GetTokens(VBAParser.SET);
-			var letTokens = context.GetTokens(VBAParser.LET);
-			var tokens = setTokens.Concat(letTokens);
-			GetLetSet(tokens);
-			GetVBAFunction(context.children);
-			GetPredefined(context.children);
-			GetFilenumber(context);
-			GetVariant(context);
+		//public override void ExitPropertyLetStmt([NotNull] VBAParser.PropertyetStmtContext context) {
+		//	//var setTokens = context.GetTokens(VBAParser.SET);
+		//	//var letTokens = context.GetTokens(VBAParser.LET);
+		//	//var tokens = setTokens.Concat(letTokens);
+		//	//GetLetSet(tokens);
+		//	//GetVBAFunction(context.children);
+		//	//GetPredefined(context.children);
+		//	//GetFilenumber(context);
+		//	//GetVariant(context);
 
-			var name = context.identifier();
-			var end_stm = context.endPropertyStmt();
+		//	var name = context.identifier();
+		//	//var end_stm = context.endPropertyStmt();
 
-			string asType = null;
-			var args = context.argList();
-			if (args != null && args.arg().Length > 0) {
-				var arg = args.arg()[0];
-				var argIdent = arg.asTypeClause()?.identifier();
-				if (GetVariant(argIdent)) {
-					asType = "Object";
-				} else {
-					asType = argIdent?.GetText();
-				}
-			}
-			rewriteVBA.AddPropertyName(name.Start.Line - 1, "Let", name.GetText(), asType);
+		//	string asType = null;
+		//	var args = context.argList();
+		//	if (args != null && args.arg().Length > 0) {
+		//		var arg = args.arg()[0];
+		//		var argIdent = arg.asTypeClause()?.identifier();
+		//		if (GetVariant(argIdent)) {
+		//			asType = "Object";
+		//		} else {
+		//			asType = argIdent?.GetText();
+		//		}
+		//	}
+		//	rewriteVBA.AddPropertyName(name.Start.Line - 1, "Let", name.GetText(), asType);
 
-			var name_s = name.Start;
-			rewriteVBA.AddChange(name_s.Line - 1, (0, name_s.Column),
-				"Private Sub Set", name_s.Column);
-			var end_s = end_stm.Start;
-			rewriteVBA.AddChange(end_s.Line - 1, "End Sub");
-		}
+		//	var name_s = name.Start;
+		//	rewriteVBA.AddChange(name_s.Line - 1, (0, name_s.Column),
+		//		"Private Sub Let", name_s.Column);
+
+		//	rewriteGetProperty.AddPropertyStart(PropertyType.Let, name.GetText(), context.Start.Line);
+		//	rewriteDynamicArray.AddMethodStart($"let_prop_{name.GetText()}", context.Start.Line);
+		//	//var end_s = end_stm.Start;
+		//	//rewriteVBA.AddChange(end_s.Line - 1, "End Sub");
+		//}
 
 		public override void ExitPropertySetStmt([NotNull] VBAParser.PropertySetStmtContext context) {
-			var setTokens = context.GetTokens(VBAParser.SET);
-			var letTokens = context.GetTokens(VBAParser.LET);
-			var tokens = setTokens.Concat(letTokens);
-			GetLetSet(tokens);
-			GetVBAFunction(context.children);
-			GetPredefined(context.children);
-			GetFilenumber(context);
-			GetVariant(context);
+			//var setTokens = context.GetTokens(VBAParser.SET);
+			//var letTokens = context.GetTokens(VBAParser.LET);
+			//var tokens = setTokens.Concat(letTokens);
+			//GetLetSet(tokens);
+			//GetVBAFunction(context.children);
+			//GetPredefined(context.children);
+			//GetFilenumber(context);
+			//GetVariant(context);
 
 			var name = context.identifier();
-			var end_stm = context.endPropertyStmt();
+			//var end_stm = context.endPropertyStmt();
 
-			string asType = null;
-			var args = context.argList();
-			if (args != null && args.arg().Length > 0) {
-				var arg = args.arg()[0];
-				var argIdent = arg.asTypeClause()?.identifier();
-				GetVariant(argIdent);
-				asType = argIdent?.GetText();
-			}
-			rewriteVBA.AddPropertyName(name.Start.Line - 1, "Set", name.GetText(), asType);
+			//string asType = null;
+			//var args = context.argList();
+			//if (args != null && args.arg().Length > 0) {
+			//	var arg = args.arg()[0];
+			//	var argIdent = arg.asTypeClause()?.identifier();
+			//	GetVariant(argIdent);
+			//	asType = argIdent?.GetText();
+			//}
+			//rewriteVBA.AddPropertyName(name.Start.Line - 1, "Set", name.GetText(), asType);
 			
 			var name_s = name.Start;
-			rewriteVBA.AddChange(name_s.Line - 1, (0, name_s.Column),
-				"Private Sub Set", name_s.Column);
-			var end_s = end_stm.Start;
-			rewriteVBA.AddChange(end_s.Line - 1, "End Sub");
+			//rewriteVBA.AddChange(name_s.Line - 1, (0, name_s.Column),
+			//	"Private Sub Set", name_s.Column);
+
+			rewriteGetProperty.AddProperty(PropertyType.Set, context);
+			rewriteDynamicArray.AddMethodStart($"set_prop_{name.GetText()}", context.Start.Line);
+			//var end_s = end_stm.Start;
+			//rewriteVBA.AddChange(end_s.Line - 1, "End Sub");
+		}
+
+		public override void ExitEndPropertyStmt([NotNull] VBAParser.EndPropertyStmtContext context) {
+			//base.ExitEndPropertyStmt(context);
+
+			//rewriteVBA.AddChange(context.Start.Line - 1, "End Structure");
+			rewriteGetProperty.AddProperty(PropertyType.End, context);
+			rewriteDynamicArray.AddMethodEnd(context.Start.Line);
 		}
 
 		public override void ExitOpenStmt([NotNull] VBAParser.OpenStmtContext context) {

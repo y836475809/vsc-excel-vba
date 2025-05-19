@@ -6,7 +6,9 @@ options {
 
 startRule
     : (typeStmt 
-    | propertyGetStmt | propertyLetStmt | propertySetStmt
+    // | propertyGetStmt | propertyLetStmt | propertySetStmt
+    | propertyGetStmt | propertySetStmt
+    | endPropertyStmt
     | moduleAttributes | moduleOption 
     | openStmt | outputStmt | closeStmt 
     | inputStmt | lineInputStmt
@@ -181,24 +183,30 @@ typeEndStmt
     : END_TYPE
     ;
 propertyGetStmt
-    : (visibility WS)? (STATIC WS)? PROPERTY_GET WS identifier LPAREN WS? RPAREN (
+    // : (visibility WS)? (STATIC WS)? PROPERTY_GET WS identifier LPAREN WS? RPAREN (
+    //     WS asTypeClause
+    // )? endOfStatement (blockLetSetStmt | .)*? endPropertyStmt
+    : (visibility WS)? (STATIC WS)? PROPERTY WS GET WS identifier argList? (
         WS asTypeClause
-    )? endOfStatement (blockLetSetStmt | .)*? endPropertyStmt
+    )? endOfStatement
     ;
-blockLetSetStmt
-    : letStmt | setStmt
-    ;
+// blockLetSetStmt
+//     : letStmt | setStmt
+//     ;
 letStmt
     : (LET WS)? identifier WS? EQ WS? identifier argList? endOfStatement
     ;
 setStmt
     : SET WS identifier WS? EQ WS? identifier argList? endOfStatement
     ;
-propertyLetStmt
-    : (visibility WS)? (STATIC WS)? PROPERTY_LET WS identifier (WS? argList)? endOfStatement .*? endPropertyStmt
-    ;
+// propertyLetStmt
+//     // : (visibility WS)? (STATIC WS)? PROPERTY_LET WS identifier (WS? argList)? endOfStatement .*? endPropertyStmt
+//     : (visibility WS)? (STATIC WS)? PROPERTY_LET WS identifier (WS? argList)? endOfStatement
+//     ;
 propertySetStmt
-    : (visibility WS)? (STATIC WS)? PROPERTY_SET WS identifier (WS? argList)? endOfStatement .*? endPropertyStmt
+    // : (visibility WS)? (STATIC WS)? PROPERTY_SET WS identifier (WS? argList)? endOfStatement .*? endPropertyStmt
+    // : (visibility WS)? (STATIC WS)? PROPERTY_SET WS identifier (WS? argList)? endOfStatement
+    : (visibility WS)? (STATIC WS)? PROPERTY WS (SET | LET) WS identifier WS? LPAREN WS? arg WS? RPAREN endOfStatement
     ;
 endPropertyStmt
     : END_PROPERTY
@@ -217,15 +225,30 @@ arg
 argDefaultValue
     : EQ WS? identifier
     ;
-PROPERTY_GET
-    : 'PROPERTY' WS 'GET'
+PROPERTY
+    : 'PROPERTY'
     ;
-PROPERTY_LET
-    : 'PROPERTY' WS 'LET'
+GET
+    : 'GET'
     ;
-PROPERTY_SET
-    : 'PROPERTY' WS 'SET'
-    ; 
+// PROPERTY_SET
+//     : 'SET'
+//     ;
+// PROPERTY_LET
+//     : 'LET'
+//     ;
+// PROPERTY_SET
+//     : 'PROPERTY' WS 'SET'
+//     ; 
+// PROPERTY_GET
+//     : 'PROPERTY' WS 'GET'
+//     ;
+// PROPERTY_LET
+//     : 'PROPERTY' WS 'LET'
+//     ;
+// PROPERTY_SET
+//     : 'PROPERTY' WS 'SET'
+//     ; 
 END_PROPERTY
     : 'END' WS 'PROPERTY'
     ;

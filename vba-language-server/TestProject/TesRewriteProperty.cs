@@ -32,20 +32,21 @@ Get
 Name1 = LCase(Name)
 End Get:End Property
 
-Private Function SetName1(argName As String)
+Private Sub            Name1(argName As String)
 Dim a As String
 a = argName
-End Function
+Sub Function
+
+Private Sub set_Name3(argName As String)
+Me.Name = argName
+End Sub
+Public Property Name3 As String
 
 Property ReadOnly Name2() As String
 Get
 Name2 = LCase(Name)
 End Get:End Property
 
-Property WriteOnly Name3()
-Set(argName As String)
-Me.Name = argName
-End Set:End Property
 ";
 			Helper.AssertCode(preCode, actCode);
 		}

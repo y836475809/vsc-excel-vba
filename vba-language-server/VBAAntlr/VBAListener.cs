@@ -36,6 +36,10 @@ namespace VBAAntlr {
 		/// <param name="text"></param>
 		void AddChange(int lineIndex, string text);
 
+		void InsertLines(int line, string[] texts);
+
+		void AddLineMap(int srcLine, int toLine);
+
 		void AddPropertyName(int lineIndex, string prefix, string text, string asType);
 
 		void AddModuleAttribute(int lastLineIndex, string vbName, ModuleType type);
@@ -241,8 +245,8 @@ namespace VBAAntlr {
 			//}
 
 			var name_s = name.Start;
-			rewriteVBA.AddChange(name_s.Line - 1, (0, name_s.Column), 
-				"Private Function Get", name_s.Column);
+			//rewriteVBA.AddChange(name_s.Line - 1, (0, name_s.Column), 
+			//	"Private Function Get", name_s.Column);
 
 			rewriteGetProperty.AddProperty(PropertyType.Get, context);
 			rewriteDynamicArray.AddMethodStart($"get_prop_{name.GetText()}",  context.Start.Line);
@@ -307,7 +311,8 @@ namespace VBAAntlr {
 			//	GetVariant(argIdent);
 			//	asType = argIdent?.GetText();
 			//}
-			//rewriteVBA.AddPropertyName(name.Start.Line - 1, "Set", name.GetText(), asType);
+			string asType = context.arg().asTypeClause()?.identifier()?.GetText();
+			rewriteVBA.AddPropertyName(name.Start.Line - 1, "Set", name.GetText(), asType);
 			
 			var name_s = name.Start;
 			//rewriteVBA.AddChange(name_s.Line - 1, (0, name_s.Column),

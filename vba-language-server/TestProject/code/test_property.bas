@@ -8,10 +8,10 @@ Dim a As String
 a = argName
 End Property
 
-Property Get Name2() As String
-Name2 = LCase(Name)
-End Property
-
 Property Set Name3(argName As String)
 Me.Name = argName
+End Property
+
+Property Get Name2() As String
+Name2 = LCase(Name)
 End Property

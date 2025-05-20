@@ -38,6 +38,9 @@ namespace AntlrTemplate {
 			if (hasGetPorp && hasSetPorp) {
 				return PropertyDataType.GetSet;
 			}
+			if (hasGetPorp) {
+				return PropertyDataType.Get;
+			}
 			if (hasSetPorp) {
 				return PropertyDataType.Set;
 			}
@@ -48,10 +51,12 @@ namespace AntlrTemplate {
 
 	internal class RewriteGetProperty {
 		private List<(PropertyType, ParserRuleContext)> PropLines;
+		//public Dictionary<int, int> lineReMapDict;
 		//private List<(PropertyType, string, int)> PropBlockLines;
 
 		public RewriteGetProperty() {
 			PropLines = [];
+			//lineReMapDict = [];
 			//PropBlockLines = [];
 		}
 		public void AddProperty(PropertyType propType, ParserRuleContext stmt) {
@@ -100,43 +105,72 @@ namespace AntlrTemplate {
 				}
 			}
 			foreach (var (name, propData) in propDict) {
-				if(propData.DataType() == PropertyDataType.GetSet) {
-
+				var dataType = propData.DataType();
+				if (dataType == PropertyDataType.GetSet) {
+					RewriteGetSetProp(rewriteVBA, propData);
 				}
-				if (propData.DataType() == PropertyDataType.Get) {
-
+				if (dataType == PropertyDataType.Get) {
+					RewriteGetProp(rewriteVBA, propData);
 				}
-				if (propData.DataType() == PropertyDataType.Set) {
-
+				if (dataType == PropertyDataType.Set) {
+					RewriteSetProp(rewriteVBA, propData);
 				}
 			}
-
-			//foreach (var propEnd in propEndList) {
-			//	var (pre, line) = propEnd;
-			//	if (pre == PropertyType.Get) {
-			//		rewriteVBA.AddChange(line - 1, "End Function");
-			//	} else {
-			//		rewriteVBA.AddChange(line - 1, "End Sub");
-			//	}
-			//}
-
-			//foreach (var token in letsetTokens) {
-			//	if (GetPropertyToken(token, rangeDict, out string propName)) {
-			//		var sym = token.Symbol;
-			//		var line = sym.Line - 1;
-			//		var sc = sym.Column;
-			//		var ec = sc + sym.Text.Length;
-			//		rewriteVBA.AddChange(line, (sc, sc), "Get", sc);
-			//	}
-			//}
 		}
 
-		private void RewriteGetSet(
-			IRewriteVBA rewriteVBA,
-			PropertyGetStmtContext getStmt, EndPropertyStmtContext getEndStmt,
-			PropertySetStmtContext setStmt, EndPropertyStmtContext setEndStmt) {
-			//getStmt.
+		private void RewriteGetSetProp(IRewriteVBA rewriteVBA, PropertyData propertyData) {
+			var getPropStmt = propertyData.GetStmt;
+			var getPropEndStmt = propertyData.GetEndStmt;
+			//var getStmt = getPropStmt.GET();
+			var getSym = getPropStmt.GET().Symbol;
+			var getStartCol = getSym.Column;
+			rewriteVBA.AddChange(getSym.Line - 1,
+				(getStartCol, getStartCol + getSym.Text.Length),
+				new string(' ',  getSym.Text.Length), getStartCol);
+			rewriteVBA.InsertLines(getPropStmt.Start.Line, ["Set:End Set", "Get"]);
+			rewriteVBA.AddChange(getPropEndStmt.Start.Line - 1, "End Get:End Property");
+			
+			var setPropStmt = propertyData.SetStmt;
+			var setPropEndStmt = propertyData.SetEndStmt;
+			var setPropIdeStart = setPropStmt.identifier().Start;
+			rewriteVBA.AddChange(setPropIdeStart.Line - 1, (0, setPropIdeStart.Column),
+				"Private Sub ", setPropIdeStart.Column);
+			rewriteVBA.AddChange(
+				setPropEndStmt.Start.Line - 1, "End Sub");
+		}
 
+		private void RewriteGetProp(IRewriteVBA rewriteVBA, PropertyData propertyData) {
+			var getPropStmt = propertyData.GetStmt;
+			var getPropEndStmt = propertyData.GetEndStmt;
+			var getSym = getPropStmt.GET().Symbol;
+			var getStartCol = getSym.Column;
+			rewriteVBA.AddChange(getSym.Line - 1,
+				(getStartCol, getStartCol + getSym.Text.Length),
+				"ReadOnly", getStartCol);
+			rewriteVBA.InsertLines(getPropStmt.Start.Line, ["Get"]);
+			rewriteVBA.AddChange(getPropEndStmt.Start.Line - 1, "End Get:End Property");
+		}
+
+		private void RewriteSetProp(IRewriteVBA rewriteVBA, PropertyData propertyData) {
+			var setPropStmt = propertyData.SetStmt;
+			var setPropEndStmt = propertyData.SetEndStmt;
+			var setPropIdeStart = setPropStmt.identifier().Start;
+			rewriteVBA.AddChange(setPropIdeStart.Line - 1, (0, setPropIdeStart.Column),
+				"Private Sub set_", setPropIdeStart.Column);
+			rewriteVBA.AddChange(
+				setPropEndStmt.Start.Line - 1, "End Sub");
+			var asType = "";
+			if (setPropStmt.arg().asTypeClause() != null) {
+				var asStmt = setPropStmt.arg().asTypeClause();
+				asType = $" As {asStmt.identifier().GetText()}";
+			}
+			rewriteVBA.InsertLines(
+				setPropEndStmt.Start.Line,
+				[$"Public Property {setPropStmt.identifier().GetText()}{asType}"]);
+			rewriteVBA.AddLineMap(
+				setPropEndStmt.Start.Line,
+				 setPropIdeStart.Line - 1);
+			//lineReMapDict[setPropEndStmt.Start.Line] = setPropIdeStart.Line - 1;
 		}
 
 		private bool GetPropertyToken(Antlr4.Runtime.Tree.ITerminalNode token, Dictionary<string, (int, int)> rangeDict, out string name) {

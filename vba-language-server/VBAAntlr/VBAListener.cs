@@ -311,8 +311,14 @@ namespace VBAAntlr {
 			//	GetVariant(argIdent);
 			//	asType = argIdent?.GetText();
 			//}
-			string asType = context.arg().asTypeClause()?.identifier()?.GetText();
-			rewriteVBA.AddPropertyName(name.Start.Line - 1, "Set", name.GetText(), asType);
+			var prefix = "";
+			if (context.LET() != null) {
+				prefix = "Let";
+			} else {
+				prefix = "Set";
+			}
+				string asType = context.arg().asTypeClause()?.identifier()?.GetText();
+			rewriteVBA.AddPropertyName(name.Start.Line - 1, prefix, name.GetText(), asType);
 			
 			var name_s = name.Start;
 			//rewriteVBA.AddChange(name_s.Line - 1, (0, name_s.Column),

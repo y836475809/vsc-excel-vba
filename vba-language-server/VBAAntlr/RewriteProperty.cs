@@ -126,7 +126,7 @@ namespace AntlrTemplate {
 			var getStartCol = getSym.Column;
 			rewriteVBA.AddChange(getSym.Line - 1,
 				(getStartCol, getStartCol + getSym.Text.Length),
-				new string(' ',  getSym.Text.Length), getStartCol);
+				"", getPropStmt.identifier().Start.Column);
 			rewriteVBA.InsertLines(getPropStmt.Start.Line, ["Set:End Set", "Get"]);
 			rewriteVBA.AddChange(getPropEndStmt.Start.Line - 1, "End Get:End Property");
 			

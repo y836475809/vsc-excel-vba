@@ -633,7 +633,8 @@ namespace VBACodeAnalysis {
 			var doc = workspace.CurrentSolution.GetDocument(docId);
 			var node = doc.GetSyntaxRootAsync().Result;
             var docSymbols = DocumentSymbolProvider.GetDocumentSymbols(node, uri,  (int line) => {
-                if(_preprocVBA.TryGetProperty(name, line, out string prefix, out string propName)) {
+                var shiftLine = _preprocVBA.GetLineShift(name, line);
+                if(_preprocVBA.TryGetProperty(name, line - shiftLine, out string prefix, out string propName)) {
                     return (true, prefix, propName);
                 }
                 return (false, null, null);

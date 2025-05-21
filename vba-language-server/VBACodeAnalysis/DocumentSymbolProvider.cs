@@ -18,6 +18,7 @@ namespace VBACodeAnalysis {
 			children.AddRange(GetMethodSymbols(node, propMapFunc));
 			children.AddRange(GetTypeSymbols(node));
 			children.AddRange(GetEnumSymbols(node));
+			children.AddRange(GetPropertySymbols(node));
 
 			var symbolName = Path.GetFileNameWithoutExtension(uri.LocalPath);
 			var ext = Path.GetExtension(uri.LocalPath);
@@ -30,6 +31,38 @@ namespace VBACodeAnalysis {
 			var rootSymbol = GetSymbol(node, symbolName, kind);
 			rootSymbol.Children = [.. children];
 			return [rootSymbol];
+		}
+
+		private static List<VBADocSymbol> GetPropertySymbols(SyntaxNode node) {
+			var symbols = new List<VBADocSymbol>();
+			var syntaxes = node.DescendantNodes().OfType<PropertyBlockSyntax>();
+			foreach (var syntax in syntaxes) {
+				var stmt = syntax.PropertyStatement;
+				var ident = stmt.Identifier.Text;
+				if (ident == "") {
+					continue;
+				}
+				var name = "";
+				if (ident.ToLower() == "readonly") {
+					var propNames = stmt.Identifier.GetAllTrivia().Where(x => x.IsKind(SyntaxKind.SkippedTokensTrivia));
+					if (propNames.Any()) {
+						var propName = propNames.First().ToString();
+						var index = propName.IndexOf("(");
+						if (index < 0) {
+							name = $"Get {propName}";
+						} else {
+							name = $"Get {propName.Substring(0, index)}";
+						}
+					} else {
+						continue;
+					}
+					//name = $"Get {stmt.Identifier.GetAllTrivia().ToString().Trim()}";
+				} else {
+					name = $"Get Set {ident}";
+				}
+				symbols.Add(GetSymbol(stmt, name, "Property"));
+			}
+			return symbols;
 		}
 
 		private static List<VBADocSymbol> GetMethodSymbols(SyntaxNode node, Func<int, (bool, string, string)> propMapFunc) {

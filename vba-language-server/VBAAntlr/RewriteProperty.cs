@@ -51,23 +51,14 @@ namespace AntlrTemplate {
 
 	internal class RewriteGetProperty {
 		private List<(PropertyType, ParserRuleContext)> PropLines;
-		//public Dictionary<int, int> lineReMapDict;
-		//private List<(PropertyType, string, int)> PropBlockLines;
 
 		public RewriteGetProperty() {
 			PropLines = [];
-			//lineReMapDict = [];
-			//PropBlockLines = [];
-		}
-		public void AddProperty(PropertyType propType, ParserRuleContext stmt) {
-			//PropBlockLines.Add((propType, name, line));
-			PropLines.Add((propType, stmt));
 		}
 
-		//public void AddPropertyEnd(ParserRuleContext stmt) {
-		//	PropLines.Add((PropertyType.End, stmt));
-		//	//PropLines.Add((propType, stmt, line));
-		//}
+		public void AddProperty(PropertyType propType, ParserRuleContext stmt) {
+			PropLines.Add((propType, stmt));
+		}
 
 		public void Rewrite(IRewriteVBA rewriteVBA) {
 			var propEndList = new List<(PropertyType, int)>();
@@ -121,14 +112,13 @@ namespace AntlrTemplate {
 		private void RewriteGetSetProp(IRewriteVBA rewriteVBA, PropertyData propertyData) {
 			var getPropStmt = propertyData.GetStmt;
 			var getPropEndStmt = propertyData.GetEndStmt;
-			//var getStmt = getPropStmt.GET();
 			var getSym = getPropStmt.GET().Symbol;
 			var getStartCol = getSym.Column;
 			rewriteVBA.AddChange(getSym.Line - 1,
 				(getStartCol, getStartCol + getSym.Text.Length),
 				"", getPropStmt.identifier().Start.Column);
-			rewriteVBA.InsertLines(getPropStmt.Start.Line, ["Set:End Set", "Get"]);
-			rewriteVBA.AddChange(getPropEndStmt.Start.Line - 1, "End Get:End Property");
+			rewriteVBA.InsertLines(getPropStmt.Start.Line, ["Set : End Set", "Get"]);
+			rewriteVBA.AddChange(getPropEndStmt.Start.Line - 1, "End Get : End Property");
 			
 			var setPropStmt = propertyData.SetStmt;
 			var setPropEndStmt = propertyData.SetEndStmt;
@@ -148,7 +138,7 @@ namespace AntlrTemplate {
 				(getStartCol, getStartCol + getSym.Text.Length),
 				"ReadOnly", getStartCol);
 			rewriteVBA.InsertLines(getPropStmt.Start.Line, ["Get"]);
-			rewriteVBA.AddChange(getPropEndStmt.Start.Line - 1, "End Get:End Property");
+			rewriteVBA.AddChange(getPropEndStmt.Start.Line - 1, "End Get : End Property");
 		}
 
 		private void RewriteSetProp(IRewriteVBA rewriteVBA, PropertyData propertyData) {
@@ -170,21 +160,6 @@ namespace AntlrTemplate {
 			rewriteVBA.AddLineMap(
 				setPropEndStmt.Start.Line,
 				 setPropIdeStart.Line - 1);
-			//lineReMapDict[setPropEndStmt.Start.Line] = setPropIdeStart.Line - 1;
-		}
-
-		private bool GetPropertyToken(Antlr4.Runtime.Tree.ITerminalNode token, Dictionary<string, (int, int)> rangeDict, out string name) {
-			foreach (var item in rangeDict) {
-				var s = item.Value.Item1;
-				var e = item.Value.Item2;
-				//if (Enumerable.Range(s, e).Contains(token.Symbol.Line)) {
-				if (s < token.Symbol.Line && token.Symbol.Line < e) {
-					name = item.Key;
-					return true;
-				}
-			}
-			name = "";
-			return false;
 		}
 	}
 }

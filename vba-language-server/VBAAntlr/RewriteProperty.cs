@@ -95,6 +95,7 @@ namespace AntlrTemplate {
 					propDict[name].SetEndStmt = EndStmt as EndPropertyStmtContext;
 				}
 			}
+			// TODO slow
 			foreach (var (name, propData) in propDict) {
 				var dataType = propData.DataType();
 				if (dataType == PropertyDataType.GetSet) {
@@ -124,7 +125,7 @@ namespace AntlrTemplate {
 			var setPropEndStmt = propertyData.SetEndStmt;
 			var setPropIdeStart = setPropStmt.identifier().Start;
 			rewriteVBA.AddChange(setPropIdeStart.Line - 1, (0, setPropIdeStart.Column),
-				"Private Sub ", setPropIdeStart.Column);
+				"Private Sub set_p_", setPropIdeStart.Column);
 			rewriteVBA.AddChange(
 				setPropEndStmt.Start.Line - 1, "End Sub");
 		}
@@ -134,9 +135,10 @@ namespace AntlrTemplate {
 			var getPropEndStmt = propertyData.GetEndStmt;
 			var getSym = getPropStmt.GET().Symbol;
 			var getStartCol = getSym.Column;
+			var identStartCol = getPropStmt.identifier().Start.Column;
 			rewriteVBA.AddChange(getSym.Line - 1,
 				(getStartCol, getStartCol + getSym.Text.Length),
-				"ReadOnly", getStartCol);
+				"ReadOnly", identStartCol);
 			rewriteVBA.InsertLines(getPropStmt.Start.Line, ["Get"]);
 			rewriteVBA.AddChange(getPropEndStmt.Start.Line - 1, "End Get : End Property");
 		}
@@ -152,7 +154,11 @@ namespace AntlrTemplate {
 			var asType = "";
 			if (setPropStmt.arg().asTypeClause() != null) {
 				var asStmt = setPropStmt.arg().asTypeClause();
-				asType = $" As {asStmt.identifier().GetText()}";
+				var asTypeName = asStmt.identifier().GetText();
+				if(asTypeName.ToLower() == "variant") {
+					asTypeName = "Object";
+				}
+				asType = $" As {asTypeName}";
 			}
 			rewriteVBA.InsertLines(
 				setPropEndStmt.Start.Line,

@@ -1,4 +1,8 @@
-﻿using System;
+﻿global using ColumnShiftDict = System.Collections.Generic.Dictionary<int, System.Collections.Generic.List<VBACodeAnalysis.ColumnShift>>;
+global using LineShiftList = System.Collections.Generic.List<(int, int)>;
+global using LineReMapDict = System.Collections.Generic.Dictionary<int, int>;
+
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.CompilerServices;
@@ -11,7 +15,19 @@ using System.Linq;
 using System.Text;
 
 namespace TestProject {
-	using ColumnShiftDict = Dictionary<int, List<ColumnShift>>;
+	class TestPreprocVBA : PreprocVBA {
+		public Dictionary<string, ColumnShiftDict> ColDict {
+			get { return _fileColShiftDict; }
+		}
+
+		public Dictionary<string, LineShiftList> LineShiftDict {
+			get { return _fileLineShiftDict; }
+		}
+
+		public Dictionary<string, LineReMapDict> LineDict {
+			get { return _fileLineReMapDict; }
+		}
+	}
 
 	class Helper {
         public static string getPath(string fileName, [CallerFilePath] string filePath = "") {
@@ -117,6 +133,15 @@ namespace TestProject {
 				}
 			}
 		}
+
+		public static void AssertLineShift(List<(int, int)> exp, List<(int, int)> act) {
+			Assert.Equal(exp.Count, act.Count);
+			var items = exp.Zip(act, (line, count) => (line, count));
+			foreach (var (v1, v2) in items) {
+				Assert.True(v1.Equals(v2));
+			}
+		}
+
 		public static void AssertDict<T1, T2>(Dictionary<T1, T2> pre, Dictionary<T1, T2> act) {
 			Assert.True(pre.Keys.All(x => act.Keys.Contains(x)));
 			foreach (var item in pre) {

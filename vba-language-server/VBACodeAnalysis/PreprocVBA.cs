@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -14,7 +15,7 @@ using VBAAntlr;
 namespace VBACodeAnalysis {
 	using ChangeDict = Dictionary<int, List<ChangeVBA>>;
 	using ColumnShiftDict = Dictionary<int, List<ColumnShift>>;
-	using InsertList = List<(int, string[])>;
+	using InsertDict = SortedDictionary<int, string[]>;
 	using LineShiftList = List<(int, int)>;
 	using LineReMapDict = Dictionary<int, int>;
 	using PropertyDict = Dictionary<int, PropertyName>;
@@ -81,10 +82,11 @@ namespace VBACodeAnalysis {
 			}
 			var t1 = line[0..rStart];
 			var t2 = line[rEnd..];
-			var t3 = $"{t1}{text}";
-			var shiftCol = t3.Length - StartCol;
-			
-			var rep_line = $"{t3}{t2}";
+			var repText = $"{t1}{text}";
+			var orgText = line[..rEnd];
+			var shiftCol = repText.Length - orgText.Length;
+
+			var rep_line = $"{repText}{t2}";
 			if(_enableShift) {
 				var colShift = new ColumnShift(_lineIndex, StartCol, shiftCol);
 				return (colShift, rep_line);
@@ -93,11 +95,19 @@ namespace VBACodeAnalysis {
 				return (colShift, rep_line);
 			}
 		}
+
+		public bool Eq(int lineIndex, (int, int) repColRange, string text, int startCol, bool enableShift) {
+			return _lineIndex == lineIndex
+				&& _repColRange.Equals(repColRange)
+				&& _text == text
+				&& StartCol == startCol
+				&& _enableShift == enableShift;
+		}
 	}
 
 	public class RewriteVBA : IRewriteVBA {
 		private ChangeDict _changeDict;
-		private InsertList _insertList;
+		private InsertDict _insertDict;
 		private Dictionary<string, PropertyName> _propertyNameDict;
 		private List<VBADiagnostic> _ignoreDiagnosticList;
 
@@ -156,7 +166,7 @@ namespace VBACodeAnalysis {
 
 		public RewriteVBA() {
 			_changeDict = [];
-			_insertList = [];
+			_insertDict = [];
 			_lineShiftList = [];
 			_lineReMapDict = [];
 			_propertyNameDict = [];
@@ -166,23 +176,28 @@ namespace VBACodeAnalysis {
 		}
 
 		public void AddChange(int lineIndex, (int, int) repColRange, string text, int startCol, bool enableShift = true) {
-			if(!_changeDict.TryGetValue(lineIndex, out List<ChangeVBA> value)) {
-				value = ([]);
-				_changeDict.Add(lineIndex, value);
+			var change = new ChangeVBA(lineIndex, repColRange, text, startCol, enableShift);
+			if (_changeDict.TryGetValue(lineIndex, out List<ChangeVBA> value)) {
+				var f = value.FindIndex(x => {
+					return x.Eq(lineIndex, repColRange, text, startCol, enableShift);
+				});
+				if(f < 0) {
+					value.Add(change);
+				}
+			} else {
+				_changeDict[lineIndex] = [change];
 			}
-			value.Add(new ChangeVBA(lineIndex, repColRange, text, startCol, enableShift));
 		}
 
 		public void AddChange(int lineIndex, string text) {
 			if (!_changeDict.TryGetValue(lineIndex, out List<ChangeVBA> value)) {
-				value = ([]);
-				_changeDict.Add(lineIndex, value);
+				var change = new ChangeVBA(lineIndex, (-1, -1), text, 0);
+				_changeDict[lineIndex] = [change];
 			}
-			value.Add(new ChangeVBA(lineIndex, (-1, -1), text, 0));
 		}
 
 		public void InsertLines(int line, string[] texts) {
-			_insertList.Add((line, texts));
+			_insertDict[line] = texts;
 		}
 
 		public void AddLineMap(int srcLine, int toLine) {
@@ -191,16 +206,6 @@ namespace VBACodeAnalysis {
 
 		public void AddPropertyName(int lineIndex, string prefix, string text, string asType) {
 			_propertyDict[lineIndex] = new PropertyName(lineIndex, prefix, text, asType);
-			
-			//if (_propertyNameDict.ContainsKey(text)) {
-			//	var propName = _propertyNameDict[text];
-			//	if(propName.AsType == null && asType != null) {
-			//		_propertyNameDict[text].AsType = asType;
-			//	}
-			//	return;
-			//}
-			//_propertyNameDict[text] = 
-			//	new PropertyName(lineIndex, prefix, text, asType);
 		}
 		public void AddModuleAttribute(int lastLineIndex, string vbName, ModuleType type) {
 			_moduleHeader = new ModuleHeader(lastLineIndex, vbName, type);
@@ -269,36 +274,13 @@ namespace VBACodeAnalysis {
 			SortColumnShift(_colShiftDict);
 
 			_lineShiftList = [];
-			_insertList.Sort((a, b) => a.Item1 - b.Item1);
-			//var lineCount = 0;
-			foreach (var (line, texts) in _insertList) {
-				//lineCount += texts.Length;
+			foreach (var (line, texts) in _insertDict) {
 				_lineShiftList.Add((line, texts.Length));
 			}
 
-			_insertList.Sort((a, b) => -(a.Item1 - b.Item1));
-			foreach (var (line, texts) in _insertList) {
+			foreach (var (line, texts) in _insertDict.Reverse()) {
 				lines.InsertRange(line, texts);
 			}
-
-			//foreach (var item in _propertyNameDict) {
-			//	var name = item.Key;
-			//	var propName = item.Value;
-			//	var inertIndex = lines.Count - 1;
-			//	if (propName.AsType != null) {
-			//		var asType = propName.AsType;
-			//		var opt = StringComparison.OrdinalIgnoreCase;
-			//		if (string.Equals(propName.AsType, "variant", opt)) {
-			//			asType = "Object";
-			//		}
-			//		var prop = $"Public Property {name} As {asType}";
-			//		lines.Insert(inertIndex, prop);
-			//	} else {
-			//		var prop = $"Public Property {name}";
-			//		lines.Insert(inertIndex, prop);
-			//	}
-			//	_lineReMapDict[inertIndex] = propName.LineIndex;
-			//}
 
 			_code = string.Join(Environment.NewLine,  lines);
 		}
@@ -308,6 +290,7 @@ namespace VBACodeAnalysis {
 				item.Value.Sort((a,b) => -(a.StartCol - b.StartCol));
 			}
 		}
+
 		public void SortColumnShift(ColumnShiftDict dict) {
 			foreach (var item in dict) {
 				item.Value.Sort((a, b) => a.StartCol - b.StartCol);

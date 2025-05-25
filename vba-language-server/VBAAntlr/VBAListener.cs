@@ -304,20 +304,18 @@ namespace VBAAntlr {
 			//var end_stm = context.endPropertyStmt();
 
 			//string asType = null;
-			//var args = context.argList();
-			//if (args != null && args.arg().Length > 0) {
-			//	var arg = args.arg()[0];
-			//	var argIdent = arg.asTypeClause()?.identifier();
-			//	GetVariant(argIdent);
-			//	asType = argIdent?.GetText();
-			//}
+			var arg = context.arg();
+			if (arg != null) {
+				var argIdent = arg.asTypeClause()?.identifier();
+				GetVariant(argIdent);
+			}
 			var prefix = "";
 			if (context.LET() != null) {
 				prefix = "Let";
 			} else {
 				prefix = "Set";
 			}
-				string asType = context.arg().asTypeClause()?.identifier()?.GetText();
+			string asType = context.arg().asTypeClause()?.identifier()?.GetText();
 			rewriteVBA.AddPropertyName(name.Start.Line - 1, prefix, name.GetText(), asType);
 			
 			var name_s = name.Start;

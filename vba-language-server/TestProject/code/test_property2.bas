@@ -1,4 +1,3 @@
-
 Property Get Name1() As String
 	Name1 = LCase(Name)
 End Property

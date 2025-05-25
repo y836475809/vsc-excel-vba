@@ -1,11 +1,10 @@
-
 Public Property  Name1() As String
 Set : End Set
 Get
 	Name1 = LCase(Name)
 End Get : End Property
 
-Private Sub Name1(argName As String)
+Private Sub set_p_Name1(argName As String)
 	Dim a As String
 	a = argName
 End Sub

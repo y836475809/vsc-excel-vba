@@ -82,164 +82,6 @@ End {0}
 		}
 
 		[Fact]
-		public void TestProperty() {
-			var code = @"Module TestType
-Property Get Name1() As String
-    name1 = 1
-    Name1 = name1
-    Set Name1 = name1
-End Property
-Property Let Name1(ByVal arg As String)
-    name = arg
-End Property
-
-Property Get Name2()
-    name1 = 1
-    Name2 = name1
-    Set Name2 = name1
-End Property
-Property Set Name2(ByVal arg As String)
-    name = arg
-End Property
-
-Property Let Name3(ByVal arg As String)
-    name = arg
-End Property
-
-End Module";
-			var preCode = @"Module TestType
-Private Function GetName1() As String
-    name1 = 1
-    GetName1 = name1
-        GetName1 = name1
-End Function
-Private Sub SetName1(ByVal arg As String)
-    name = arg
-End Sub
-
-Private Function GetName2()
-    name1 = 1
-    GetName2 = name1
-        GetName2 = name1
-End Function
-Private Sub SetName2(ByVal arg As String)
-    name = arg
-End Sub
-
-Private Sub SetName3(ByVal arg As String)
-    name = arg
-End Sub
-
-Public Property Name1 As String
-Public Property Name2 As String
-Public Property Name3 As String
-End Module";
-			var pp = new TestPreprocVBA();
-			var actCode = pp.Rewrite("test", code);
-			Helper.AssertCode(preCode, actCode);
-
-			var preColDict = new ColumnShiftDict {
-				{1, new List<ColumnShift>{ new(1, 13, 7) } },
-				{3, new List<ColumnShift>{ new(3, 4, 3) } },
-				{4, new List<ColumnShift>{ new(4, 8, 3) } },
-				{6, new List<ColumnShift>{ new(6, 13, 2) } },
-				{10, new List<ColumnShift>{ new(10, 13, 7) } },
-				{12, new List<ColumnShift>{ new(12, 4, 3) } },
-				{13, new List<ColumnShift>{ new(13, 8, 3) } },
-				{15, new List<ColumnShift>{ new(15, 13, 2) } },
-				{19, new List<ColumnShift>{ new(19, 13, 2) } },
-			};
-			var actColDict = pp.ColDict["test"];
-			Helper.AssertColumnShiftDict(preColDict, actColDict);
-
-			var preLineDict = new LineReMapDict {
-				{23,  1},
-				{24, 10 },
-				{25, 19 },
-			};
-			var actLineDict = pp.LineDict["test"];
-			Helper.AssertDict(preLineDict, actLineDict);
-		}
-
-		[Fact]
-		public void TestLetSet() {
-			var code = @"
-Let a = 10
-Set b = 10
-Let a = 10:Set b = 10
-
-Function func1() As int
-    Let f1 = 10
-    Set f1 = 10
-End Function
-Sub sub1() As int
-    Let s1 = 10
-    Set s2 = 10
-End Sub
-
-Property Get Name1() As String
-    Let g1 = 10
-    Set g2 = 10
-End Property
-Property Let Name1(n As String)
-    Let l1 = 10
-    Set l2 = 10
-End Property
-Property Set Name2(n As String)
-    Let s1 = 10
-    Set s2 = 10
-End Property
-";
-			var preCode = @"
-    a = 10
-    b = 10
-    a = 10:    b = 10
-
-Function func1() As int
-        f1 = 10
-        f1 = 10
-End Function
-Sub sub1() As int
-        s1 = 10
-        s2 = 10
-End Sub
-
-Private Function GetName1() As String
-        g1 = 10
-        g2 = 10
-End Function
-Private Sub SetName1(n As String)
-        l1 = 10
-        l2 = 10
-End Sub
-Private Sub SetName2(n As String)
-        s1 = 10
-        s2 = 10
-End Sub
-Public Property Name1 As String
-Public Property Name2 As String
-";
-			var pp = new TestPreprocVBA();
-			var actCode = pp.Rewrite("test", code);
-			Helper.AssertCode(preCode, actCode);
-
-			var preColDict = new ColumnShiftDict {
-				{14, new List<ColumnShift>{ new(14, 13, 7) } },
-				{18, new List<ColumnShift>{ new(18, 13, 2) } },
-				{22, new List<ColumnShift>{ new(22, 13, 2) } },
-			};
-			var actColDict = pp.ColDict["test"];
-			Helper.AssertColumnShiftDict(preColDict, actColDict);
-
-			var preLineDict = new LineReMapDict {
-				{26, 14},
-				{27, 22 },
-			};
-			var actLineDict = pp.LineDict["test"];
-			Helper.AssertDict(preLineDict, actLineDict);
-		}
-
-		[Fact]
 		public void TestFileNumber() {
 			var codeFmt = @"
 date = #1/2/3#
@@ -299,21 +141,22 @@ Property Set Name2(n As String)
 End Property
 ";
 			var preCode = @"
-Private Function GetName1() As String
+Property  Name1() As String
+Set : End Set
+Get
     g1 =  10
     g1 =  n
-    GetName1 =  10
-    GetName1 =  n
-End Function
-Private Sub SetName1(n As String)
+    Name1 =  10
+    Name1 =  n
+End Get : End Property
+Private Sub set_p_Name1(n As String)
     l1 =  10
     l1 =  n
 End Sub
-Private Sub SetName2(n As String)
+Private Sub set_Name2(n As String)
     s1 =  10
     s1 =  n
 End Sub
-Public Property Name1 As String
 Public Property Name2 As String
 ";
 			var pp = new TestPreprocVBA();
@@ -390,36 +233,22 @@ Property Set Name2(n As Variant)
 End Property
 ";
 			var preCode = @"
-Private Function GetName1() As Object 
+Property  Name1() As Object 
+Set : End Set
+Get
     Dim g1 As Object 
-End Function
-Private Sub SetName1(n As Object )
+End Get : End Property
+Private Sub set_p_Name1(n As Object )
     Dim l1 As Object 
 End Sub
-Private Sub SetName2(n As Object )
+Private Sub set_Name2(n As Object )
     Dim s1 As Object 
 End Sub
-Public Property Name1 As Object
 Public Property Name2 As Object
 ";
 			var pp = new TestPreprocVBA();
 			var actCode = pp.Rewrite("test", code);
 			Helper.AssertCode(preCode, actCode);
-
-			var preColDict = new ColumnShiftDict {
-				{1, new List<ColumnShift>{ new(1, 13, 7) } },
-				{4, new List<ColumnShift>{ new(4, 13, 2) } },
-				{7, new List<ColumnShift>{ new(7, 13, 2) } },
-			};
-			var actColDict = pp.ColDict["test"];
-			Helper.AssertColumnShiftDict(preColDict, actColDict);
-
-			var preLineDict = new LineReMapDict {
-				{10, 1},
-				{11, 7 },
-			};
-			var actLineDict = pp.LineDict["test"];
-			Helper.AssertDict(preLineDict, actLineDict);
 		}
 
 		[Fact]

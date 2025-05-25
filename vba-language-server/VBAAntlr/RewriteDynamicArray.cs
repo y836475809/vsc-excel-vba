@@ -1,4 +1,5 @@
 ﻿using Antlr4.Runtime;
+using AntlrTemplate;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -50,12 +51,18 @@ namespace VBAAntlr {
 			MethodLines.Add(("end", line));
 		}
 
-		public Dictionary<string, DynamicArray> GetDynamicArrayDict() {
+		public Dictionary<(string, string), DynamicArray> GetDynamicArrayDict() {
 			var rangeDitc = new Dictionary<string, (int, int)>();
 			for (int i = 0; i < MethodLines.Count; i+=2) {
 				var name = MethodLines[i].Item1;
 				if(name == "") {
 					continue;
+				}
+				if (MethodLines[i].Item1 == "") {
+					continue;
+				}
+				if (MethodLines.Count <= i + 1) {
+					break;
 				}
 				var s = MethodLines[i].Item2;
 				var e = MethodLines[i+1].Item2;
@@ -81,29 +88,31 @@ namespace VBAAntlr {
 				}
 			}
 
-			var dynamicArrayDict = new Dictionary<string, DynamicArray>();
+			var dynamicArrayDict = new Dictionary<(string, string), DynamicArray>();
 			foreach (var methodName in rangeDitc.Keys) {
 				if (DimStmtDict.TryGetValue(methodName, out DimStmtContext dimstmt)) {
 					var varName = dimstmt.identifier().GetText();
-					if (!dynamicArrayDict.ContainsKey(varName)) {
-						dynamicArrayDict[varName] = new DynamicArray();
-						dynamicArrayDict[varName].Name = varName;
+					var key = (methodName, varName);
+					if (!dynamicArrayDict.ContainsKey(key)) {
+						dynamicArrayDict[key] = new DynamicArray();
+						dynamicArrayDict[key].Name = varName;
 					}
-					dynamicArrayDict[varName].DimStmt = dimstmt;
+					dynamicArrayDict[key].DimStmt = dimstmt;
 				}
 				if (ReDimStmtsDict.TryGetValue(methodName, out List<RedimStmtContext> redimstmts)) {
 					foreach (var redimstmt in redimstmts) {
 						var varName = redimstmt.identifier().GetText();
-						if (!dynamicArrayDict.ContainsKey(varName)) {
-							dynamicArrayDict[varName] = new DynamicArray();
-							dynamicArrayDict[varName].Name = varName;
+						var key = (methodName, varName);
+						if (!dynamicArrayDict.ContainsKey(key)) {
+							dynamicArrayDict[key] = new DynamicArray();
+							dynamicArrayDict[key].Name = varName;
 						}
-						dynamicArrayDict[varName].ReDimStmts.Add(redimstmt);
+						dynamicArrayDict[key].ReDimStmts.Add(redimstmt);
 					}
 				}
 			}
 			foreach (var pair in dynamicArrayDict) {
-				var varName = pair.Key;
+				var (methodName, varName) = pair.Key;
 				if (FieldDimStmtDict.TryGetValue(varName, out DimStmtContext stmt)) {
 					if (pair.Value.DimStmt == null) {
 						pair.Value.DimStmt = stmt;
@@ -116,7 +125,7 @@ namespace VBAAntlr {
 		public void Rewrite(IRewriteVBA rewriteVBA) {
 			var dynamicArrayDict = GetDynamicArrayDict();
 			foreach (var pair in dynamicArrayDict) {
-				var varName = pair.Key;
+				var (methodName, varName) = pair.Key;
 				var dimStmt = pair.Value.DimStmt;
 				var reDimStmts = pair.Value.ReDimStmts;
 				if (dimStmt == null && reDimStmts.Count > 0) {
@@ -177,7 +186,7 @@ namespace VBAAntlr {
 			foreach (var item in rangeDict) {
 				var s = item.Value.Item1;
 				var e = item.Value.Item2;
-				if(Enumerable.Range(s, e).Contains(stmt.Start.Line)) {
+				if(s < stmt.Start.Line && stmt.Start.Line< e) {
 					name = item.Key;
 					return true;
 				}

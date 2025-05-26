@@ -3,7 +3,7 @@ Dim m1(,)
 Dim m2(,) As Long
 Dim m3() As Long
 
-Public Property ReadOnly Name1(argName As String)
+Public ReadOnly Property Name1(argName As String)
 Get
 	ReDim m1(1, 2)
 

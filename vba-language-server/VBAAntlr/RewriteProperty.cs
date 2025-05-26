@@ -133,12 +133,13 @@ namespace AntlrTemplate {
 		private void RewriteGetProp(IRewriteVBA rewriteVBA, PropertyData propertyData) {
 			var getPropStmt = propertyData.GetStmt;
 			var getPropEndStmt = propertyData.GetEndStmt;
+			var porpSym = getPropStmt.PROPERTY().Symbol;
 			var getSym = getPropStmt.GET().Symbol;
 			var getStartCol = getSym.Column;
 			var identStartCol = getPropStmt.identifier().Start.Column;
-			rewriteVBA.AddChange(getSym.Line - 1,
-				(getStartCol, getStartCol + getSym.Text.Length),
-				"ReadOnly", identStartCol);
+			rewriteVBA.AddChange(porpSym.Line - 1,
+				(porpSym.Column, getStartCol + getSym.Text.Length),
+				"ReadOnly Property", identStartCol);
 			rewriteVBA.InsertLines(getPropStmt.Start.Line, ["Get"]);
 			rewriteVBA.AddChange(getPropEndStmt.Start.Line - 1, "End Get : End Property");
 		}

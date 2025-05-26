@@ -14,7 +14,7 @@ Private Sub set_Name2(argName As String)
 End Sub
 Public Property Name2 As String
 
-Property ReadOnly Name3() As String
+ReadOnly Property Name3() As String
 Get
 	Name3 = LCase(Name)
 End Get : End Property

@@ -1,4 +1,4 @@
-Public Property ReadOnly Name1(argName As String)
+Public ReadOnly Property Name1(argName As String)
 Get
 	Dim ary1() As Long
 	ReDim ary1(2)

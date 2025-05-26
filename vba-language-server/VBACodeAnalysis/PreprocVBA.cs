@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using Antlr4.Runtime;
+using Antlr4.Runtime.Atn;
 using Microsoft.CodeAnalysis;
 using VBAAntlr;
 
@@ -383,14 +384,22 @@ namespace VBACodeAnalysis {
 			var lexer = new VBALexer(new AntlrInputStream(vbaCode));
 			var tokens = new CommonTokenStream(lexer);
 			var parser = new VBAParser(tokens);
+			parser.Interpreter.PredictionMode = PredictionMode.SLL;
 			lexer.RemoveErrorListeners();
 			parser.RemoveErrorListeners();
 
 			var rewriteVBA = new RewriteVBA();
 			var nn = new VBAListener(rewriteVBA);
 			parser.AddParseListener(nn);
-			parser.startRule();
-
+			try {
+				parser.startRule();
+			} catch (Exception) {
+				tokens.Reset();
+				parser.Reset();
+				parser.Interpreter.PredictionMode = PredictionMode.LL;
+				parser.startRule();
+			}
+			
 			rewriteVBA.ApplyChange(vbaCode);
 			_fileColShiftDict[name] = rewriteVBA.ColShiftDict;
 			_fileLineShiftDict[name] = rewriteVBA.LineShiftList;

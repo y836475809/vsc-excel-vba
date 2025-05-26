@@ -156,7 +156,7 @@ namespace AntlrTemplate {
 			if (setPropStmt.arg().asTypeClause() != null) {
 				var asStmt = setPropStmt.arg().asTypeClause();
 				var asTypeName = asStmt.identifier().GetText();
-				if(asTypeName.ToLower() == "variant") {
+				if(Util.Eq(asTypeName, "variant")) {
 					asTypeName = "Object";
 				}
 				asType = $" As {asTypeName}";

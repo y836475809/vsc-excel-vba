@@ -5,11 +5,21 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Debug antlr",
+            "name": "Debug redim",
             "type": "antlr-debug",
             "request": "launch",
-            "input": "${file}",
-            "grammar": "./VBAAntlr/VBA.g4",
+            "input": "./code/redim.bas",
+            "grammar": "./VBADocumentSymbol.g4",
+            "startRule": "startRule",
+            "printParseTree": true,
+            "visualParseTree": true
+        },
+        {
+            "name": "Debug redim prop",
+            "type": "antlr-debug",
+            "request": "launch",
+            "input": "./code/redim_prop.bas",
+            "grammar": "./VBADocumentSymbol.g4",
             "startRule": "startRule",
             "printParseTree": true,
             "visualParseTree": true
@@ -18,8 +28,8 @@
             "name": "Debug type",
             "type": "antlr-debug",
             "request": "launch",
-            "input": "./VBAAntlr/code/type.bas",
-            "grammar": "./VBAAntlr/VBA.g4",
+            "input": "./code/type.bas",
+            "grammar": "./VBADocumentSymbol.g4",
             "startRule": "startRule",
             "printParseTree": true,
             "visualParseTree": true
@@ -28,8 +38,8 @@
             "name": "Debug property",
             "type": "antlr-debug",
             "request": "launch",
-            "input": "./VBAAntlr/code/property.bas",
-            "grammar": "./VBAAntlr/VBA.g4",
+            "input": "./code/property.bas",
+            "grammar": "./VBADocumentSymbol.g4",
             "startRule": "startRule",
             "printParseTree": true,
             "visualParseTree": true
@@ -38,8 +48,8 @@
             "name": "Debug let set",
             "type": "antlr-debug",
             "request": "launch",
-            "input": "./VBAAntlr/code/letset.bas",
-            "grammar": "./VBAAntlr/VBA.g4",
+            "input": "./code/letset.bas",
+            "grammar": "./VBADocumentSymbol.g4",
             "startRule": "startRule",
             "printParseTree": true,
             "visualParseTree": true
@@ -48,8 +58,8 @@
             "name": "Debug filenumber",
             "type": "antlr-debug",
             "request": "launch",
-            "input": "./VBAAntlr/code/filenumber.bas",
-            "grammar": "./VBAAntlr/VBA.g4",
+            "input": "./code/filenumber.bas",
+            "grammar": "./VBADocumentSymbol.g4",
             "startRule": "startRule",
             "printParseTree": true,
             "visualParseTree": true
@@ -58,8 +68,8 @@
             "name": "Debug macro",
             "type": "antlr-debug",
             "request": "launch",
-            "input": "./VBAAntlr/code/macro.bas",
-            "grammar": "./VBAAntlr/VBA.g4",
+            "input": "./code/macro.bas",
+            "grammar": "./VBADocumentSymbol.g4",
             "startRule": "startRule",
             "printParseTree": true,
             "visualParseTree": true
@@ -68,8 +78,8 @@
             "name": "Debug fileio",
             "type": "antlr-debug",
             "request": "launch",
-            "input": "./VBAAntlr/code/fileio.bas",
-            "grammar": "./VBAAntlr/VBA.g4",
+            "input": "./code/fileio.bas",
+            "grammar": "./VBADocumentSymbol.g4",
             "startRule": "startFileIoRule",
             "printParseTree": true,
             "visualParseTree": true
@@ -78,8 +88,8 @@
             "name": "Debug header class",
             "type": "antlr-debug",
             "request": "launch",
-            "input": "./VBAAntlr/code/header.cls",
-            "grammar": "./VBAAntlr/VBA.g4",
+            "input": "./code/header.cls",
+            "grammar": "./VBADocumentSymbol.g4",
             "startRule": "startRule",
             "printParseTree": true,
             "visualParseTree": true
@@ -88,8 +98,8 @@
             "name": "Debug header bas",
             "type": "antlr-debug",
             "request": "launch",
-            "input": "./VBAAntlr/code/header.bas",
-            "grammar": "./VBAAntlr/VBA.g4",
+            "input": "./code/header.bas",
+            "grammar": "./VBADocumentSymbol.g4",
             "startRule": "startRule",
             "printParseTree": true,
             "visualParseTree": true

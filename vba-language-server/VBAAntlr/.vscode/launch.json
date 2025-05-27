@@ -1,0 +1,108 @@
+{
+    // IntelliSense を使用して利用可能な属性を学べます。
+    // 既存の属性の説明をホバーして表示します。
+    // 詳細情報は次を確認してください: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug redim",
+            "type": "antlr-debug",
+            "request": "launch",
+            "input": "./VBAAntlr/code/redim.bas",
+            "grammar": "./VBAAntlr/VBA.g4",
+            "startRule": "startRule",
+            "printParseTree": true,
+            "visualParseTree": true
+        },
+        {
+            "name": "Debug redim prop",
+            "type": "antlr-debug",
+            "request": "launch",
+            "input": "./VBAAntlr/code/redim_prop.bas",
+            "grammar": "./VBAAntlr/VBA.g4",
+            "startRule": "startRule",
+            "printParseTree": true,
+            "visualParseTree": true
+        },
+        {
+            "name": "Debug type",
+            "type": "antlr-debug",
+            "request": "launch",
+            "input": "./VBAAntlr/code/type.bas",
+            "grammar": "./VBAAntlr/VBA.g4",
+            "startRule": "startRule",
+            "printParseTree": true,
+            "visualParseTree": true
+        },
+        {
+            "name": "Debug property",
+            "type": "antlr-debug",
+            "request": "launch",
+            "input": "./VBAAntlr/code/property.bas",
+            "grammar": "./VBAAntlr/VBA.g4",
+            "startRule": "startRule",
+            "printParseTree": true,
+            "visualParseTree": true
+        },
+        {
+            "name": "Debug let set",
+            "type": "antlr-debug",
+            "request": "launch",
+            "input": "./VBAAntlr/code/letset.bas",
+            "grammar": "./VBAAntlr/VBA.g4",
+            "startRule": "startRule",
+            "printParseTree": true,
+            "visualParseTree": true
+        },
+        {
+            "name": "Debug filenumber",
+            "type": "antlr-debug",
+            "request": "launch",
+            "input": "./VBAAntlr/code/filenumber.bas",
+            "grammar": "./VBAAntlr/VBA.g4",
+            "startRule": "startRule",
+            "printParseTree": true,
+            "visualParseTree": true
+        },
+        {
+            "name": "Debug macro",
+            "type": "antlr-debug",
+            "request": "launch",
+            "input": "./VBAAntlr/code/macro.bas",
+            "grammar": "./VBAAntlr/VBA.g4",
+            "startRule": "startRule",
+            "printParseTree": true,
+            "visualParseTree": true
+        },
+        {
+            "name": "Debug fileio",
+            "type": "antlr-debug",
+            "request": "launch",
+            "input": "./VBAAntlr/code/fileio.bas",
+            "grammar": "./VBAAntlr/VBA.g4",
+            "startRule": "startFileIoRule",
+            "printParseTree": true,
+            "visualParseTree": true
+        },
+        {
+            "name": "Debug header class",
+            "type": "antlr-debug",
+            "request": "launch",
+            "input": "./VBAAntlr/code/header.cls",
+            "grammar": "./VBAAntlr/VBA.g4",
+            "startRule": "startRule",
+            "printParseTree": true,
+            "visualParseTree": true
+        },
+        {
+            "name": "Debug header bas",
+            "type": "antlr-debug",
+            "request": "launch",
+            "input": "./VBAAntlr/code/header.bas",
+            "grammar": "./VBAAntlr/VBA.g4",
+            "startRule": "startRule",
+            "printParseTree": true,
+            "visualParseTree": true
+        },
+    ]
+}

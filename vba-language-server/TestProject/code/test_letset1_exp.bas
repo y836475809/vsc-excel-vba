@@ -12,9 +12,7 @@ Sub sub1() As int
         s2 = 10
 End Sub
 
-Property  Name1() As String
-Set : End Set
-Get
+Property Name1() As String : Set : End Set : Get
         g1 = 10
         g2 = 10
 End Get : End Property
@@ -24,8 +22,7 @@ Private Sub set_p_Name1(n As String)
         l2 = 10
 End Sub
 
-Private Sub set_Name2(n As String)
+WriteOnly Property Name2() As String : Set(n As String)
         s1 = 10
         s2 = 10
-End Sub
-Public Property Name2 As String
+End Set : End Property

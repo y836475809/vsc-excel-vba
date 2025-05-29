@@ -188,7 +188,7 @@ propertyGetStmt
     // )? endOfStatement (blockLetSetStmt | .)*? endPropertyStmt
     : (visibility WS)? (STATIC WS)? PROPERTY WS GET WS identifier argList? (
         WS asTypeClause
-    )? endOfStatement
+    )?
     ;
 // blockLetSetStmt
 //     : letStmt | setStmt
@@ -206,7 +206,7 @@ setStmt
 propertySetStmt
     // : (visibility WS)? (STATIC WS)? PROPERTY_SET WS identifier (WS? argList)? endOfStatement .*? endPropertyStmt
     // : (visibility WS)? (STATIC WS)? PROPERTY_SET WS identifier (WS? argList)? endOfStatement
-    : (visibility WS)? (STATIC WS)? PROPERTY WS (SET | LET) WS identifier WS? LPAREN WS? arg WS? RPAREN endOfStatement
+    : (visibility WS)? (STATIC WS)? PROPERTY WS (SET | LET) WS identifier WS? LPAREN WS? arg WS? RPAREN
     ;
 endPropertyStmt
     : END_PROPERTY

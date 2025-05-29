@@ -1,6 +1,4 @@
-Property  Name1() As String
-Set : End Set
-Get
+Property Name1() As String : Set : End Set : Get
 	Name1 = LCase(Name)
 End Get : End Property
 
@@ -9,12 +7,10 @@ Private Sub set_p_Name1(argName As String)
 	a = argName
 End Sub
 
-Private Sub set_Name2(argName As String)
+WriteOnly Property Name2() As String : Set(argName As String)
 	Me.Name = argName
-End Sub
-Public Property Name2 As String
+End Set : End Property
 
-ReadOnly Property Name3() As String
-Get
+ReadOnly Property Name3() As String : Get
 	Name3 = LCase(Name)
 End Get : End Property

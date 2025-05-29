@@ -13,9 +13,9 @@ namespace TestProject {
 			Helper.AssertCode(expCode, actCode);
 
 			var expColDict = new ColumnShiftDict {
-					{14, new (){ new(14, 13, -3) } },
+					{14, new (){ new(14, 13, -4) } },
 					{19, new (){ new(19, 13, 5) } },
-					{24, new (){ new(24, 13, 3) } },
+					{24, new (){ new(24, 13, 6) } },
 				};
 			var actColDict = preprocVBA.ColDict["test"];
 			Helper.AssertColumnShiftDict(expColDict, actColDict);

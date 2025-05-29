@@ -141,9 +141,7 @@ Property Set Name2(n As String)
 End Property
 ";
 			var preCode = @"
-Property  Name1() As String
-Set : End Set
-Get
+Property Name1() As String : Set : End Set : Get
     g1 =  10
     g1 =  n
     Name1 =  10
@@ -153,11 +151,10 @@ Private Sub set_p_Name1(n As String)
     l1 =  10
     l1 =  n
 End Sub
-Private Sub set_Name2(n As String)
+WriteOnly Property Name2() As String : Set(n As String)
     s1 =  10
     s1 =  n
-End Sub
-Public Property Name2 As String
+End Set : End Property
 ";
 			var pp = new TestPreprocVBA();
 			var actCode = pp.Rewrite("test", code);
@@ -233,18 +230,15 @@ Property Set Name2(n As Variant)
 End Property
 ";
 			var preCode = @"
-Property  Name1() As Object 
-Set : End Set
-Get
+Property Name1() As Object  : Set : End Set : Get
     Dim g1 As Object 
 End Get : End Property
 Private Sub set_p_Name1(n As Object )
     Dim l1 As Object 
 End Sub
-Private Sub set_Name2(n As Object )
+WriteOnly Property Name2() As Object : Set(n As Object)
     Dim s1 As Object 
-End Sub
-Public Property Name2 As Object
+End Set : End Property
 ";
 			var pp = new TestPreprocVBA();
 			var actCode = pp.Rewrite("test", code);

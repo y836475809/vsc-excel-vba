@@ -29,6 +29,8 @@ namespace VBAAntlr {
 		/// <param name="enableShift"></param>
 		void AddChange(int lineIndex, (int, int) repColRange, string text, int startCol, bool enableShift=true);
 
+		void AddChange(int lineIndex, (int, int) repColRange, string text, int startCol, int shiftCol);
+
 		/// <summary>
 		/// 行ごと置換、ColShifなし
 		/// </summary>

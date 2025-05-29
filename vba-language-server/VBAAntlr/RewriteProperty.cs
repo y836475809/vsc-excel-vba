@@ -116,11 +116,9 @@ namespace AntlrTemplate {
 			var getSym = getPropStmt.GET().Symbol;
 			var getStartCol = getSym.Column;
 			rewriteVBA.AddChange(getSym.Line - 1,
-				(getStartCol, getStartCol + getSym.Text.Length),
+				(getStartCol, getStartCol + getSym.Text.Length + 1),
 				"", getPropStmt.identifier().Start.Column);
-			rewriteVBA.InsertLines(getPropStmt.Start.Line, ["Set : End Set", "Get"]);
-			rewriteVBA.AddChange(getPropEndStmt.Start.Line - 1, "End Get : End Property");
-			
+
 			var setPropStmt = propertyData.SetStmt;
 			var setPropEndStmt = propertyData.SetEndStmt;
 			var setPropIdeStart = setPropStmt.identifier().Start;
@@ -128,6 +126,12 @@ namespace AntlrTemplate {
 				"Private Sub set_p_", setPropIdeStart.Column);
 			rewriteVBA.AddChange(
 				setPropEndStmt.Start.Line - 1, "End Sub");
+
+			var sCol = getPropStmt.Start.Column + getPropStmt.GetText().Length;
+			rewriteVBA.AddChange(getPropStmt.Start.Line - 1, 
+				(sCol, sCol), " : Set : End Set : Get", sCol, false);
+			rewriteVBA.AddChange(getPropEndStmt.Start.Line - 1, 
+				"End Get : End Property");
 		}
 
 		private void RewriteGetProp(IRewriteVBA rewriteVBA, PropertyData propertyData) {
@@ -137,36 +141,67 @@ namespace AntlrTemplate {
 			var getSym = getPropStmt.GET().Symbol;
 			var getStartCol = getSym.Column;
 			var identStartCol = getPropStmt.identifier().Start.Column;
+			var startCol = getPropStmt.Start.Column;
+			var propLen = getPropStmt.GetText().Length;
+
 			rewriteVBA.AddChange(porpSym.Line - 1,
 				(porpSym.Column, getStartCol + getSym.Text.Length),
 				"ReadOnly Property", identStartCol);
-			rewriteVBA.InsertLines(getPropStmt.Start.Line, ["Get"]);
+			rewriteVBA.AddChange(porpSym.Line - 1,
+				(startCol + propLen, startCol + propLen),
+				" : Get", startCol + propLen, false);
+
 			rewriteVBA.AddChange(getPropEndStmt.Start.Line - 1, "End Get : End Property");
 		}
 
 		private void RewriteSetProp(IRewriteVBA rewriteVBA, PropertyData propertyData) {
 			var setPropStmt = propertyData.SetStmt;
 			var setPropEndStmt = propertyData.SetEndStmt;
-			var setPropIdeStart = setPropStmt.identifier().Start;
-			rewriteVBA.AddChange(setPropIdeStart.Line - 1, (0, setPropIdeStart.Column),
-				"Private Sub set_", setPropIdeStart.Column);
-			rewriteVBA.AddChange(
-				setPropEndStmt.Start.Line - 1, "End Sub");
+			var startCol = setPropStmt.Start.Column;
+			var propLen = setPropStmt.GetText().Length;
+			var porpSym = setPropStmt.PROPERTY().Symbol;
+			var identStartCol = setPropStmt.identifier().Start.Column;
+			var setSym = setPropStmt.SET();
+			if(setSym == null) {
+				setSym = setPropStmt.LET();
+			}
+			var setStartCol = setSym.Symbol.Column;
+			var setEndCol = setStartCol + setSym.Symbol.Text.Length;
+
+			rewriteVBA.AddChange(porpSym.Line - 1,
+				(porpSym.Column, setEndCol),
+				"WriteOnly Property", identStartCol);
+
+			var lpCol = setPropStmt.LPAREN().Symbol.Column;
+			var argName = "value";
 			var asType = "";
 			if (setPropStmt.arg().asTypeClause() != null) {
+				var argIdets = setPropStmt.arg().identifier();
 				var asStmt = setPropStmt.arg().asTypeClause();
-				var asTypeName = asStmt.identifier().GetText();
-				if(Util.Eq(asTypeName, "variant")) {
-					asTypeName = "Object";
+				asType = asStmt.identifier().GetText();
+				if(Util.Eq(asType, "variant")) {
+					asType = "Object";
 				}
-				asType = $" As {asTypeName}";
+				if (argIdets.Length > 0) {
+					argName = argIdets[0].GetText();
+				}
+				lpCol = argIdets[0].Start.Column;
 			}
-			rewriteVBA.InsertLines(
-				setPropEndStmt.Start.Line,
-				[$"Public Property {setPropStmt.identifier().GetText()}{asType}"]);
-			rewriteVBA.AddLineMap(
-				setPropEndStmt.Start.Line,
-				 setPropIdeStart.Line - 1);
+			var rep1 = "";
+			var rep2 = "";
+			if (asType == "") {
+				rep1 = $") : Set(";
+				rep2 = $")";
+			} else {
+				rep1 = $") As {asType} : Set(";
+				rep2 = $"{argName} As {asType})";
+			}
+
+			rewriteVBA.AddChange(porpSym.Line - 1,
+				(lpCol, startCol + propLen),
+				$"{rep1}{rep2}",
+				lpCol, rep1.Length);
+			rewriteVBA.AddChange(setPropEndStmt.Start.Line - 1, "End Set : End Property");
 		}
 	}
 }

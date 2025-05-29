@@ -67,12 +67,31 @@ namespace VBACodeAnalysis {
 		public string VBAName = vbaName;
 	}
 
-	public class ChangeVBA(int lineIndex, (int, int) repColRange, string text, int startCol, bool enableShift=true) {
-		private int _lineIndex = lineIndex;
-		private (int, int) _repColRange = repColRange;
-		private string _text = text;
-		public int StartCol = startCol;
-		private bool _enableShift = enableShift;
+	public class ChangeVBA {
+		private int _lineIndex;
+		private (int, int) _repColRange;
+		private string _text;
+		public int StartCol;
+		public int? ShiftCol;
+		private bool _enableShift;
+
+		public ChangeVBA(int lineIndex, (int, int) repColRange, string text, int startCol, bool enableShift = true) {
+			_lineIndex = lineIndex;
+			_repColRange = repColRange;
+			_text = text;
+			StartCol = startCol;
+			ShiftCol = null;
+			_enableShift = enableShift;
+		}
+
+		public ChangeVBA(int lineIndex, (int, int) repColRange, string text, int startCol, int  shiftCol) {
+			_lineIndex = lineIndex;
+			_repColRange = repColRange;
+			_text = text;
+			StartCol = startCol;
+			ShiftCol = shiftCol;
+			_enableShift = true;
+		}
 
 		public (ColumnShift, string) Apply(string line) {
 			var (rStart, rEnd) = _repColRange;
@@ -86,6 +105,9 @@ namespace VBACodeAnalysis {
 			var repText = $"{t1}{text}";
 			var orgText = line[..rEnd];
 			var shiftCol = repText.Length - orgText.Length;
+			if(ShiftCol != null) {
+				shiftCol = (int)ShiftCol;
+			}
 
 			var rep_line = $"{repText}{t2}";
 			if(_enableShift) {
@@ -183,6 +205,20 @@ namespace VBACodeAnalysis {
 					return x.Eq(lineIndex, repColRange, text, startCol, enableShift);
 				});
 				if(f < 0) {
+					value.Add(change);
+				}
+			} else {
+				_changeDict[lineIndex] = [change];
+			}
+		}
+
+		public void AddChange(int lineIndex, (int, int) repColRange, string text, int startCol, int shiftCol) {
+			var change = new ChangeVBA(lineIndex, repColRange, text, startCol, shiftCol);
+			if (_changeDict.TryGetValue(lineIndex, out List<ChangeVBA> value)) {
+				var f = value.FindIndex(x => {
+					return x.Eq(lineIndex, repColRange, text, startCol, true);
+				});
+				if (f < 0) {
 					value.Add(change);
 				}
 			} else {

@@ -186,7 +186,7 @@ propertyGetStmt
     // : (visibility WS)? (STATIC WS)? PROPERTY_GET WS identifier LPAREN WS? RPAREN (
     //     WS asTypeClause
     // )? endOfStatement (blockLetSetStmt | .)*? endPropertyStmt
-    : (visibility WS)? (STATIC WS)? PROPERTY WS GET WS identifier argList? (
+    : (visibility WS)? (STATIC WS)? PROPERTY WS GET WS identifier argList (
         WS asTypeClause
     )?
     ;
@@ -206,7 +206,7 @@ setStmt
 propertySetStmt
     // : (visibility WS)? (STATIC WS)? PROPERTY_SET WS identifier (WS? argList)? endOfStatement .*? endPropertyStmt
     // : (visibility WS)? (STATIC WS)? PROPERTY_SET WS identifier (WS? argList)? endOfStatement
-    : (visibility WS)? (STATIC WS)? PROPERTY WS (SET | LET) WS identifier WS? LPAREN WS? arg WS? RPAREN
+    : (visibility WS)? (STATIC WS)? PROPERTY WS (SET | LET) WS identifier WS? argList
     ;
 endPropertyStmt
     : END_PROPERTY
@@ -218,12 +218,18 @@ argList
     : LPAREN (WS? arg (WS? ',' WS? arg)*)? WS? RPAREN
     ;
 arg
-    : (identifier WS)? identifier (
+    : ((BYVAL | BYREF) WS)? identifier (
         WS? LPAREN WS? RPAREN
     )? (WS? asTypeClause)? (WS? argDefaultValue)?
     ;
 argDefaultValue
     : EQ WS? identifier
+    ;
+BYVAL
+    :  'BYVAL'
+    ;
+BYREF
+    :  'BYREF'
     ;
 PROPERTY
     : 'PROPERTY'

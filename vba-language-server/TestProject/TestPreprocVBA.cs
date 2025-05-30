@@ -236,7 +236,7 @@ End Get : End Property
 Private Sub set_p_Name1(n As Object )
     Dim l1 As Object 
 End Sub
-WriteOnly Property Name2() As Object : Set(n As Object)
+WriteOnly Property Name2() As Object  : Set(n As Object )
     Dim s1 As Object 
 End Set : End Property
 ";

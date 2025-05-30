@@ -1,7 +1,9 @@
 ﻿using Antlr4.Runtime;
+using Antlr4.Runtime.Misc;
 using Antlr4.Runtime.Tree;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Security.Policy;
 using System.Text;
@@ -95,7 +97,6 @@ namespace AntlrTemplate {
 					propDict[name].SetEndStmt = EndStmt as EndPropertyStmtContext;
 				}
 			}
-			// TODO slow
 			foreach (var (name, propData) in propDict) {
 				var dataType = propData.DataType();
 				if (dataType == PropertyDataType.GetSet) {
@@ -112,95 +113,131 @@ namespace AntlrTemplate {
 
 		private void RewriteGetSetProp(IRewriteVBA rewriteVBA, PropertyData propertyData) {
 			var getPropStmt = propertyData.GetStmt;
-			var getPropEndStmt = propertyData.GetEndStmt;
-			var getSym = getPropStmt.GET().Symbol;
-			var getStartCol = getSym.Column;
-			rewriteVBA.AddChange(getSym.Line - 1,
-				(getStartCol, getStartCol + getSym.Text.Length + 1),
-				"", getPropStmt.identifier().Start.Column);
 
-			var setPropStmt = propertyData.SetStmt;
-			var setPropEndStmt = propertyData.SetEndStmt;
-			var setPropIdeStart = setPropStmt.identifier().Start;
-			rewriteVBA.AddChange(setPropIdeStart.Line - 1, (0, setPropIdeStart.Column),
-				"Private Sub set_p_", setPropIdeStart.Column);
-			rewriteVBA.AddChange(
-				setPropEndStmt.Start.Line - 1, "End Sub");
+			{
+				var getSym = getPropStmt.GET().Symbol;
+				var rangeStartCol = getSym.Column;
+				var rangeEndCol = rangeStartCol + getSym.Text.Length + 1;
+				var startCol = getPropStmt.identifier().Start.Column;
+				rewriteVBA.AddChange(getSym.Line - 1,
+					(rangeStartCol, rangeEndCol), "", startCol);
+			}
+			{
+				var rangeCol = getPropStmt.Start.Column + getPropStmt.GetText().Length;
+				var startCol = rangeCol;
+				rewriteVBA.AddChange(getPropStmt.Start.Line - 1,
+					(rangeCol, rangeCol), 
+					" : Set : End Set : Get", startCol, false);
 
-			var sCol = getPropStmt.Start.Column + getPropStmt.GetText().Length;
-			rewriteVBA.AddChange(getPropStmt.Start.Line - 1, 
-				(sCol, sCol), " : Set : End Set : Get", sCol, false);
-			rewriteVBA.AddChange(getPropEndStmt.Start.Line - 1, 
-				"End Get : End Property");
+				var getPropEndStmt = propertyData.GetEndStmt;
+				rewriteVBA.AddChange(getPropEndStmt.Start.Line - 1,
+					"End Get : End Property");
+			}
+			{
+				var setPropStmt = propertyData.SetStmt;
+				var rangeStartCol = setPropStmt.Start.Column;
+				var rangeEndCol = setPropStmt.identifier().Start.Column;
+				rewriteVBA.AddChange(setPropStmt.Start.Line - 1,
+					(rangeStartCol, rangeEndCol),
+					"Private Sub set_p_", rangeEndCol);
+
+				var argList = setPropStmt.argList();
+				foreach (var arg in argList.arg()) {
+					var asTypeClause = arg.asTypeClause();
+					if (asTypeClause == null) {
+						continue;
+					}
+					var asTypeIdent = asTypeClause.identifier();
+					var asType = asTypeIdent.GetText();
+					if (Util.Eq(asType, "variant")) {
+						var startCol = asTypeIdent.Start.Column;
+						rewriteVBA.AddChange(asTypeClause.Start.Line - 1,
+							(startCol, startCol + asType.Length),
+							"Object ", startCol, false);
+					}
+				}
+
+				var setPropEndStmt = propertyData.SetEndStmt;
+				rewriteVBA.AddChange(
+					setPropEndStmt.Start.Line - 1, "End Sub");
+			}
 		}
 
 		private void RewriteGetProp(IRewriteVBA rewriteVBA, PropertyData propertyData) {
 			var getPropStmt = propertyData.GetStmt;
-			var getPropEndStmt = propertyData.GetEndStmt;
-			var porpSym = getPropStmt.PROPERTY().Symbol;
-			var getSym = getPropStmt.GET().Symbol;
-			var getStartCol = getSym.Column;
-			var identStartCol = getPropStmt.identifier().Start.Column;
-			var startCol = getPropStmt.Start.Column;
-			var propLen = getPropStmt.GetText().Length;
+			var propStartLine = getPropStmt.Start.Line;
 
-			rewriteVBA.AddChange(porpSym.Line - 1,
-				(porpSym.Column, getStartCol + getSym.Text.Length),
-				"ReadOnly Property", identStartCol);
-			rewriteVBA.AddChange(porpSym.Line - 1,
-				(startCol + propLen, startCol + propLen),
-				" : Get", startCol + propLen, false);
+			{ 
+				var rangeStartCol = getPropStmt.PROPERTY().Symbol.Column;
+				var getSym = getPropStmt.GET().Symbol;
+				var rangeEndCol = getSym.Column + getSym.Text.Length;
+				var startCol = getPropStmt.identifier().Start.Column;
+				rewriteVBA.AddChange(propStartLine - 1,
+					(rangeStartCol, rangeEndCol),
+					"ReadOnly Property", startCol);
+			}
+			{
+				var startCol = getPropStmt.Start.Column;
+				var rangeCol = startCol + getPropStmt.GetText().Length;
+				rewriteVBA.AddChange(propStartLine - 1,
+					(rangeCol, rangeCol), " : Get", rangeCol, false);
+			}
 
-			rewriteVBA.AddChange(getPropEndStmt.Start.Line - 1, "End Get : End Property");
+			var propEndStmt = propertyData.GetEndStmt;
+			rewriteVBA.AddChange(propEndStmt.Start.Line - 1, 
+				"End Get : End Property");
 		}
 
 		private void RewriteSetProp(IRewriteVBA rewriteVBA, PropertyData propertyData) {
 			var setPropStmt = propertyData.SetStmt;
+			var startLine = setPropStmt.Start.Line;
+			
+			{	
+				var setSym = setPropStmt.SET();
+				if (setSym == null) {
+					setSym = setPropStmt.LET();
+				}
+				var rangeStartCol = setPropStmt.PROPERTY().Symbol.Column;
+				var rangeEndCol = setSym.Symbol.Column + setSym.Symbol.Text.Length;
+				var startCol = setPropStmt.identifier().Start.Column;
+				rewriteVBA.AddChange(startLine - 1,
+					(rangeStartCol, rangeEndCol),
+					"WriteOnly Property", startCol);
+			}
+			{
+				var argList = setPropStmt.argList();
+				var argStartCol = argList.Start.Column;
+				var argName = "";
+				var asType = "";
+				if (argList.arg().Any()) {
+					var arg = argList.arg().First();
+					argStartCol = arg.Start.Column;
+					argName = arg.identifier().GetText();
+					if (arg.asTypeClause() != null) {
+						asType = arg.asTypeClause().identifier().GetText();
+						if (Util.Eq(asType, "variant")) {
+							asType = "Object ";
+						}
+					}
+				}
+				var argText = argList.GetText().Replace("variant", "Object ", StringComparison.OrdinalIgnoreCase);
+				var insertText1 = ") : Set";
+				var insertText2 = $"{argText}";
+				if (asType != "") {
+					insertText1 = $") As {asType} : Set";
+				}
+				var lCol = argList.LPAREN().Symbol.Column;
+				var startCol = setPropStmt.Start.Column;
+				var propLen = setPropStmt.GetText().Length;
+				// rep1に "("の分+1する
+				var shiftCol = insertText1.Length + 1;
+				rewriteVBA.AddChange(startLine - 1,
+					(lCol+1, startCol + propLen),
+					$"{insertText1}{insertText2}",
+					argStartCol, shiftCol);
+			}
+
 			var setPropEndStmt = propertyData.SetEndStmt;
-			var startCol = setPropStmt.Start.Column;
-			var propLen = setPropStmt.GetText().Length;
-			var porpSym = setPropStmt.PROPERTY().Symbol;
-			var identStartCol = setPropStmt.identifier().Start.Column;
-			var setSym = setPropStmt.SET();
-			if(setSym == null) {
-				setSym = setPropStmt.LET();
-			}
-			var setStartCol = setSym.Symbol.Column;
-			var setEndCol = setStartCol + setSym.Symbol.Text.Length;
-
-			rewriteVBA.AddChange(porpSym.Line - 1,
-				(porpSym.Column, setEndCol),
-				"WriteOnly Property", identStartCol);
-
-			var lpCol = setPropStmt.LPAREN().Symbol.Column;
-			var argName = "value";
-			var asType = "";
-			if (setPropStmt.arg().asTypeClause() != null) {
-				var argIdets = setPropStmt.arg().identifier();
-				var asStmt = setPropStmt.arg().asTypeClause();
-				asType = asStmt.identifier().GetText();
-				if(Util.Eq(asType, "variant")) {
-					asType = "Object";
-				}
-				if (argIdets.Length > 0) {
-					argName = argIdets[0].GetText();
-				}
-				lpCol = argIdets[0].Start.Column;
-			}
-			var rep1 = "";
-			var rep2 = "";
-			if (asType == "") {
-				rep1 = $") : Set(";
-				rep2 = $")";
-			} else {
-				rep1 = $") As {asType} : Set(";
-				rep2 = $"{argName} As {asType})";
-			}
-
-			rewriteVBA.AddChange(porpSym.Line - 1,
-				(lpCol, startCol + propLen),
-				$"{rep1}{rep2}",
-				lpCol, rep1.Length);
 			rewriteVBA.AddChange(setPropEndStmt.Start.Line - 1, "End Set : End Property");
 		}
 	}

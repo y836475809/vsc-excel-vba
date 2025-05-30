@@ -8,6 +8,7 @@ namespace TestProject {
 		[Theory]
 		[InlineData("1")]
 		[InlineData("2")]
+		[InlineData("3")]
 		public void TestRewrite(string codeId) {
 			var code = Helper.getCode($"test_property{codeId}.bas");
 			var preprocVBA = new TestPreprocVBA();
@@ -30,6 +31,14 @@ namespace TestProject {
 					{4, new (){ new(4, 13, 5) } },
 					{9, new (){ new(9, 13, 6), new(9, 19, 18) } },
 					{13, new (){ new(13, 13, 5) } },
+				};
+			}
+			if (codeId == "3") {
+				expColDict = new ColumnShiftDict {
+					{0, new (){ new(0, 20, -4) } },
+					{4, new (){ new(4, 20, -2) } },
+					{9, new (){ new(9, 20, 6), new(9, 28, 19) } },
+					{13, new (){ new(13, 20, 6) } },
 				};
 			}
 

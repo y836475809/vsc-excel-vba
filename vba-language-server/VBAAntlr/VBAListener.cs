@@ -293,41 +293,9 @@ namespace VBAAntlr {
 		//}
 
 		public override void ExitPropertySetStmt([NotNull] VBAParser.PropertySetStmtContext context) {
-			//var setTokens = context.GetTokens(VBAParser.SET);
-			//var letTokens = context.GetTokens(VBAParser.LET);
-			//var tokens = setTokens.Concat(letTokens);
-			//GetLetSet(tokens);
-			//GetVBAFunction(context.children);
-			//GetPredefined(context.children);
-			//GetFilenumber(context);
-			//GetVariant(context);
-
 			var name = context.identifier();
-			//var end_stm = context.endPropertyStmt();
-
-			//string asType = null;
-			var arg = context.arg();
-			if (arg != null) {
-				var argIdent = arg.asTypeClause()?.identifier();
-				GetVariant(argIdent);
-			}
-			var prefix = "";
-			if (context.LET() != null) {
-				prefix = "Let";
-			} else {
-				prefix = "Set";
-			}
-			string asType = context.arg().asTypeClause()?.identifier()?.GetText();
-			rewriteVBA.AddPropertyName(name.Start.Line - 1, prefix, name.GetText(), asType);
-			
-			var name_s = name.Start;
-			//rewriteVBA.AddChange(name_s.Line - 1, (0, name_s.Column),
-			//	"Private Sub Set", name_s.Column);
-
 			rewriteGetProperty.AddProperty(PropertyType.Set, context);
 			rewriteDynamicArray.AddMethodStart($"set_prop_{name.GetText()}", context.Start.Line);
-			//var end_s = end_stm.Start;
-			//rewriteVBA.AddChange(end_s.Line - 1, "End Sub");
 		}
 
 		public override void ExitEndPropertyStmt([NotNull] VBAParser.EndPropertyStmtContext context) {

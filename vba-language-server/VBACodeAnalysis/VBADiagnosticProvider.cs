@@ -17,6 +17,7 @@ namespace VBACodeAnalysis {
 
         public VBADiagnosticProvider() {
             ignoreDs = [];
+            ignoerPropertyDiagnostics = [];
 			_errorMsgDict = new Dictionary<string, string> {
 				["open"] = Properties.Resources.OpenErrorMsg,
 				["print"] = Properties.Resources.PrintErrorMsg,

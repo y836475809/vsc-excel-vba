@@ -35,6 +35,7 @@ namespace AntlrTemplate {
 		Get,
 		Set
 	}
+
 	internal class PropertyData {
 		public string Name { get; set; }
 		public PropertyGetStmtContext GetStmt { get; set; }
@@ -42,7 +43,6 @@ namespace AntlrTemplate {
 
 		public PropertySetStmtContext SetStmt { get; set; }
 		public EndPropertyStmtContext SetEndStmt { get; set; }
-
 
 		public PropertyDataType DataType() {
 			var hasGetPorp = GetStmt != null && GetEndStmt != null;
@@ -60,54 +60,58 @@ namespace AntlrTemplate {
 		}
 	}
 
-
 	internal class RewriteGetProperty {
-		private List<(PropertyType, ParserRuleContext)> PropLines;
+		private List<PropertyData> PropDataList;
 
 		public RewriteGetProperty() {
-			PropLines = [];
+			PropDataList = [];
 		}
 
 		public void AddProperty(PropertyType propType, ParserRuleContext stmt) {
-			PropLines.Add((propType, stmt));
+			if (propType == PropertyType.End) {
+				if (!PropDataList.Any()) {
+					return;
+				}
+				var porpData = PropDataList.Last();
+				var propStmt = stmt as EndPropertyStmtContext;
+				if (porpData.GetStmt != null && porpData.GetEndStmt == null) {
+					porpData.GetEndStmt = propStmt;
+				}
+				if (porpData.SetStmt != null && porpData.SetEndStmt == null) {
+					porpData.SetEndStmt = propStmt;
+				}
+			} else if(propType == PropertyType.Get) {
+				var propStmt = stmt as PropertyGetStmtContext;
+				var name = propStmt.identifier().GetText();
+				var propData = PropDataList.Find(x => x.Name == name);
+				if (propData == null) {
+					PropDataList.Add(new PropertyData {
+						Name = name,
+						GetStmt = propStmt
+					});
+				} else {
+					propData.GetStmt = propStmt;
+				}
+			} else if (propType == PropertyType.Set) {
+				var propStmt = stmt as PropertySetStmtContext;
+				var name = propStmt.identifier().GetText();
+				var propData = PropDataList.Find(x => x.Name == name);
+				if (propData == null) {
+					PropDataList.Add(new PropertyData {
+						Name = propStmt.identifier().GetText(),
+						SetStmt = propStmt
+					});
+				} else {
+					propData.SetStmt = propStmt;
+				}
+			}
 		}
 
 		public void Rewrite(IRewriteVBA rewriteVBA) {
-			var propEndList = new List<(PropertyType, int)>();
-			var propDict = new Dictionary<string, PropertyData>();
-			for (int i = 0; i < PropLines.Count; i += 2) {
-				var propType = PropLines[i].Item1;
-
-				if (propType == PropertyType.End) {
+			foreach (var propData in PropDataList) {
+				if (propData.Name == null) {
 					continue;
 				}
-				if (PropLines.Count <= i + 1) {
-					break;
-				}
-
-				var startStmt = PropLines[i].Item2;
-				var EndStmt = PropLines[i + 1].Item2;
-
-				if (propType == PropertyType.Get) {
-					var getStmt = startStmt as PropertyGetStmtContext;
-					var name = getStmt.identifier().GetText();
-					if (!propDict.ContainsKey(name)) {
-						propDict[name] = new();
-					}
-					propDict[name].GetStmt = getStmt;
-					propDict[name].GetEndStmt = EndStmt as EndPropertyStmtContext;
-				}
-				if (propType == PropertyType.Set) {
-					var setStmt = startStmt as PropertySetStmtContext;
-					var name = setStmt.identifier().GetText();
-					if (!propDict.ContainsKey(name)) {
-						propDict[name] = new();
-					}
-					propDict[name].SetStmt = setStmt;
-					propDict[name].SetEndStmt = EndStmt as EndPropertyStmtContext;
-				}
-			}
-			foreach (var (name, propData) in propDict) {
 				var dataType = propData.DataType();
 				if (dataType == PropertyDataType.GetSet) {
 					RewriteGetSetProp(rewriteVBA, propData);

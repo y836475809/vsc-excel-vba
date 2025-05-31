@@ -13,6 +13,16 @@ using VBAAntlr;
 using static VBAAntlr.VBAParser;
 
 namespace AntlrTemplate {
+	internal class PropertyDiagnostic : IPropertyDiagnostic {
+		public string Id { get; set; }
+
+		public string Code { get; set; }
+
+		public string Severity { get; set; }
+
+		public int Line { get; set; }
+	}
+
 	public enum PropertyType {
 		End,
 		Get,
@@ -123,11 +133,15 @@ namespace AntlrTemplate {
 					(rangeStartCol, rangeEndCol), "", startCol);
 			}
 			{
+				var startLine = getPropStmt.Start.Line - 1;
 				var rangeCol = getPropStmt.Start.Column + getPropStmt.GetText().Length;
 				var startCol = rangeCol;
-				rewriteVBA.AddChange(getPropStmt.Start.Line - 1,
+				rewriteVBA.AddChange(startLine,
 					(rangeCol, rangeCol), 
 					" : Set : End Set : Get", startCol, false);
+
+				AddIgnoreDiagnostic(rewriteVBA, "Set", startLine);
+				AddIgnoreDiagnostic(rewriteVBA, "Get", startLine);
 
 				var getPropEndStmt = propertyData.GetEndStmt;
 				rewriteVBA.AddChange(getPropEndStmt.Start.Line - 1,
@@ -181,6 +195,8 @@ namespace AntlrTemplate {
 				var rangeCol = startCol + getPropStmt.GetText().Length;
 				rewriteVBA.AddChange(propStartLine - 1,
 					(rangeCol, rangeCol), " : Get", rangeCol, false);
+
+				AddIgnoreDiagnostic(rewriteVBA, "Get", propStartLine - 1);
 			}
 
 			var propEndStmt = propertyData.GetEndStmt;
@@ -203,6 +219,8 @@ namespace AntlrTemplate {
 				rewriteVBA.AddChange(startLine - 1,
 					(rangeStartCol, rangeEndCol),
 					"WriteOnly Property", startCol);
+
+				AddIgnoreDiagnostic(rewriteVBA, "Set", startLine - 1);
 			}
 			{
 				var argList = setPropStmt.argList();
@@ -239,6 +257,15 @@ namespace AntlrTemplate {
 
 			var setPropEndStmt = propertyData.SetEndStmt;
 			rewriteVBA.AddChange(setPropEndStmt.Start.Line - 1, "End Set : End Property");
+		}
+
+		private void AddIgnoreDiagnostic(IRewriteVBA rewriteVBA, string code, int line) {
+			rewriteVBA.AddIgnoreDiagnostic(new PropertyDiagnostic {
+				Id = "BC32009",
+				Code = code,
+				Severity = "Error",
+				Line = line
+			});
 		}
 	}
 }

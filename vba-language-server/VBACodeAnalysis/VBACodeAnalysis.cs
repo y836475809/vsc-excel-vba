@@ -21,7 +21,6 @@ namespace VBACodeAnalysis {
         private Project project;
         private Dictionary<string, DocumentId> doc_id_dict;
 		private PreprocVBA _preprocVBA;
-		private VBADiagnosticProvider vbaDiagnosticProvider;
 
         public VBACodeAnalysis() {
             var host = MefHostServices.Create(MefHostServices.DefaultAssemblies);
@@ -38,7 +37,6 @@ namespace VBACodeAnalysis {
 
 		public void setSetting(RewriteSetting rewriteSetting) {
             _preprocVBA = new PreprocVBA();
-			vbaDiagnosticProvider = new VBADiagnosticProvider();
         }
 
         public string Rewrite(string name, string vbaCode) {
@@ -560,11 +558,13 @@ namespace VBACodeAnalysis {
 				return [];
 			}
 			var doc = workspace.CurrentSolution.GetDocument(docId);
-			vbaDiagnosticProvider.ignoreDs = _preprocVBA.GetIgnoreDiagnostics(name);
-            var prepDiagnosticList = _preprocVBA.GetDiagnostics(name);
-			var diagnosticList = await vbaDiagnosticProvider.GetDiagnostics(doc);
-            var items = diagnosticList.Concat(prepDiagnosticList);
-            return [..items];
+			var diagnosticProvider = new VBADiagnosticProvider();
+			diagnosticProvider.IgnorePropertyDiagnostics = _preprocVBA.GetIgnorePropertyDiagnostics(name);
+			diagnosticProvider.ignoreDs = _preprocVBA.GetIgnoreDiagnostics(name);
+			var prepDiagnosticList = _preprocVBA.GetDiagnostics(name);
+			var diagnosticList = await diagnosticProvider.GetDiagnostics(doc);
+			var items = diagnosticList.Concat(prepDiagnosticList);
+			return [..items];
 		}
 
         public async Task<List<VBALocation>> GetReferences(

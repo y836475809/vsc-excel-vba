@@ -18,6 +18,13 @@ namespace VBAAntlr {
 		Bas,
 	}
 
+	public interface IPropertyDiagnostic {
+		string Id { get; }
+		string Code { get; }
+		string Severity { get; }
+		int Line { get; }
+	}
+
 	public interface IRewriteVBA {
 		/// <summary>
 		/// 部分置換
@@ -51,6 +58,8 @@ namespace VBAAntlr {
 		void FoundOption();
 
 		void AddIgnoreDiagnostic((int, int) start, (int, int) end, string text);
+
+		void AddIgnoreDiagnostic(IPropertyDiagnostic propertyDiagnostic);
 	}
 
 	public class VBAListener : VBABaseListener {

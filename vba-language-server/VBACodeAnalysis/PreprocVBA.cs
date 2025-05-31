@@ -133,6 +133,7 @@ namespace VBACodeAnalysis {
 		private InsertDict _insertDict;
 		private Dictionary<string, PropertyName> _propertyNameDict;
 		private List<VBADiagnostic> _ignoreDiagnosticList;
+		private List<IPropertyDiagnostic> _ignorePropertyDiagnosticList;
 
 		private string _code;
 		private ColumnShiftDict _colShiftDict;
@@ -187,6 +188,10 @@ namespace VBACodeAnalysis {
 			get { return _ignoreDiagnosticList; }
 		}
 
+		public List<IPropertyDiagnostic> IgnorePropertyDiagnosticList {
+			get { return _ignorePropertyDiagnosticList; }
+		}
+
 		public RewriteVBA() {
 			_changeDict = [];
 			_insertDict = [];
@@ -195,6 +200,7 @@ namespace VBACodeAnalysis {
 			_propertyNameDict = [];
 			_propertyDict = [];
 			_ignoreDiagnosticList = [];
+			_ignorePropertyDiagnosticList = [];
 			_foundOption = false;
 		}
 
@@ -264,6 +270,10 @@ namespace VBACodeAnalysis {
 				Start = (startLinel, startCol),
 				End = (endLinel, endCol)
 			});
+		}
+
+		public void AddIgnoreDiagnostic(IPropertyDiagnostic propertyDiagnostic) {
+			_ignorePropertyDiagnosticList.Add(propertyDiagnostic);
 		}
 
 		public void ApplyChange(string code) {
@@ -342,6 +352,7 @@ namespace VBACodeAnalysis {
 		protected Dictionary<string, PropertyDict> _filePropertyDict;
 		protected Dictionary<string, List<VBADiagnostic>> _fileDiagnosticDict;
 		protected Dictionary<string, List<VBADiagnostic>> _fileIgnoreDiagnosticDict;
+		protected Dictionary<string, List<IPropertyDiagnostic>> _fileIgnorePropertyDiagnosticDict;
 
 		public PreprocVBA() {
 			_fileColShiftDict = [];
@@ -350,6 +361,7 @@ namespace VBACodeAnalysis {
 			_filePropertyDict = [];
 			_fileDiagnosticDict = [];
 			_fileIgnoreDiagnosticDict = [];
+			_fileIgnorePropertyDiagnosticDict = [];
 		}
 
 		public int GetColShift(string name, int line, int col) {
@@ -412,6 +424,13 @@ namespace VBACodeAnalysis {
 			return value;
 		}
 
+		public List<IPropertyDiagnostic> GetIgnorePropertyDiagnostics(string name) {
+			if (!_fileIgnorePropertyDiagnosticDict.TryGetValue(name, out List<IPropertyDiagnostic> value)) {
+				return [];
+			}
+			return value;
+		}
+
 		public string Rewrite(string name, string vbaCode) {
 			if (name.EndsWith(".d.vb")) {
 				return vbaCode;
@@ -450,6 +469,7 @@ namespace VBACodeAnalysis {
 			var diagnosticList = rewriteVBA.GetAttributeDiagnosticList(name);
 			_fileDiagnosticDict[fp] = [.. diagnosticList];
 			_fileIgnoreDiagnosticDict[fp] = rewriteVBA.IgnoreDiagnosticList;
+			_fileIgnorePropertyDiagnosticDict[fp] = rewriteVBA.IgnorePropertyDiagnosticList;
 		}
 	}
 }

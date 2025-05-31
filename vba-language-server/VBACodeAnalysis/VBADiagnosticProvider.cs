@@ -1,4 +1,5 @@
 ﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.Text;
 using Microsoft.CodeAnalysis.VisualBasic;
 using Microsoft.CodeAnalysis.VisualBasic.Syntax;
 using System;
@@ -6,11 +7,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using VBAAntlr;
 
 namespace VBACodeAnalysis {
 	public class VBADiagnosticProvider {
         public List<VBADiagnostic> ignoreDs;
-        private Dictionary<string, string> _errorMsgDict;
+        private List<IPropertyDiagnostic> ignoerPropertyDiagnostics;
+		private Dictionary<string, string> _errorMsgDict;
+
         public VBADiagnosticProvider() {
             ignoreDs = [];
 			_errorMsgDict = new Dictionary<string, string> {
@@ -23,17 +27,38 @@ namespace VBACodeAnalysis {
 			};
 		}
 
-		public async Task<List<VBADiagnostic>> GetDiagnostics(Document doc) {
+        public List<IPropertyDiagnostic> IgnorePropertyDiagnostics {
+            set {
+                ignoerPropertyDiagnostics = value;
+            }
+        }
+
+        public async Task<List<VBADiagnostic>> GetDiagnostics(Microsoft.CodeAnalysis.Document doc) {
             var codes = new string[] {
                 "BC35000",  // ランタイム ライブラリ関数 が定義されていないため、
                                    // 要求された操作を実行できません。
             };
-            var AddItems = new List<VBADiagnostic>();
-            var node = doc.GetSyntaxRootAsync().Result;
-            var result = await doc.GetSemanticModelAsync();
-            var diagnostics = result.GetDiagnostics();
+			var code = await doc.GetTextAsync();
+			var ignoerPropDiagSet = new HashSet<string>();
+			foreach (var item in ignoerPropertyDiagnostics) {
+                var key = $"{item.Id},{item.Code},{item.Severity},{item.Line}";
+                ignoerPropDiagSet.Add(key);
+			}
+
+			var AddItems = new List<VBADiagnostic>();
+			var node = doc.GetSyntaxRootAsync().Result;
+			var result = await doc.GetSemanticModelAsync();
+			var diagnostics = result.GetDiagnostics();
             var items1 = diagnostics.Where(x => {
-                if (codes.Contains(x.Id)) {
+                var srcSp = x.Location.SourceSpan;
+				var lineSp = x.Location.GetLineSpan().Span;
+				var diagCode = code.GetSubText(new TextSpan(srcSp.Start, srcSp.End - srcSp.Start));
+                var propDiagKey = $"{x.Id},{diagCode},{x.Severity.ToString()},{lineSp.Start.Line}";
+				if (ignoerPropDiagSet.Contains(propDiagKey)) {
+                    return false;
+                }
+
+				if (codes.Contains(x.Id)) {
                     return false;
                 }
 

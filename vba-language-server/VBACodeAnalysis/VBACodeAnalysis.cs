@@ -14,6 +14,7 @@ using Antlr4.Runtime.Misc;
 using System.Reflection.Emit;
 using Microsoft.CodeAnalysis.Elfie.Model;
 using Microsoft.VisualBasic;
+using VBADocumentSymbol;
 
 namespace VBACodeAnalysis {
     public class VBACodeAnalysis {
@@ -643,7 +644,11 @@ namespace VBACodeAnalysis {
             return docSymbols;
 		}
 
-        private int GetPosition(Document doc, int line, int chara) {
+		public IDocumentSymbol GetDocumentSymbols(Uri uri, string vbaCode) {
+            return DocumentSymbolProvider.GetRoot(uri, vbaCode);
+		}
+
+		private int GetPosition(Document doc, int line, int chara) {
             var lines = doc.GetTextAsync().Result.Lines;
             if (lines.Count <= line || line < 0) {
                 return -1;

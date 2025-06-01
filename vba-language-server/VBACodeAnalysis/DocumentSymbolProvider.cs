@@ -1,4 +1,6 @@
-﻿using Microsoft.CodeAnalysis;
+﻿using Antlr4.Runtime.Atn;
+using Antlr4.Runtime;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Elfie.Model;
 using Microsoft.CodeAnalysis.VisualBasic;
 using Microsoft.CodeAnalysis.VisualBasic.Syntax;
@@ -7,9 +9,74 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Xml.Linq;
+using VBADocumentSymbol;
+using static System.Net.Mime.MediaTypeNames;
+using System.Collections;
 
 namespace VBACodeAnalysis {
+	public class Doctest {
+		
+	}
+
+	internal class DocumentSymbol : IDocumentSymbol {
+		//public string Name { get; set; }
+		//public string Kind { get; set; }
+		//public int StartLine { get; set; }
+		//public int StartColumn { get; set; }
+		//public int EndLine { get; set; }
+		//public int EndColumn { get; set; }
+		//public List<DocumentSymbol> Variants { get; set; }
+
+		public DocumentSymbol() {
+			Variables = [];
+		}
+	}
+
 	class DocumentSymbolProvider {
+		public static IDocumentSymbol GetRoot(Uri uri, string vbaCode) {
+			var symbolName = Path.GetFileNameWithoutExtension(uri.LocalPath);
+			var ext = Path.GetExtension(uri.LocalPath);
+			string kind = "Module";
+			if (ext == ".bas") {
+				kind = "Module";
+			} else if (ext == ".cls") {
+				kind = "Class";
+			}
+			var lines = vbaCode.Split(Environment.NewLine);
+			var symbols = mm(vbaCode);
+			var root = new DocumentSymbol {
+				Name = symbolName,
+				Kind = kind,
+				StartLine = 0,
+				StartColumn = 0,
+				EndLine = lines.Length - 1,
+				EndColumn = lines.Last().Length - 1,
+				Variables = symbols
+			};
+			return root;
+		}
+
+		public static List<IDocumentSymbol> mm(string vbaCode) {
+			var lexer = new VBADocumentSymbolLexer(new AntlrInputStream(vbaCode));
+			var tokens = new CommonTokenStream(lexer);
+			var parser = new VBADocumentSymbolParser(tokens);
+			parser.Interpreter.PredictionMode = PredictionMode.SLL;
+			lexer.RemoveErrorListeners();
+			parser.RemoveErrorListeners();
+
+			var nn = new VBADocumentSymbolListener();
+			parser.AddParseListener(nn);
+			try {
+				parser.startRule();
+			} catch (Exception) {
+				tokens.Reset();
+				parser.Reset();
+				parser.Interpreter.PredictionMode = PredictionMode.LL;
+				parser.startRule();
+			}
+			return nn.SymbolList;
+		}
+
 		public static List<VBADocSymbol> GetDocumentSymbols(
 			SyntaxNode node, Uri uri, 
 			Func<int, (bool, string, string)> propMapFunc) {
@@ -42,24 +109,25 @@ namespace VBACodeAnalysis {
 				if (ident == "") {
 					continue;
 				}
-				var name = "";
-				if (ident.ToLower() == "readonly") {
-					var propNames = stmt.Identifier.GetAllTrivia().Where(x => x.IsKind(SyntaxKind.SkippedTokensTrivia));
-					if (propNames.Any()) {
-						var propName = propNames.First().ToString();
-						var index = propName.IndexOf("(");
-						if (index < 0) {
-							name = $"Get {propName}";
-						} else {
-							name = $"Get {propName.Substring(0, index)}";
-						}
-					} else {
-						continue;
-					}
-					//name = $"Get {stmt.Identifier.GetAllTrivia().ToString().Trim()}";
-				} else {
-					name = $"Get Set {ident}";
-				}
+				//var name = "";
+				//if (ident.ToLower() == "readonly") {
+				//	var propNames = stmt.Identifier.GetAllTrivia().Where(x => x.IsKind(SyntaxKind.SkippedTokensTrivia));
+				//	if (propNames.Any()) {
+				//		var propName = propNames.First().ToString();
+				//		var index = propName.IndexOf("(");
+				//		if (index < 0) {
+				//			name = $"Get {propName}";
+				//		} else {
+				//			name = $"Get {propName.Substring(0, index)}";
+				//		}
+				//	} else {
+				//		continue;
+				//	}
+				//	//name = $"Get {stmt.Identifier.GetAllTrivia().ToString().Trim()}";
+				//} else {
+				//	name = $"Get Set {ident}";
+				//}
+				var name = $"Get {ident}";
 				symbols.Add(GetSymbol(stmt, name, "Property"));
 			}
 			return symbols;

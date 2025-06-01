@@ -3,6 +3,8 @@ Option ExplicitOn
 
 Private fieldvar1 As String, fieldvar2 As Long
 Private fieldvar3 As String
+Dim field_num1 as Long
+Const field_const = 100
 
 Public Enum testEnum
   e1
@@ -25,6 +27,17 @@ Type type3
   num3 As Long
   name3 As String
 End Type
+
+Property Get prop_get_set1() As String
+  dim name1 as string
+  name1 = 1
+  Set prop_get_set1 = name1
+End Property
+
+Property Set prop_get_set1(name as string)
+  dim name1 as string
+  Set name1 = name
+End Property
 
 Property Get prop_get1() As String
   dim name1 as string

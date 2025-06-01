@@ -1,6 +1,8 @@
 ﻿using System.IO;
+using System.Linq;
 using System.Text;
 using System.Text.Json;
+using VBADocumentSymbol;
 using LSP = Microsoft.VisualStudio.LanguageServer.Protocol;
 
 namespace VBALanguageServer {
@@ -65,6 +67,22 @@ namespace VBALanguageServer {
 				default:
 					return LSP.SymbolKind.Object;
 			}
+		}
+
+		public static LSP.DocumentSymbol ToLspDocumentSymbol(IDocumentSymbol doc) {
+			var range = new LSP.Range {
+				Start = new() { Line = doc.StartLine, Character = doc.StartColumn },
+				End = new() { Line = doc.EndLine, Character = doc.EndColumn }
+			};
+			var docSymbol = new LSP.DocumentSymbol {
+				Name = doc.Name,
+				Kind = Util.ToSymbolKind(doc.Kind),
+				Deprecated = false,
+				Range = range,
+				SelectionRange = range,
+				Children = [.. doc.Variables.Select(x => ToLspDocumentSymbol(x))]
+			};
+			return docSymbol;
 		}
 	}
 }

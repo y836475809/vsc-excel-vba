@@ -5,17 +5,17 @@ options {
 }
 
 startRule
-    : (typeStmt 
-    | propertyGetStmt | propertySetStmt
-    | constStmt
-    | dimStmt
-    | subStmt
-    | functionStmt
+    : (constStmt | dimStmt | filedVariant
+    | typeStmt 
+    | enumStmt
+    | propertyGetStmt | propertySetStmt | endPropertyStmt
+    | subStmt | endSubStmt
+    | functionStmt | endFunctionStmt
     | .)*?
     EOF
     ;
 constStmt
-    : CONST WS identifier WS? EQ WS? identifier
+    : CONST WS identifier WS? EQ WS? (identifier | NUMBER)
     ;
 CONST
     : 'CONST'
@@ -26,14 +26,29 @@ dimStmt
 DIM
     : 'DIM'
     ;
+filedVariant
+    : (visibility WS)? identifier argList? WS asTypeClause
+    ;
+enumStmt
+    : (visibility WS)? ENUM WS identifier endOfStatement blockEnumStmt*? endEnumStmt
+    ;
+endEnumStmt
+    : 'END' WS 'ENUM'
+    ;
+ENUM
+    : 'ENUM'
+    ;
+blockEnumStmt
+    : identifier (WS? EQ WS? NUMBER)? endOfStatement
+    ;
 subStmt
-    : (visibility WS)? SUB WS identifier WS? argList WS? endOfStatement .*? endSubStmt
+    : (visibility WS)? SUB WS identifier WS? argList WS? endOfStatement
     // : (visibility WS)? SUB WS identifier WS? .*? END_SUB
     // : (visibility WS)? 'SUB' WS identifier WS? LPAREN WS? RPAREN WS? endOfStatement
     // : (visibility WS)? SUB WS identifier WS? LPAREN
     ;
 functionStmt
-    : (visibility WS)? FUNCTION WS identifier WS? argList WS? (WS? asTypeClause)? endOfStatement .*? endFunctionStmt
+    : (visibility WS)? FUNCTION WS identifier WS? argList WS? (WS? asTypeClause)? endOfStatement
     // : (visibility WS)? 'FUNCTION' WS identifier argList? (WS? asTypeClause)? endOfStatement
     // : (visibility WS)? FUNCTION WS identifier WS? LPAREN
     ;
@@ -65,10 +80,10 @@ typeEndStmt
 propertyGetStmt
     : (visibility WS)? (STATIC WS)? PROPERTY WS GET WS identifier argList? (
         WS asTypeClause
-    )? endOfStatement .*? endPropertyStmt
+    )? endOfStatement
     ;
 propertySetStmt
-    : (visibility WS)? (STATIC WS)? PROPERTY WS (SET | LET) WS identifier (WS? argList)? endOfStatement .*? endPropertyStmt
+    : (visibility WS)? (STATIC WS)? PROPERTY WS (SET | LET) WS identifier (WS? argList)? endOfStatement
     // : (visibility WS)? (STATIC WS)? PROPERTY_SET WS identifier (WS? argList)? endOfStatement
     // : (visibility WS)? (STATIC WS)? PROPERTY WS (SET | LET) WS identifier WS? LPAREN WS? arg WS? RPAREN endOfStatement
     ;
@@ -82,12 +97,18 @@ argList
     : LPAREN (WS? arg (WS? ',' WS? arg)*)? WS? RPAREN
     ;
 arg
-    : (identifier WS)? identifier (
+    : ((BYVAL | BYREF) WS)? identifier (
         WS? LPAREN WS? RPAREN
     )? (WS? asTypeClause)? (WS? argDefaultValue)?
     ;
 argDefaultValue
     : EQ WS? identifier
+    ;
+BYVAL
+    :  'BYVAL'
+    ;
+BYREF
+    :  'BYREF'
     ;
 PROPERTY
     : 'PROPERTY'
@@ -147,6 +168,9 @@ visibility
 
 identifier
     : IDENTIFIER+
+    ;
+NUMBER
+    : [0-9]+
     ;
 L_SQUARE_BRACKET
     : '['

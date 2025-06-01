@@ -560,6 +560,7 @@ namespace VBACodeAnalysis {
 			var doc = workspace.CurrentSolution.GetDocument(docId);
 			var diagnosticProvider = new VBADiagnosticProvider();
 			diagnosticProvider.IgnorePropertyDiagnostics = _preprocVBA.GetIgnorePropertyDiagnostics(name);
+            diagnosticProvider.IgnoreLineDiagnosticsSet = _preprocVBA.GetIgnoreLineDiagnosticsSet(name);
 			diagnosticProvider.ignoreDs = _preprocVBA.GetIgnoreDiagnostics(name);
 			var prepDiagnosticList = _preprocVBA.GetDiagnostics(name);
 			var diagnosticList = await diagnosticProvider.GetDiagnostics(doc);

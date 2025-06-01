@@ -16,7 +16,7 @@ Public ReadOnly Property Name1(argName As String) : Get
 	ReDim ary3(0 TO 1, 0 TO 3)
 End Get : End Property
 
-WriteOnly Property Name2() As String : Set(argName As String)
+Private Sub R__Name2(argName As String)
 	ReDim m2(1, 2)
 
 	Dim ary1 As Long
@@ -27,9 +27,9 @@ WriteOnly Property Name2() As String : Set(argName As String)
 	Dim ary3(,) As Long:ReDim ary3(1, 3)         'redim
 	ReDim ary3(1, 3)
 	ReDim ary3(0 TO 1, 0 TO 3)
-End Set : End Property
+End Sub
 
-WriteOnly Property Name3() As String : Set(argName As String)
+Private Sub R__Name3(argName As String)
 	ReDim m2(1, 3)
 
 	Dim ary1 As Long
@@ -40,4 +40,6 @@ WriteOnly Property Name3() As String : Set(argName As String)
 	Dim ary3(,) As Long:ReDim ary3(1, 3)         'redim
 	ReDim ary3(1, 3)
 	ReDim ary3(0 TO 1, 0 TO 3)
-End Set : End Property
+End Sub
+WriteOnly Property Name2 As String
+WriteOnly Property Name3 As String

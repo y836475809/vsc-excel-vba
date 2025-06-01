@@ -17,12 +17,13 @@ Property Name1() As String : Set : End Set : Get
         g2 = 10
 End Get : End Property
 
-Private Sub set_p_Name1(n As String)
+Private Sub R__Name1(n As String)
         l1 = 10
         l2 = 10
 End Sub
 
-WriteOnly Property Name2() As String : Set(n As String)
+Private Sub R__Name2(n As String)
         s1 = 10
         s2 = 10
-End Set : End Property
+End Sub
+WriteOnly Property Name2 As String

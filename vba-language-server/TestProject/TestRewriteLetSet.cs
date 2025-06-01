@@ -14,11 +14,17 @@ namespace TestProject {
 
 			var expColDict = new ColumnShiftDict {
 					{14, new (){ new(14, 13, -4) } },
-					{19, new (){ new(19, 13, 5) } },
-					{24, new (){ new(24, 13, 6) } },
+					{19, new (){ new(19, 13, 2) } },
+					{24, new (){ new(24, 13, 2) } },
 				};
 			var actColDict = preprocVBA.ColDict["test"];
 			Helper.AssertColumnShiftDict(expColDict, actColDict);
+
+			var expLineMapDict = new LineReMapDict {
+					{ 28, 24 }
+				};
+			var actLineDict = preprocVBA.LineDict["test"];
+			Helper.AssertDict(actLineDict, expLineMapDict);
 		}
 	}
 }

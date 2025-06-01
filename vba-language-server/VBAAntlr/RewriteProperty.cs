@@ -151,34 +151,9 @@ namespace AntlrTemplate {
 				rewriteVBA.AddChange(getPropEndStmt.Start.Line - 1,
 					"End Get : End Property");
 			}
-			{
-				var setPropStmt = propertyData.SetStmt;
-				var rangeStartCol = setPropStmt.Start.Column;
-				var rangeEndCol = setPropStmt.identifier().Start.Column;
-				rewriteVBA.AddChange(setPropStmt.Start.Line - 1,
-					(rangeStartCol, rangeEndCol),
-					"Private Sub set_p_", rangeEndCol);
 
-				var argList = setPropStmt.argList();
-				foreach (var arg in argList.arg()) {
-					var asTypeClause = arg.asTypeClause();
-					if (asTypeClause == null) {
-						continue;
-					}
-					var asTypeIdent = asTypeClause.identifier();
-					var asType = asTypeIdent.GetText();
-					if (Util.Eq(asType, "variant")) {
-						var startCol = asTypeIdent.Start.Column;
-						rewriteVBA.AddChange(asTypeClause.Start.Line - 1,
-							(startCol, startCol + asType.Length),
-							"Object ", startCol, false);
-					}
-				}
-
-				var setPropEndStmt = propertyData.SetEndStmt;
-				rewriteVBA.AddChange(
-					setPropEndStmt.Start.Line - 1, "End Sub");
-			}
+			RewriteSet(rewriteVBA, 
+				propertyData.SetStmt, propertyData.SetEndStmt);
 		}
 
 		private void RewriteGetProp(IRewriteVBA rewriteVBA, PropertyData propertyData) {
@@ -211,56 +186,67 @@ namespace AntlrTemplate {
 		private void RewriteSetProp(IRewriteVBA rewriteVBA, PropertyData propertyData) {
 			var setPropStmt = propertyData.SetStmt;
 			var startLine = setPropStmt.Start.Line;
-			
-			{	
-				var setSym = setPropStmt.SET();
-				if (setSym == null) {
-					setSym = setPropStmt.LET();
-				}
-				var rangeStartCol = setPropStmt.PROPERTY().Symbol.Column;
-				var rangeEndCol = setSym.Symbol.Column + setSym.Symbol.Text.Length;
-				var startCol = setPropStmt.identifier().Start.Column;
-				rewriteVBA.AddChange(startLine - 1,
-					(rangeStartCol, rangeEndCol),
-					"WriteOnly Property", startCol);
 
-				AddIgnoreDiagnostic(rewriteVBA, "Set", startLine - 1);
-			}
 			{
+				RewriteSet(rewriteVBA,
+					propertyData.SetStmt, propertyData.SetEndStmt);
+
+				var propAsType = "";
 				var argList = setPropStmt.argList();
-				var argStartCol = argList.Start.Column;
-				var argName = "";
-				var asType = "";
 				if (argList.arg().Any()) {
-					var arg = argList.arg().First();
-					argStartCol = arg.Start.Column;
-					argName = arg.identifier().GetText();
-					if (arg.asTypeClause() != null) {
-						asType = arg.asTypeClause().identifier().GetText();
+					var asType = argList.arg().First().asTypeClause()?.identifier()?.GetText();
+					if(asType != null) {
 						if (Util.Eq(asType, "variant")) {
 							asType = "Object ";
 						}
+						propAsType = $" As {asType}";
 					}
 				}
-				var argText = argList.GetText().Replace("variant", "Object ", StringComparison.OrdinalIgnoreCase);
-				var insertText1 = ") : Set";
-				var insertText2 = $"{argText}";
-				if (asType != "") {
-					insertText1 = $") As {asType} : Set";
+
+				var porpVisibility = "";
+				var visibility = setPropStmt.visibility();
+				if (visibility != null) {
+					if (visibility.PUBLIC() != null) {
+						porpVisibility = "Public ";
+					} else if (visibility.PRIVATE() != null) {
+						porpVisibility = "Private ";
+					}
 				}
-				var lCol = argList.LPAREN().Symbol.Column;
-				var startCol = setPropStmt.Start.Column;
-				var propLen = setPropStmt.GetText().Length;
-				// rep1に "("の分+1する
-				var shiftCol = insertText1.Length + 1;
-				rewriteVBA.AddChange(startLine - 1,
-					(lCol+1, startCol + propLen),
-					$"{insertText1}{insertText2}",
-					argStartCol, shiftCol);
+
+				var propName = setPropStmt.identifier().GetText();
+				rewriteVBA.AddPropertyMember(
+					$"{porpVisibility}WriteOnly Property {propName}{propAsType}",
+					startLine - 1);
+			}
+		}
+
+		private void RewriteSet(IRewriteVBA rewriteVBA, 
+			PropertySetStmtContext setPropStmt,
+			EndPropertyStmtContext setPropEndStmt) {
+			var rangeStartCol = setPropStmt.Start.Column;
+			var rangeEndCol = setPropStmt.identifier().Start.Column;
+			rewriteVBA.AddChange(setPropStmt.Start.Line - 1,
+				(rangeStartCol, rangeEndCol),
+				"Private Sub R__", rangeEndCol);
+
+			var argList = setPropStmt.argList();
+			foreach (var arg in argList.arg()) {
+				var asTypeClause = arg.asTypeClause();
+				if (asTypeClause == null) {
+					continue;
+				}
+				var asTypeIdent = asTypeClause.identifier();
+				var asType = asTypeIdent.GetText();
+				if (Util.Eq(asType, "variant")) {
+					var startCol = asTypeIdent.Start.Column;
+					rewriteVBA.AddChange(asTypeClause.Start.Line - 1,
+						(startCol, startCol + asType.Length),
+						"Object ", startCol, false);
+				}
 			}
 
-			var setPropEndStmt = propertyData.SetEndStmt;
-			rewriteVBA.AddChange(setPropEndStmt.Start.Line - 1, "End Set : End Property");
+			rewriteVBA.AddChange(
+				setPropEndStmt.Start.Line - 1, "End Sub");
 		}
 
 		private void AddIgnoreDiagnostic(IRewriteVBA rewriteVBA, string code, int line) {

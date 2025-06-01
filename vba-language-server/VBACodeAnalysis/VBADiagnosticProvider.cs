@@ -13,11 +13,13 @@ namespace VBACodeAnalysis {
 	public class VBADiagnosticProvider {
         public List<VBADiagnostic> ignoreDs;
         private List<IPropertyDiagnostic> ignoerPropertyDiagnostics;
+		private HashSet<int> ignoerLineDiagnosticsSet;
 		private Dictionary<string, string> _errorMsgDict;
 
         public VBADiagnosticProvider() {
             ignoreDs = [];
             ignoerPropertyDiagnostics = [];
+            ignoerLineDiagnosticsSet = [];
 			_errorMsgDict = new Dictionary<string, string> {
 				["open"] = Properties.Resources.OpenErrorMsg,
 				["print"] = Properties.Resources.PrintErrorMsg,
@@ -34,7 +36,13 @@ namespace VBACodeAnalysis {
             }
         }
 
-        public async Task<List<VBADiagnostic>> GetDiagnostics(Microsoft.CodeAnalysis.Document doc) {
+		public HashSet<int> IgnoreLineDiagnosticsSet {
+			set {
+				ignoerLineDiagnosticsSet = value;
+			}
+		}
+
+		public async Task<List<VBADiagnostic>> GetDiagnostics(Microsoft.CodeAnalysis.Document doc) {
             var codes = new string[] {
                 "BC35000",  // ランタイム ライブラリ関数 が定義されていないため、
                                    // 要求された操作を実行できません。
@@ -58,6 +66,10 @@ namespace VBACodeAnalysis {
 				if (ignoerPropDiagSet.Contains(propDiagKey)) {
                     return false;
                 }
+
+                if (ignoerLineDiagnosticsSet.Contains(lineSp.Start.Line)) {
+					return false;
+				}
 
 				if (codes.Contains(x.Id)) {
                     return false;

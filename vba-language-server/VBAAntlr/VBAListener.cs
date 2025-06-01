@@ -51,6 +51,8 @@ namespace VBAAntlr {
 
 		void AddPropertyName(int lineIndex, string prefix, string text, string asType);
 
+		void AddPropertyMember(string text, int srcLine);
+
 		void AddModuleAttribute(int lastLineIndex, string vbName, ModuleType type);
 
 		void SetAttributeVBName(int line, int startChara, int endChara, string vbName);

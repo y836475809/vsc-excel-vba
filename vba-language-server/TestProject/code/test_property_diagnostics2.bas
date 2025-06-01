@@ -1,6 +1,6 @@
 Attribute VB_Name = "test"
 
-Public Property Get Name1() As String
+Public Property Ge Name1() As String 'Get -> Ge
 	Name1 = "Name"
 End Property
 
@@ -13,7 +13,7 @@ Public Property Get Name2() As String
 	Name2 = "Name"
 End Property
 
-Public Property Set Name3(argName As String)
+Public Property Set Name3(argName As Stri) 'String -> Stri
 	Dim a As String
 	a = "Name"
 End Property

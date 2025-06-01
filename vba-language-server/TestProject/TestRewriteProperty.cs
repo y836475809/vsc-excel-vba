@@ -17,28 +17,39 @@ namespace TestProject {
 			Helper.AssertCode(expCode, actCode);
 
 			ColumnShiftDict expColDict = null;
-			if(codeId == "1") {
+			LineReMapDict expLineMapDict = null;
+			if (codeId == "1") {
 				expColDict = new ColumnShiftDict {
 					{0, new (){ new(0, 20, -4) } },
-					{4, new (){ new(4, 20, -2) } },
-					{9, new (){ new(9, 20, 6), new(9, 26, 18) } },
+					{4, new (){ new(4, 20, -5) } },
+					{9, new (){ new(9, 20, -5) } },
 					{13, new (){ new(13, 20, 5) } },
+				};
+				expLineMapDict = new LineReMapDict {
+					{ 16, 9 }
 				};
 			}
 			if (codeId == "2") {
 				expColDict = new ColumnShiftDict {
 					{0, new (){ new(0, 13, -4) } },
-					{4, new (){ new(4, 13, 5) } },
-					{9, new (){ new(9, 13, 6), new(9, 19, 18) } },
+					{4, new (){ new(4, 13, 2) } },
+					{9, new (){ new(9, 13, 2) } },
 					{13, new (){ new(13, 13, 5) } },
+				};
+				expLineMapDict = new LineReMapDict {
+					{ 16, 9 }
 				};
 			}
 			if (codeId == "3") {
 				expColDict = new ColumnShiftDict {
 					{0, new (){ new(0, 20, -4) } },
-					{4, new (){ new(4, 20, -2) } },
-					{9, new (){ new(9, 20, 6), new(9, 28, 19) } },
-					{13, new (){ new(13, 20, 6) } },
+					{4, new (){ new(4, 20, -5) } },
+					{9, new (){ new(9, 20, -5) } },
+					{13, new (){ new(13, 20, -5) } },
+				};
+				expLineMapDict = new LineReMapDict {
+					{ 16, 9 },
+					{ 17, 13 }
 				};
 			}
 
@@ -47,9 +58,9 @@ namespace TestProject {
 
 			var actLineShiftDict = preprocVBA.LineShiftDict["test"];
 			Assert.Empty(actLineShiftDict);
-
+			
 			var actLineDict = preprocVBA.LineDict["test"];
-			Assert.Empty(actLineDict);
+			Helper.AssertDict(actLineDict, expLineMapDict);
 		}
 
 		[Theory]
@@ -64,6 +75,7 @@ namespace TestProject {
 			Helper.AssertCode(expCode, actCode);
 
 			ColumnShiftDict expColDict = null;
+			LineReMapDict expLineMapDict = null;
 			if (codeId == "1") {
 				expColDict = new ColumnShiftDict {
 					{1, new (){ new(1, 7, 1) } },
@@ -73,13 +85,17 @@ namespace TestProject {
 					{10, new (){ new(10, 10, 1) } },
 					{13, new (){ new(13, 1, 20) } },
 
-					{18, new (){ new(18, 13, 6), new(18, 19, 18) } },
+					{18, new (){ new(18, 13, 2) } },
 					{23, new (){ new(23, 10, 1) } },
 					{26, new (){ new(26, 1, 20) } },
 					
-					{31, new (){ new(31, 13, 6), new(31, 19, 18) } },
+					{31, new (){ new(31, 13, 2) } },
 					{36, new (){ new(36, 10, 1) } },
 					{39, new (){ new(39, 1, 20) } },
+				};
+				expLineMapDict = new LineReMapDict {
+					{ 43, 18 },
+					{ 44, 31 }
 				};
 			}
 			if (codeId == "2") {
@@ -87,13 +103,17 @@ namespace TestProject {
 					{0, new (){ new(0, 20, 5) } },
 					{4, new (){ new(4, 1, 19) } },
 
-					{8, new (){ new(8, 13, 6), new(8, 19, 18) } },
+					{8, new (){ new(8, 13, 2) } },
 					{9, new (){ new(9, 10, 1) } },
 					{12, new (){ new(12, 1, 20) } },
 
-					{16, new (){ new(16, 13, 6), new(16, 19, 18) } },
+					{16, new (){ new(16, 13, 2) } },
 					{17, new (){ new(17, 10, 2) } },
 					{20, new (){ new(20, 1, 21) } },
+				};
+				expLineMapDict = new LineReMapDict {
+					{ 23, 8 },
+					{ 24, 16 }
 				};
 			}
 			var actColDict = preprocVBA.ColDict["test"];
@@ -103,7 +123,7 @@ namespace TestProject {
 			Assert.Empty(actLineShiftDict);
 
 			var actLineDict = preprocVBA.LineDict["test"];
-			Assert.Empty(actLineDict);
+			Helper.AssertDict(actLineDict, expLineMapDict);
 		}
 	}
 }

@@ -1,13 +1,13 @@
 Attribute VB_Name = "test_document_symbol"
 Option ExplicitOn
 
-Private fieldvar1 As String, fieldvar2 As Long
-Private fieldvar3 As String
-Dim field_num1 as Long
-Const field_const = 100
+Private field_var1 As String
+Private field_var2 As String, field_var3 As Long
+Dim field_dim_var4 as Long
+Const field_const_var5 = 100
 
 Public Enum testEnum
-  e1
+  e1 = 1
   e2
   e3
 End Enum
@@ -53,12 +53,12 @@ Property Set prop_set1(ByVal arg As String)
   name = arg
 End Property
 
-Sub Main()
+Function func1() As Long
   Dim num1 as Long
   Dim name1 As string
+End Function
 
-  Debug.Print "test"
-
-  Dim End_Row As Long, End_Col As Long
-  End_Row = Cells(Rows.Count, 2).End(xlUp).Row
+Sub sub1()
+  Dim num1 as Long
+  Dim name1 As string
 End Sub

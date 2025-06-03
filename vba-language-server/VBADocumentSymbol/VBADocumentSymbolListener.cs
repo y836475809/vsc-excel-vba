@@ -12,6 +12,15 @@ using static VBADocumentSymbol.VBADocumentSymbolParser;
 
 
 namespace VBADocumentSymbol {
+	internal enum SymbolKind {
+		Variable,
+		Property,
+		Method,
+		Struct,
+		Enum,
+		EnumMember
+	};
+
 	public class DocumentSymbol : IDocumentSymbol {
 		public DocumentSymbol() {
 			Variables = [];
@@ -28,53 +37,28 @@ namespace VBADocumentSymbol {
 			SymbolList = [];
 		}
 
-		public override void ExitStartRule([NotNull] StartRuleContext context) {
-			base.ExitStartRule(context);
-		}
-
 		public override void ExitFiledVariant([NotNull] FiledVariantContext context) {
-			var name = context.identifier().GetText();
-			var text = context.GetText();
-			var start = context.Start;
-			var stop = context.Stop;
-			VariantList.Add(new DocumentSymbol {
-				Name = name,
-				Kind = "FieldVariant",
-				StartLine = start.Line - 1,
-				StartColumn = start.Column,
-				EndLine = stop.Line - 1,
-				EndColumn = start.Column + text.Length
-			});
+			var ident = context.identifier();
+			var name = ident.GetText();
+			var start = ident.Start;
+			var stop = ident.Stop;
+			VariantList.Add(GetVariableSymbol(name, SymbolKind.Variable, start, stop));
 		}
 
 		public override void ExitDimStmt([NotNull] DimStmtContext context) {
-			var name = context.identifier().GetText();
-			var text = context.GetText();
-			var start = context.Start;
-			var stop = context.Stop;
-			VariantList.Add(new DocumentSymbol {
-				Name = name,
-				Kind = "Variable",
-				StartLine = start.Line - 1,
-				StartColumn = start.Column,
-				EndLine = stop.Line - 1,
-				EndColumn = start.Column + text.Length
-			});
+			var ident = context.identifier();
+			var name = ident.GetText();
+			var start = ident.Start;
+			var stop = ident.Stop;
+			VariantList.Add(GetVariableSymbol(name, SymbolKind.Variable, start, stop));
 		}
 
 		public override void ExitConstStmt([NotNull] ConstStmtContext context) {
-			var name = context.identifier().First().GetText();
-			var text = context.GetText();
-			var start = context.Start;
-			var stop = context.Stop;
-			VariantList.Add(new DocumentSymbol {
-				Name = name,
-				Kind = "Variable",
-				StartLine = start.Line - 1,
-				StartColumn = start.Column,
-				EndLine = stop.Line - 1,
-				EndColumn = start.Column + text.Length
-			});
+			var ident = context.identifier().First();
+			var name = ident.GetText();
+			var start = ident.Start;
+			var stop = ident.Stop;
+			VariantList.Add(GetVariableSymbol(name, SymbolKind.Variable, start, stop));
 		}
 
 		public override void ExitPropertyGetStmt([NotNull] PropertyGetStmtContext context) {
@@ -199,31 +183,24 @@ namespace VBADocumentSymbol {
 
 			var variables = new List<IDocumentSymbol>();
 			foreach (var stmt in context.blockTypeStmt()) {
-				var name = stmt.identifier().GetText();
-				var text = stmt.GetText();
-				var start = stmt.Start;
-				var stop = stmt.Stop;
-				variables.Add(new DocumentSymbol {
-					Name = name,
-					Kind = "Variable",
-					StartLine = start.Line - 1,
-					StartColumn = start.Column,
-					EndLine = stop.Line - 1,
-					EndColumn = start.Column + text.Length
-				});
+				var ident = stmt.identifier();
+				var name = ident.GetText();
+				var start = ident.Start;
+				var stop = ident.Stop;
+				variables.Add(GetVariableSymbol(name, SymbolKind.Variable, start, stop));
 			}
 			{
 				var name = $"{context.identifier().GetText()}";
 				var text = context.GetText();
 				var start = context.Start;
-				var stop = context.Stop;
+				var endStmt = context.typeEndStmt();
 				SymbolList.Add(new DocumentSymbol {
 					Name = name,
 					Kind = "Struct",
 					StartLine = start.Line - 1,
 					StartColumn = start.Column,
-					EndLine = stop.Line - 1,
-					EndColumn = start.Column + text.Length,
+					EndLine = endStmt.Start.Line - 1,
+					EndColumn = endStmt.Start.Column + endStmt.GetText().Length,
 					Variables = variables
 				});
 			}
@@ -235,34 +212,38 @@ namespace VBADocumentSymbol {
 
 			var variables = new List<IDocumentSymbol>();
 			foreach (var stmt in context.blockEnumStmt()) {
-				var name = stmt.identifier().GetText();
-				var text = stmt.GetText();
-				var start = stmt.Start;
-				var stop = stmt.Stop;
-				variables.Add(new DocumentSymbol {
-					Name = name,
-					Kind = "Enum",
-					StartLine = start.Line - 1,
-					StartColumn = start.Column,
-					EndLine = stop.Line - 1,
-					EndColumn = start.Column + text.Length
-				});
+				var ident = stmt.identifier();
+				var name = ident.GetText();
+				var start = ident.Start;
+				var stop = ident.Stop;
+				variables.Add(GetVariableSymbol(name, SymbolKind.EnumMember, start, stop));
 			}
 			{
 				var name = $"{context.identifier().GetText()}";
 				var text = context.GetText();
 				var start = context.Start;
-				var stop = context.Stop;
+				var endStmt = context.endEnumStmt();
 				SymbolList.Add(new DocumentSymbol {
 					Name = name,
-					Kind = "EnumMember",
+					Kind = "Enum",
 					StartLine = start.Line - 1,
 					StartColumn = start.Column,
-					EndLine = stop.Line - 1,
-					EndColumn = start.Column + text.Length,
+					EndLine = endStmt.Start.Line - 1,
+					EndColumn = endStmt.Start.Column + endStmt.GetText().Length,
 					Variables = variables
 				});
 			}
+		}
+
+		private IDocumentSymbol GetVariableSymbol(string name, SymbolKind kind, IToken start, IToken stop) {
+			return new DocumentSymbol {
+				Name = name,
+				Kind = kind.ToString("g"),
+				StartLine = start.Line - 1,
+				StartColumn = start.Column,
+				EndLine = stop.Line - 1,
+				EndColumn = start.Column + name.Length,
+			};
 		}
 	}
 }

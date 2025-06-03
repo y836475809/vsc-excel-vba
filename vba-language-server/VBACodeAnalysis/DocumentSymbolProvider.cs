@@ -50,7 +50,7 @@ namespace VBACodeAnalysis {
 				StartLine = 0,
 				StartColumn = 0,
 				EndLine = lines.Length - 1,
-				EndColumn = lines.Last().Length - 1,
+				EndColumn = lines.Last().Length,
 				Variables = symbols
 			};
 			return root;

@@ -72,7 +72,7 @@ typeStmt
     ;
 blockTypeStmt
     // : (visibility WS)? identifier .*? WS asTypeClause endOfStatement
-    : (visibility WS)? identifier (WS? LPAREN WS? .*? WS? RPAREN)? WS asTypeClause endOfStatement
+    : (visibility WS)? identifier (WS? LPAREN WS? .*? WS? RPAREN)? (WS asTypeClause)? endOfStatement
     ;
 typeEndStmt
     : END_TYPE

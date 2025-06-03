@@ -40,6 +40,7 @@ namespace VBALanguageServer {
 		private readonly string srcDirName;
 		private VBACodeAnalysis.VBACodeAnalysis vbaca;
 		private Dictionary<string, string> vbCache;
+		private Dictionary<string, string> vbaCache;
 		private readonly JsonRpc rpc;
 		private DebounceDispatcher didTextChangeDebounce;
 		private CurrentTextDocument currentTextDocument;
@@ -60,6 +61,7 @@ namespace VBALanguageServer {
 			this.vbaca = new VBACodeAnalysis.VBACodeAnalysis();
 			this.vbaca.setSetting(this.LoadSettings().RewriteSetting);
 			this.vbCache = [];
+			this.vbaCache = [];
 
 			var fps = Enumerable.Empty<string>();
 			foreach (var ext in exts) {
@@ -186,6 +188,8 @@ namespace VBALanguageServer {
 		public void OnTextDocumentOpened(JToken arg) {
 			Logger.Info("OnTextDocumentOpened");
 			var @params = arg.ToObject<DidOpenTextDocumentParams>();
+			var fp = this.GetFsPath(@params.TextDocument.Uri);
+			this.vbaCache[fp] = @params.TextDocument.Text;
 			this.SendDiagnostics(@params.TextDocument.Uri);
 		}
 
@@ -214,8 +218,10 @@ namespace VBALanguageServer {
 				if (changes.Length == 0) {
 					return;
 				}
-				var vbCode = this.vbaca.Rewrite(fp, changes[0].Text);
+				var vbaCode = changes[0].Text;
+				var vbCode = this.vbaca.Rewrite(fp, vbaCode);
 				this.vbCache[fp] = vbCode;
+				this.vbaCache[fp] = vbaCode;
 				this.vbaca.ChangeDocument(fp, vbCode);
 				this.SendDiagnostics(@params.TextDocument.Uri);
 			});
@@ -471,40 +477,12 @@ namespace VBALanguageServer {
 			var @params = arg.ToObject<DocumentSymbolParams>();
 			var uri = @params.TextDocument.Uri;
 			var fp = this.GetFsPath(@params.TextDocument.Uri);
-			var vbaDocSymbols = this.vbaca.GetDocumentSymbols(fp, uri);
-			var docSymbols = vbaDocSymbols.Select(vbaSymbol => {
-				var start = vbaSymbol.Start;
-				var end = vbaSymbol.End;
-				var range = new LSP.Range {
-					Start = new() { Line = start.Item1, Character = start.Item2 },
-					End = new() { Line = end.Item1, Character = end.Item2 }
-				};
-				var docSymbol = new DocumentSymbol {
-					Name = vbaSymbol.Name,
-					Kind = Util.ToSymbolKind(vbaSymbol.Kind),
-					Deprecated = false,
-					Range = range,
-					SelectionRange = range
-				};
-				var children = vbaSymbol.Children.Select(child => {
-					var childStart = child.Start;
-					var childEnd = child.End;
-					var childRange = new LSP.Range {
-						Start = new() { Line = childStart.Item1, Character = childStart.Item2 },
-						End = new() { Line = childEnd.Item1, Character = childEnd.Item2 }
-					};
-					return new DocumentSymbol {
-						Name = child.Name,
-						Kind = Util.ToSymbolKind(child.Kind),
-						Deprecated = false,
-						Range = childRange,
-						SelectionRange = childRange
-					};
-				});
-				docSymbol.Children = [..children];
-				return docSymbol;
-			});	
-			return [..docSymbols];
+			if(!this.vbaCache.TryGetValue(fp, out string vbaCode)) {
+				return null;
+			}
+			var root = this.vbaca.GetDocumentSymbols(uri, vbaCode);
+			var docSymbol = Util.ToLspDocumentSymbol(root);
+			return [docSymbol];
 		}
 
 		private Task SendNotificationAsync<TIn>(LspNotification<TIn> method, TIn param) {

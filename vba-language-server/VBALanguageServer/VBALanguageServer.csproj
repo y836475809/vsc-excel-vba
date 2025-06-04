@@ -31,7 +31,7 @@
   <ProjectExtensions><VisualStudio><UserProperties /></VisualStudio></ProjectExtensions>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="xcopy /y /d $(ProjectDir)bin\$(Configuration)\net8.0\* $(ProjectDir)..\..\vsc-excel-vba\bin\$(Configuration)&#xD;&#xA;xcopy /S /I /y /d $(ProjectDir)d.vb\* $(ProjectDir)..\..\vsc-excel-vba\bin\$(Configuration)\d.vb" />
+    <Exec Command="xcopy /S /I /y /d $(ProjectDir)d.vb\* $(ProjectDir)$(OutDir)d.vb" />
   </Target>
 
 </Project>

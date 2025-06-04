@@ -628,22 +628,6 @@ namespace VBACodeAnalysis {
             return vbaLocations;
         }
 
-        public List<VBADocSymbol> GetDocumentSymbols(string name, Uri uri) {
-			if (!doc_id_dict.TryGetValue(name, out DocumentId docId)) {
-				return [];
-			}
-			var doc = workspace.CurrentSolution.GetDocument(docId);
-			var node = doc.GetSyntaxRootAsync().Result;
-            var docSymbols = DocumentSymbolProvider.GetDocumentSymbols(node, uri,  (int line) => {
-                var shiftLine = _preprocVBA.GetLineShift(name, line);
-                if(_preprocVBA.TryGetProperty(name, line - shiftLine, out string prefix, out string propName)) {
-                    return (true, prefix, propName);
-                }
-                return (false, null, null);
-			});
-            return docSymbols;
-		}
-
 		public IDocumentSymbol GetDocumentSymbols(Uri uri, string vbaCode) {
             return DocumentSymbolProvider.GetRoot(uri, vbaCode);
 		}

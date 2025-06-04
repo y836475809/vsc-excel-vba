@@ -57,12 +57,4 @@ namespace VBACodeAnalysis {
 				&& this.End.Item2 == obj.End.Item2;
 		}
 	}
-
-	public class VBADocSymbol {
-		public string Name { get; set; }
-		public string Kind { get; set; }
-		public (int, int) Start { get; set; }
-		public (int, int) End { get; set; }
-		public List<VBADocSymbol> Children { get; set; }
-	}
 }

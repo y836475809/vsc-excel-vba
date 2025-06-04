@@ -23,7 +23,7 @@ namespace VBADocumentSymbol {
 
 	public class DocumentSymbol : IDocumentSymbol {
 		public DocumentSymbol() {
-			Variables = [];
+			Children = [];
 		}
 	}
 
@@ -181,13 +181,13 @@ namespace VBADocumentSymbol {
 			SymbolList.AddRange(VariantList);
 			VariantList.Clear();
 
-			var variables = new List<IDocumentSymbol>();
+			var children = new List<IDocumentSymbol>();
 			foreach (var stmt in context.blockTypeStmt()) {
 				var ident = stmt.identifier();
 				var name = ident.GetText();
 				var start = ident.Start;
 				var stop = ident.Stop;
-				variables.Add(GetVariableSymbol(name, SymbolKind.Variable, start, stop));
+				children.Add(GetVariableSymbol(name, SymbolKind.Variable, start, stop));
 			}
 			{
 				var name = $"{context.identifier().GetText()}";
@@ -201,7 +201,7 @@ namespace VBADocumentSymbol {
 					StartColumn = start.Column,
 					EndLine = endStmt.Start.Line - 1,
 					EndColumn = endStmt.Start.Column + endStmt.GetText().Length,
-					Variables = variables
+					Children = children
 				});
 			}
 		}
@@ -210,13 +210,13 @@ namespace VBADocumentSymbol {
 			SymbolList.AddRange(VariantList);
 			VariantList.Clear();
 
-			var variables = new List<IDocumentSymbol>();
+			var children = new List<IDocumentSymbol>();
 			foreach (var stmt in context.blockEnumStmt()) {
 				var ident = stmt.identifier();
 				var name = ident.GetText();
 				var start = ident.Start;
 				var stop = ident.Stop;
-				variables.Add(GetVariableSymbol(name, SymbolKind.EnumMember, start, stop));
+				children.Add(GetVariableSymbol(name, SymbolKind.EnumMember, start, stop));
 			}
 			{
 				var name = $"{context.identifier().GetText()}";
@@ -230,7 +230,7 @@ namespace VBADocumentSymbol {
 					StartColumn = start.Column,
 					EndLine = endStmt.Start.Line - 1,
 					EndColumn = endStmt.Start.Column + endStmt.GetText().Length,
-					Variables = variables
+					Children = children
 				});
 			}
 		}

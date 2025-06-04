@@ -80,7 +80,7 @@ namespace VBALanguageServer {
 				Deprecated = false,
 				Range = range,
 				SelectionRange = range,
-				Children = [.. doc.Variables.Select(x => ToLspDocumentSymbol(x))]
+				Children = [.. doc.Children.Select(x => ToLspDocumentSymbol(x))]
 			};
 			return docSymbol;
 		}

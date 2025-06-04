@@ -50,9 +50,9 @@ namespace TestProject {
 
 			Assert.Equal("Module", rootSym.Kind);
 			Assert.Equal("test_document_symbol1", rootSym.Name);
-			Assert.Equal(16, rootSym.Variables.Count);
+			Assert.Equal(16, rootSym.Children.Count);
 
-			var children = rootSym.Variables;
+			var children = rootSym.Children;
 			AssertSymbol(children, [
 				("field_var1", "Variable"),
 				("field_var2", "Variable"),
@@ -88,35 +88,35 @@ namespace TestProject {
 			var funcSym = children[14];
 			var subSym = children[15];
 
-			AssertSymbol(enumSym.Variables, [
+			AssertSymbol(enumSym.Children, [
 				("e1", "EnumMember"),
 				("e2", "EnumMember"),
 				("e3", "EnumMember"),
 			]);
 
-			AssertSymbol(type1Sym.Variables, [
+			AssertSymbol(type1Sym.Children, [
 				("num1", "Variable"),
 				("name1", "Variable"),
 				("utc1", "Variable"),
 			]);
 
-			AssertSymbol(type2Sym.Variables, [
+			AssertSymbol(type2Sym.Children, [
 				("num2", "Variable"),
 				("name2", "Variable"),
 			]);
 
-			AssertSymbol(type3Sym.Variables, [
+			AssertSymbol(type3Sym.Children, [
 				("num3", "Variable"),
 				("name3", "Variable"),
 			]);
 
-			Assert.Empty(prop1Sym.Variables);
-			Assert.Empty(prop2Sym.Variables);
-			Assert.Empty(prop3Sym.Variables);
-			Assert.Empty(prop4Sym.Variables);
-			Assert.Empty(prop5Sym.Variables);
-			Assert.Empty(funcSym.Variables);
-			Assert.Empty(subSym.Variables);
+			Assert.Empty(prop1Sym.Children);
+			Assert.Empty(prop2Sym.Children);
+			Assert.Empty(prop3Sym.Children);
+			Assert.Empty(prop4Sym.Children);
+			Assert.Empty(prop5Sym.Children);
+			Assert.Empty(funcSym.Children);
+			Assert.Empty(subSym.Children);
 		}
 
 		[Fact]
@@ -126,9 +126,9 @@ namespace TestProject {
 
 			Assert.Equal("Module", rootSym.Kind);
 			Assert.Equal("test_document_symbol2", rootSym.Name);
-			Assert.Equal(11, rootSym.Variables.Count);
+			Assert.Equal(11, rootSym.Children.Count);
 
-			var children = rootSym.Variables;
+			var children = rootSym.Children;
 			AssertSymbol(children, [
 				("field_var1", "Variable", (3, 8), (3, 18)),
 				("field_var2", "Variable", (4, 8), (4, 18)),
@@ -154,20 +154,20 @@ namespace TestProject {
 			var funcSym = children[9];
 			var subSym = children[10];
 
-			AssertSymbol(enumSym.Variables, [
+			AssertSymbol(enumSym.Children, [
 				("e1", "EnumMember", (9, 2), (9, 4)),
 				("e2", "EnumMember", (10, 2), (10, 4)),
 			]);
 
-			AssertSymbol(type1Sym.Variables, [
+			AssertSymbol(type1Sym.Children, [
 				("num1", "Variable", (14, 2), (14, 6)),
 				("utc1", "Variable", (15, 2), (15, 6)),
 			]);
 
-			Assert.Empty(prop1Sym.Variables);
-			Assert.Empty(prop2Sym.Variables);
-			Assert.Empty(funcSym.Variables);
-			Assert.Empty(subSym.Variables);
+			Assert.Empty(prop1Sym.Children);
+			Assert.Empty(prop2Sym.Children);
+			Assert.Empty(funcSym.Children);
+			Assert.Empty(subSym.Children);
 		}
 	}
 }

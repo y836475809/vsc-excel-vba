@@ -66,6 +66,7 @@ namespace TestProject {
 		[Theory]
 		[InlineData("1")]
 		[InlineData("2")]
+		[InlineData("3")]
 		public void TestRewriteDynamicArray(string codeId) {
 			var filename = "test_property_dynamic_array";
 			var code = Helper.getCode($"{filename}{codeId}.bas");
@@ -114,6 +115,23 @@ namespace TestProject {
 				expLineMapDict = new LineReMapDict {
 					{ 23, 8 },
 					{ 24, 16 }
+				};
+			}
+			if (codeId == "3") {
+				expColDict = new ColumnShiftDict {
+					{1, new (){ new(1, 7, 1) } },
+
+					{5, new (){ new(5, 13, 2) } },
+
+					{12, new (){ new(12, 8, 1) } },
+					{13, new (){ new(13, 8, 1) } },
+
+					{15, new (){ new(15, 13, 2) } },
+					{16, new (){ new(16, 8, 1) } },
+				};
+				expLineMapDict = new LineReMapDict {
+					{ 21, 5 },
+					{ 22, 15 }
 				};
 			}
 			var actColDict = preprocVBA.ColDict["test"];

@@ -83,20 +83,19 @@ namespace VBAAntlr {
 		}
 
 		public override void ExitSubStmt([NotNull] VBAParser.SubStmtContext context) {
-			var name = context.identifier()?.GetText();
-			rewriteDynamicArray.AddMethodStart(name, context.Start.Line);
+			rewriteDynamicArray.StartBlockStmt();
 		}
 
 		public override void ExitEndSubStmt([NotNull] VBAParser.EndSubStmtContext context) {
-			rewriteDynamicArray.AddMethodEnd(context.Start.Line);
+			rewriteDynamicArray.EndBlockStmt();
 		}
 
 		public override void ExitFunctionStmt([NotNull] VBAParser.FunctionStmtContext context) {
-			rewriteDynamicArray.AddMethodEnd(context.Start.Line);
+			rewriteDynamicArray.StartBlockStmt();
 		}
 
 		public override void ExitEndFunctionStmt([NotNull] VBAParser.EndFunctionStmtContext context) {
-			rewriteDynamicArray.AddMethodEnd(context.Start.Line);
+			rewriteDynamicArray.EndBlockStmt();
 		}
 
 		public override void ExitStartRule([NotNull] VBAParser.StartRuleContext context) {
@@ -262,7 +261,7 @@ namespace VBAAntlr {
 			//	"Private Function Get", name_s.Column);
 
 			rewriteGetProperty.AddProperty(PropertyType.Get, context);
-			rewriteDynamicArray.AddMethodStart($"get_prop_{name.GetText()}",  context.Start.Line);
+			rewriteDynamicArray.StartBlockStmt();
 			//var end_s = end_stm.Start;
 			//rewriteVBA.AddChange(end_s.Line - 1, "End Function");
 		}
@@ -304,17 +303,13 @@ namespace VBAAntlr {
 		//}
 
 		public override void ExitPropertySetStmt([NotNull] VBAParser.PropertySetStmtContext context) {
-			var name = context.identifier();
 			rewriteGetProperty.AddProperty(PropertyType.Set, context);
-			rewriteDynamicArray.AddMethodStart($"set_prop_{name.GetText()}", context.Start.Line);
+			rewriteDynamicArray.StartBlockStmt();
 		}
 
 		public override void ExitEndPropertyStmt([NotNull] VBAParser.EndPropertyStmtContext context) {
-			//base.ExitEndPropertyStmt(context);
-
-			//rewriteVBA.AddChange(context.Start.Line - 1, "End Structure");
 			rewriteGetProperty.AddProperty(PropertyType.End, context);
-			rewriteDynamicArray.AddMethodEnd(context.Start.Line);
+			rewriteDynamicArray.EndBlockStmt();
 		}
 
 		public override void ExitOpenStmt([NotNull] VBAParser.OpenStmtContext context) {

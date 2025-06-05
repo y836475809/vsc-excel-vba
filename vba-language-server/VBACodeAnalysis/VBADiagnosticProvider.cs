@@ -44,9 +44,10 @@ namespace VBACodeAnalysis {
 
 		public async Task<List<VBADiagnostic>> GetDiagnostics(Microsoft.CodeAnalysis.Document doc) {
             var codes = new string[] {
-                "BC35000",  // ランタイム ライブラリ関数 が定義されていないため、
-                                   // 要求された操作を実行できません。
-            };
+                "BC35000",  // ランタイム ライブラリ関数 が定義されていないため、要求された操作を実行できません。
+                "BC32059",  // 配列の下限に指定できるのは '0' のみです。
+				"BC31043",  // 構造体メンバーとして宣言される配列に初期サイズを指定することはできません。
+			};
 			var code = await doc.GetTextAsync();
 			var ignoerPropDiagSet = new HashSet<string>();
 			foreach (var item in ignoerPropertyDiagnostics) {

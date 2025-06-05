@@ -14,7 +14,15 @@ namespace TestProject {
             var srcLine = 4;
             return vbaca.GetHover("m1", srcLine, chara).Result;
         }
-        private string MakeModule() {
+
+		private VBAHover GetItem(string code, int line, int chara) {
+			var vbaca = new VBACodeAnalysis.VBACodeAnalysis();
+			vbaca.setSetting(new RewriteSetting());
+			vbaca.AddDocument("m1", code);
+			return vbaca.GetHover("m1", line, chara).Result;
+		}
+
+		private string MakeModule() {
             var code = @$"Public Module m0
 Public const pub_const_num =10
 Public pub_num As Long
@@ -43,10 +51,9 @@ End Module";
         public void TestModuleConstNum() {
             var code = MakeCode("local_num=pub_const_num+1");
             var hover = GetItem(code, "local_num=".Length + 1);
-			Assert.Equal(3, hover.Contents.Count);
 			var act = hover.Contents.Select(x => x.Value);
 			Assert.Equal(
-				["Public Const pub_const_num As Integer = 10", "@return Integer", "@kind Field"],
+				["Public Const pub_const_num As Integer = 10", "@kind Field"],
 				[.. act]
 			 );
 		}
@@ -55,10 +62,9 @@ End Module";
         public void TestModuleNum() {
             var code = MakeCode("local_num=pub_num+1");
             var hover = GetItem(code, "local_num=".Length + 1);
-			Assert.Equal(3, hover.Contents.Count);
 			var act = hover.Contents.Select(x => x.Value);
 			Assert.Equal(
-				["Public pub_num As Long", "@return Long", "@kind Field"],
+				["Public pub_num As Long", "@kind Field"],
 				[.. act]
 			 );
 		}
@@ -67,10 +73,9 @@ End Module";
         public void TestClassConstNum() {
             var code = MakeCode("local_num=c.pub_const_num+1");
             var hover = GetItem(code, "local_num=c.".Length + 1);
-			Assert.Equal(3, hover.Contents.Count);
 			var act = hover.Contents.Select(x => x.Value);
 			Assert.Equal(
-				["Public Const pub_const_num As Integer = 10", "@return Integer", "@kind Field"],
+				["Public Const pub_const_num As Integer = 10", "@kind Field"],
 				[.. act]
 			 );
         }
@@ -79,12 +84,49 @@ End Module";
         public void TestClassNum() {
             var code = MakeCode("local_num=c.pub_num+1");
             var hover = GetItem(code, "local_num=c.".Length + 1);
-			Assert.Equal(3, hover.Contents.Count);
 			var act = hover.Contents.Select(x => x.Value);
             Assert.Equal(
-                ["Public pub_num As Long", "@return Long", "@kind Field"],
+                ["Public pub_num As Long", "@kind Field"],
 				[..act]
 			 );
 		}
-    }
+
+		[Theory]
+		[InlineData("ary() As Long", "ary As Long()")]
+		[InlineData("ary(1, 2) As Long", "ary As Long(,)")]
+		[InlineData("ary(1, 2, 3) As Long", "ary As Long(,,)")]
+		[InlineData("ary(1 To 2) As Long", "ary As Long()")]
+		[InlineData("ary(1 To 2, 1 To 2) As Long", "ary As Long(,)")]
+		[InlineData("ary(1 To 2, 1 To 2, 1 To 2) As Long", "ary As Long(,,)")]
+		public void TestFiledArray(string text, string expContent) {
+			var visibilitys = new string[] { "Public", "Private", "Dim" };
+			foreach (var v in visibilitys) {
+				var codes = new string[] {
+$@"Module Module1
+{v} {text}
+Sub Main()
+ary
+End Sub
+End Module",
+$@"Class class1
+{v} {text}
+Sub Main()
+ary
+End Sub
+End Class"};
+				foreach (var code in codes) {
+					var hover = GetItem(code, 3, 1);
+					var act1 = hover.Contents.Select(x => x.Value);
+					var expV = v;
+					if(expV == "Dim") {
+						expV = "Private";
+					}
+					Assert.Equal(
+						[$"{expV} {expContent}", "@kind Field"],
+						[.. act1]
+					 );
+				}
+			}
+		}
+	}
 }

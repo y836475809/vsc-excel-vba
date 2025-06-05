@@ -352,8 +352,8 @@ namespace VBACodeAnalysis {
                     foreach (var param in methodSymbol.Parameters) {
                         parameters.Add(new() {
                             Label = param.Name, 
-                            Doc = ConvKind(param.Type.Name)
-                        });
+							Doc = ConvKind(param.Type)
+						});
                     }
                     var displayText = string.Join("", methodSymbol.ToDisplayParts().Select(x => {
                         return ConvKind(x.ToString());
@@ -392,7 +392,7 @@ namespace VBACodeAnalysis {
                 foreach (var param in propSymbol.Parameters) {
 					parameters.Add(new() {
 						Label = param.Name,
-						Doc = ConvKind(param.Type.Name)
+						Doc = ConvKind(param.Type)
 					});
 				}
                 var displayText = string.Join("", propSymbol.ToDisplayParts().Select(x => {
@@ -445,7 +445,7 @@ namespace VBACodeAnalysis {
 						return ConvKind(x.ToString());
 					}));
 				}
-				returnType = ConvKind(methodSymbol.ReturnType.Name);
+				returnType = ConvKind(methodSymbol.ReturnType);
 
 				var menbersNum = symbol.ContainingType.GetMembers(symbol.Name).Length;
                 if(menbersNum > 1) {
@@ -458,7 +458,7 @@ namespace VBACodeAnalysis {
 				label = string.Join("", propSymbol.ToDisplayParts().Select(x => {
 					return ConvKind(x.ToString());
 				}));
-				returnType = ConvKind(propSymbol.Type.Name);
+				returnType = ConvKind(propSymbol.Type);
 			}
             if (symbol is INamedTypeSymbol namedType) {
                 if (namedType.TypeKind == TypeKind.Class) {
@@ -467,7 +467,7 @@ namespace VBACodeAnalysis {
 				}
             }
 			if (symbol is IFieldSymbol fieldSymbol || symbol is ILocalSymbol localSymbol) {
-                SetVariableItem(symbol, ref label, ref description, ref returnType, ref kind);
+                SetVariableItem(symbol, ref label, ref description, ref kind);
 			}
 
             var contents = new List<VBContent>();
@@ -503,7 +503,7 @@ namespace VBACodeAnalysis {
             return hover;
 		}
 
-		private void SetVariableItem(ISymbol symbol, ref string label, ref string description, ref string returnType, ref string kind) {
+		private void SetVariableItem(ISymbol symbol, ref string label, ref string description, ref string kind) {
 			string symbolName = "";
 			string typeName = "";
 			string accessibility = "";
@@ -511,14 +511,14 @@ namespace VBACodeAnalysis {
 			object constValue = null;
 			if (symbol is IFieldSymbol fieldSymbol) {
 				symbolName = fieldSymbol.Name;
-				typeName = ConvKind(fieldSymbol.Type.Name);
+				typeName = ConvKind(fieldSymbol.Type);
 				accessibility = fieldSymbol.DeclaredAccessibility.ToString();
 				isConst = fieldSymbol.IsConst;
 				constValue = fieldSymbol.ConstantValue;
 			}
 			if (symbol is ILocalSymbol localSymbol) {
 				symbolName = localSymbol.Name;
-				typeName = ConvKind(localSymbol.Type.Name);
+				typeName = ConvKind(localSymbol.Type);
 				accessibility = "Local";
 				isConst = localSymbol.IsConst;
 				constValue = localSymbol.ConstantValue;
@@ -534,7 +534,6 @@ namespace VBACodeAnalysis {
 			label = dispText;
 			description = symbol.GetDocumentationCommentXml();
 			kind = symbol.Kind.ToString();
-			returnType = typeName;
 		}
 
         private string ConvKind(string typeName) {
@@ -554,7 +553,20 @@ namespace VBACodeAnalysis {
             return convTypeName;
         }
 
-        public async Task<List<VBADiagnostic>> GetDiagnostics(string name) {
+		private string ConvKind(ITypeSymbol typeSymbol) {
+			var convTypeName = ConvKind(typeSymbol.Name); ;
+			if (typeSymbol is IArrayTypeSymbol  arrayType) {
+                var typeName = ConvKind(arrayType.ElementType.Name);
+				var dim = "()";
+				if (arrayType.Rank > 1) {
+					dim = $"({ new string(',', arrayType.Rank - 1)})";
+				}
+                convTypeName = $"{typeName}{dim}";
+			}
+			return convTypeName;
+		}
+
+		public async Task<List<VBADiagnostic>> GetDiagnostics(string name) {
 			if (!doc_id_dict.TryGetValue(name, out DocumentId docId)) {
 				return [];
 			}

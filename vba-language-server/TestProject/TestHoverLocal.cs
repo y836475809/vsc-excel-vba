@@ -13,7 +13,15 @@ namespace TestProject {
             var srcLine = 11;
             return vbaca.GetHover("m1", srcLine, chara).Result;
         }
-        private string MakeCode(string src) {
+
+		private VBAHover GetItem(string code, int line, int chara) {
+			var vbaca = new VBACodeAnalysis.VBACodeAnalysis();
+			vbaca.setSetting(new RewriteSetting());
+			vbaca.AddDocument("m1", code);
+			return vbaca.GetHover("m1", line, chara).Result;
+		}
+
+		private string MakeCode(string src) {
             var code = @$"Module Module1
 private const pri_const_num =10
 public const pub_const_num =10
@@ -35,10 +43,9 @@ End Module";
         public void TestPrivateConstNum() {
             var code = MakeCode("local_num=pri_const_num+1");
             var hover = GetItem(code, "local_num=".Length + 1);
-			Assert.Equal(3, hover.Contents.Count);
 			var act = hover.Contents.Select(x => x.Value);
 			Assert.Equal(
-				["Private Const pri_const_num As Integer = 10", "@return Integer", "@kind Field"],
+				["Private Const pri_const_num As Integer = 10", "@kind Field"],
 				[.. act]
 			 );
 		}
@@ -47,10 +54,9 @@ End Module";
         public void TestPublicConstNum() {
             var code = MakeCode("local_num=pub_const_num+1");
             var hover = GetItem(code, "local_num=".Length + 1);
-			Assert.Equal(3, hover.Contents.Count);
 			var act = hover.Contents.Select(x => x.Value);
 			Assert.Equal(
-				["Public Const pub_const_num As Integer = 10", "@return Integer", "@kind Field"],
+				["Public Const pub_const_num As Integer = 10", "@kind Field"],
 				[.. act]
 			 );
 		}
@@ -59,10 +65,9 @@ End Module";
         public void TestNonAccConstNum() {
             var code = MakeCode("local_num=const_num+1");
             var hover = GetItem(code, "local_num=".Length + 1);
-			Assert.Equal(3, hover.Contents.Count);
 			var act = hover.Contents.Select(x => x.Value);
 			Assert.Equal(
-				["Private Const const_num As Integer = 10", "@return Integer", "@kind Field"],
+				["Private Const const_num As Integer = 10", "@kind Field"],
 				[.. act]
 			 );
 		}
@@ -71,10 +76,9 @@ End Module";
         public void TestPublicConstStr() {
             var code = MakeCode(@"local_str=pub_const_str & ""a""");
             var hover = GetItem(code, "local_str=".Length + 1);
-			Assert.Equal(3, hover.Contents.Count);
 			var act = hover.Contents.Select(x => x.Value);
 			Assert.Equal(
-				["Public Const pub_const_str As String = \"\"", "@return String", "@kind Field"],
+				["Public Const pub_const_str As String = \"\"", "@kind Field"],
 				[.. act]
 			 );
 		}
@@ -83,10 +87,9 @@ End Module";
         public void TestPrivateNon() {
             var code = MakeCode("local_num=pri_non+1");
             var hover = GetItem(code, "local_num=".Length + 1);
-			Assert.Equal(3, hover.Contents.Count);
 			var act = hover.Contents.Select(x => x.Value);
 			Assert.Equal(
-				["Private pri_non As Variant", "@return Variant", "@kind Field"],
+				["Private pri_non As Variant", "@kind Field"],
 				[.. act]
 			 );
         }
@@ -95,10 +98,9 @@ End Module";
         public void TestAccNom() {
             var code = MakeCode("local_num=acc_non+1");
             var hover = GetItem(code, "ocal_num=".Length + 1);
-			Assert.Equal(3, hover.Contents.Count);
 			var act = hover.Contents.Select(x => x.Value);
 			Assert.Equal(
-				["Private acc_non As Long", "@return Long", "@kind Field"],
+				["Private acc_non As Long", "@kind Field"],
 				[.. act]
 			 );
 		}
@@ -107,10 +109,9 @@ End Module";
         public void TestLocalNum() {
             var code = MakeCode("local_num=pri_num+1");
             var hover = GetItem(code, 1);
-			Assert.Equal(3, hover.Contents.Count);
 			var act = hover.Contents.Select(x => x.Value);
 			Assert.Equal(
-				["Local local_num As Long", "@return Long", "@kind Local"],
+				["Local local_num As Long", "@kind Local"],
 				[.. act]
 			 );
 		}
@@ -119,12 +120,73 @@ End Module";
         public void TestLocalConstNum() {
             var code = MakeCode("local_const_num=pri_num+1");
             var hover = GetItem(code, 1);
-			Assert.Equal(3, hover.Contents.Count);
 			var act = hover.Contents.Select(x => x.Value);
 			Assert.Equal(
-				["Local Const local_const_num As Integer = 10", "@return Integer", "@kind Local"],
+				["Local Const local_const_num As Integer = 10", "@kind Local"],
 				[.. act]
 			 );
 		}
-    }
+
+		[Theory]
+		[InlineData("Dim ary() As Long",			  "Local ary As Long()")]
+		[InlineData("Dim ary(1, 2) As Long",	  "Local ary As Long(,)")]
+		[InlineData("Dim ary(1, 2, 3) As Long", "Local ary As Long(,,)")]
+		[InlineData("Dim ary(1 To 2) As Long",  "Local ary As Long()")]
+		[InlineData("Dim ary(1 To 2, 1 To 2) As Long", "Local ary As Long(,)")]
+		[InlineData("Dim ary(1 To 2, 1 To 2, 1 To 2) As Long", "Local ary As Long(,,)")]
+		public void TestLocalDimArray(string text, string expContent) {
+			var codes = new string[] {
+$@"Module Module1
+Sub Main()
+{text}
+ary
+End Sub
+End Module",
+$@"Class class1
+Sub Main()
+{text}
+ary
+End Sub
+End Class"};
+			foreach (var code in codes) {
+				var hover = GetItem(code, 3, 1);
+				var act1 = hover.Contents.Select(x => x.Value);
+				Assert.Equal(
+					[expContent, "@kind Local"],
+					[.. act1]
+				 );
+			}
+		}
+
+		[Theory]
+		[InlineData("Dim ary() As Long:  ReDim ary(2)", "Local ary As Long()")]
+		[InlineData("Dim ary(,) As Long: ReDim ary(1, 2)", "Local ary As Long(,)")]
+		[InlineData("Dim ary(,,) As Long:ReDim ary(1, 2, 3)", "Local ary As Long(,,)")]
+		[InlineData("Dim ary() As Long:  ReDim ary(1 To 2)", "Local ary As Long()")]
+		[InlineData("Dim ary(,) As Long: ReDim ary(1 To 2, 1 To 2)", "Local ary As Long(,)")]
+		[InlineData("Dim ary(,,) As Long:ReDim ary(1 To 2, 1 To 2, 1 To 2)", "Local ary As Long(,,)")]
+		public void TestLocalReDimArray(string text, string expContent) {
+			var codes = new string[] {
+$@"Module Module1
+Sub Main()
+{text}
+ary
+End Sub
+End Module",
+$@"Class class1
+Sub Main()
+{text}
+ary
+End Sub
+End Class"};
+			foreach (var code in codes) {
+				var hover = GetItem(code, 3, 1);
+				var act1 = hover.Contents.Select(x => x.Value);
+				Assert.Equal(
+					[expContent, "@kind Local"],
+					[.. act1]
+				 );
+			}
+		}
+	}
 }

@@ -55,9 +55,6 @@ namespace TestProject {
 
 			var actColDict = preprocVBA.ColDict["test"];
 			Helper.AssertColumnShiftDict(expColDict, actColDict);
-
-			var actLineShiftDict = preprocVBA.LineShiftDict["test"];
-			Assert.Empty(actLineShiftDict);
 			
 			var actLineDict = preprocVBA.LineDict["test"];
 			Helper.AssertDict(actLineDict, expLineMapDict);
@@ -136,9 +133,6 @@ namespace TestProject {
 			}
 			var actColDict = preprocVBA.ColDict["test"];
 			Helper.AssertColumnShiftDict(expColDict, actColDict);
-
-			var actLineShiftDict = preprocVBA.LineShiftDict["test"];
-			Assert.Empty(actLineShiftDict);
 
 			var actLineDict = preprocVBA.LineDict["test"];
 			Helper.AssertDict(actLineDict, expLineMapDict);

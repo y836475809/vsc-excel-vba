@@ -15,11 +15,8 @@ using static VBAAntlr.VBAParser;
 namespace AntlrTemplate {
 	internal class PropertyDiagnostic : IPropertyDiagnostic {
 		public string Id { get; set; }
-
 		public string Code { get; set; }
-
 		public string Severity { get; set; }
-
 		public int Line { get; set; }
 	}
 
@@ -60,16 +57,16 @@ namespace AntlrTemplate {
 		}
 	}
 
-	internal class RewriteGetProperty {
+	internal class RewriteProperty {
 		private List<PropertyData> PropDataList;
 
-		public RewriteGetProperty() {
+		public RewriteProperty() {
 			PropDataList = [];
 		}
 
 		public void AddProperty(PropertyType propType, ParserRuleContext stmt) {
 			if (propType == PropertyType.End) {
-				if (!PropDataList.Any()) {
+				if (PropDataList.Count == 0) {
 					return;
 				}
 				var porpData = PropDataList.Last();
@@ -193,7 +190,7 @@ namespace AntlrTemplate {
 
 				var propAsType = "";
 				var argList = setPropStmt.argList();
-				if (argList.arg().Any()) {
+				if (argList.arg().Length != 0) {
 					var asType = argList.arg().First().asTypeClause()?.identifier()?.GetText();
 					if(asType != null) {
 						if (Util.Eq(asType, "variant")) {

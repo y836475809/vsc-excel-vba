@@ -20,10 +20,6 @@ namespace TestProject {
 			get { return _fileColShiftDict; }
 		}
 
-		public Dictionary<string, LineShiftList> LineShiftDict {
-			get { return _fileLineShiftDict; }
-		}
-
 		public Dictionary<string, LineReMapDict> LineDict {
 			get { return _fileLineReMapDict; }
 		}

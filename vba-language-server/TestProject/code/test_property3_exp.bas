@@ -1,4 +1,4 @@
-Public Property Name1() As String : Set : End Set : Get
+Public Property Name1() As Object  : Set : End Set : Get
 	Name1 = LCase(Name)
 End Get : End Property
 

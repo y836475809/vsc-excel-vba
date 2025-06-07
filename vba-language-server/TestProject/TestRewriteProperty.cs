@@ -137,5 +137,34 @@ namespace TestProject {
 			var actLineDict = preprocVBA.LineDict["test"];
 			Helper.AssertDict(actLineDict, expLineMapDict);
 		}
+
+		[Theory]
+		[InlineData("String", "String", "")]
+		[InlineData("String", "String", "()")]
+		[InlineData("String", "String", "(2)")]
+		[InlineData("String", "String", "(2, 2)")]
+		[InlineData("String", "String", "(2, 2, 2)")]
+
+		[InlineData("Variant", "Object ", "")]
+		[InlineData("Variant", "Object ", "()")]
+		[InlineData("Variant", "Object ", "(2)")]
+		[InlineData("Variant", "Object ", "(2, 2)")]
+		[InlineData("Variant", "Object ", "(2, 2, 2)")]
+
+		[InlineData("String", "String", "(1 To 2)")]
+		[InlineData("String", "String", "(1 To 2, 1 To 2)")]
+		[InlineData("String", "String", "(1 To 2, 1 To 2, 1 To 2)")]
+
+		[InlineData("Variant", "Object ", "(1 To 2)")]
+		[InlineData("Variant", "Object ", "(1 To 2, 1 To 2)")]
+		[InlineData("Variant", "Object ", "(1 To 2, 1 To 2, 1 To 2)")]
+		public void TestRewriteAsType(string vbaType, string vbType, string array) {
+			var filename = "test_property_astype1";
+			var code = string.Format(Helper.getCode($"{filename}.bas"), vbaType, array);
+			var preprocVBA = new TestPreprocVBA();
+			var actCode = preprocVBA.Rewrite("test", code);
+			var expCode = string.Format(Helper.getCode($"{filename}_exp.bas"), vbType, array);
+			Helper.AssertCode(expCode, actCode);
+		}
 	}
 }

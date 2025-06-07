@@ -181,11 +181,6 @@ namespace VBAAntlr {
 		}
 
 		public override void ExitPropertyGetStmt([NotNull] VBAParser.PropertyGetStmtContext context) {
-			var asType = context.asTypeClause()?.identifier()?.GetText();
-			if (GetVariant(context.asTypeClause()?.identifier())) {
-				asType = "Object";
-			} 
-
 			rewriteProperty.AddProperty(PropertyType.Get, context);
 			rewriteDynamicArray.StartBlockStmt();
 		}

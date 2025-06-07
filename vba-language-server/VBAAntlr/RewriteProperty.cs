@@ -133,6 +133,9 @@ namespace AntlrTemplate {
 				rewriteVBA.AddChange(getSym.Line - 1,
 					(rangeStartCol, rangeEndCol), "", startCol);
 			}
+
+			RewriteVariant(rewriteVBA, getPropStmt);
+
 			{
 				var startLine = getPropStmt.Start.Line - 1;
 				var rangeCol = getPropStmt.Start.Column + getPropStmt.GetText().Length;
@@ -166,6 +169,9 @@ namespace AntlrTemplate {
 					(rangeStartCol, rangeEndCol),
 					"ReadOnly Property", startCol);
 			}
+
+			RewriteVariant(rewriteVBA, getPropStmt);
+
 			{
 				var startCol = getPropStmt.Start.Column;
 				var rangeCol = startCol + getPropStmt.GetText().Length;
@@ -210,9 +216,17 @@ namespace AntlrTemplate {
 					}
 				}
 
+				var propDim = "";
+				if (argList.arg().Length != 0) {
+					var dimIdents = argList.arg().First().arrayStmt()?.GetText();
+					if (dimIdents != null) {
+						propDim = dimIdents;
+					}
+				}
+
 				var propName = setPropStmt.identifier().GetText();
 				rewriteVBA.AddPropertyMember(
-					$"{porpVisibility}WriteOnly Property {propName}{propAsType}",
+					$"{porpVisibility}WriteOnly Property {propName}{propAsType}{propDim}",
 					startLine - 1);
 			}
 		}
@@ -244,6 +258,22 @@ namespace AntlrTemplate {
 
 			rewriteVBA.AddChange(
 				setPropEndStmt.Start.Line - 1, "End Sub");
+		}
+
+		private void RewriteVariant(IRewriteVBA rewriteVBA, PropertyGetStmtContext context) {
+			var asType = context.asTypeClause()?.identifier();
+			if (asType == null) {
+				return;
+			}
+			var text = asType.GetText();
+			if (!Util.Eq(text, "variant")) {
+				return;
+			}
+			var start = asType.Start;
+			var startCol = start.Column;
+			rewriteVBA.AddChange(start.Line - 1,
+				(startCol, startCol + text.Length),
+				"Object ", startCol, false);
 		}
 
 		private void AddIgnoreDiagnostic(IRewriteVBA rewriteVBA, string code, int line) {

@@ -187,7 +187,7 @@ propertyGetStmt
     //     WS asTypeClause
     // )? endOfStatement (blockLetSetStmt | .)*? endPropertyStmt
     : (visibility WS)? (STATIC WS)? PROPERTY WS GET WS identifier argList (
-        WS asTypeClause
+        WS asTypeClause (WS? arrayStmt)?
     )?
     ;
 // blockLetSetStmt
@@ -219,11 +219,15 @@ argList
     ;
 arg
     : ((BYVAL | BYREF) WS)? identifier (
-        WS? LPAREN WS? RPAREN
+        // WS? LPAREN WS? RPAREN
+        WS? arrayStmt
     )? (WS? asTypeClause)? (WS? argDefaultValue)?
     ;
 argDefaultValue
     : EQ WS? identifier
+    ;
+arrayStmt
+    : redimArgList | redimToArgList
     ;
 BYVAL
     :  'BYVAL'

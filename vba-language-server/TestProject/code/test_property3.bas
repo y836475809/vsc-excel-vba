@@ -1,4 +1,4 @@
-Public Property Get Name1() As String
+Public Property Get Name1() As Variant
 	Name1 = LCase(Name)
 End Property
 

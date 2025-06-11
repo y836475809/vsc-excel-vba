@@ -22,7 +22,6 @@ namespace TestProject {
 		public void TestProf1() {
 			var code = Helper.getCode("prof_sample1.bas");
 			var vbaca = new VBACodeAnalysis.VBACodeAnalysis();
-			vbaca.setSetting(new RewriteSetting());
 			var preprocVBA = new PreprocVBA();
 
 			var sw = new System.Diagnostics.Stopwatch();
@@ -37,7 +36,6 @@ namespace TestProject {
 		public void TestProf2() {
 			var code = Helper.getCode("prof_sample2.bas");
 			var vbaca = new VBACodeAnalysis.VBACodeAnalysis();
-			vbaca.setSetting(new RewriteSetting());
 			var preprocVBA = new PreprocVBA();
 
 			var sw = new System.Diagnostics.Stopwatch();

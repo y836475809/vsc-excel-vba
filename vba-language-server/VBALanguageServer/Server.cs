@@ -59,7 +59,6 @@ namespace VBALanguageServer {
 			this.currentTextDocument = new CurrentTextDocument();
 
 			this.vbaca = new VBACodeAnalysis.VBACodeAnalysis();
-			this.vbaca.setSetting(this.LoadSettings().RewriteSetting);
 			this.vbCache = [];
 			this.vbaCache = [];
 
@@ -491,17 +490,6 @@ namespace VBALanguageServer {
 
 		private Task SendNotificationAsync(string method) {
 			return this.rpc.NotifyWithParameterObjectAsync(method);
-		}
-
-		private Settings LoadSettings() {
-			var settings = new Settings();
-			var assembly = Assembly.GetEntryAssembly();
-			var jsonPath = Path.Join(Path.GetDirectoryName(assembly.Location), "settings.json");
-			using (var sr = new StreamReader(jsonPath)) {
-				var jsonStr = sr.ReadToEnd();
-				settings.Parse(jsonStr);
-			}
-			return settings;
 		}
 
 		private List<string> GetVBDefineFiles() {

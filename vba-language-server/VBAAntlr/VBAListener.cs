@@ -64,11 +64,13 @@ namespace VBAAntlr {
 		public IRewriteVBA rewriteVBA;
 		private RewriteDynamicArray rewriteDynamicArray;
 		private RewriteProperty rewriteProperty;
+		private Settings settings;
 
 		public VBAListener(IRewriteVBA rewriteVBA) {
 			this.rewriteVBA = rewriteVBA;
 			rewriteDynamicArray = new();
 			rewriteProperty = new();
+			settings = new();
 		}
 		public override void ExitDimStmt([NotNull] VBAParser.DimStmtContext context) {
 			rewriteDynamicArray.Add(context);
@@ -305,8 +307,11 @@ namespace VBAAntlr {
 
 		private void GetVBAFunction(IList<IParseTree> children) {
 			var nl = Environment.NewLine;
-			var traget_list = new List<string> { 
-				"range", "cells", "columns", "workbooks", "worksheets" };
+			//var traget_list = new List<string> { 
+			//	"range", "cells", "columns", "workbooks", "worksheets" };
+			var traget_list = settings.VBAFunction.Targets;
+			var funcModule = $"{settings.VBAFunction.Module}.";
+
 			var traget_set = new List<string> { "as", "new" };
 			var vbaFuncList = children.Where((x, index) => {
 				if(!Util.Contains(x.GetText(), traget_list)) {
@@ -337,20 +342,23 @@ namespace VBAAntlr {
 			foreach (var item in vbaFuncList) {
 				var ct = item.Payload as CommonToken;
 				var s = ct.Column;
-				rewriteVBA.AddChange(ct.Line - 1, (s, s), "f.", s);
+				//rewriteVBA.AddChange(ct.Line - 1, (s, s), "f.", s);
+				rewriteVBA.AddChange(ct.Line - 1, (s, s), funcModule, s);
 			}
 		}
 
 		private void GetPredefined(IList<IParseTree> children) {
-			var traget_list = new List<string> { 
-				"cstr", "cdbl", "cbyte", "cint", "clng", "cbool",
-				"strconv", "val", "createobject" };
-
+			//var traget_list = new List<string> { 
+			//	"cstr", "cdbl", "cbyte", "cint", "clng", "cbool",
+			//	"strconv", "val", "createobject" };
+			var traget_list = settings.VBAPredefined.Targets;
+			var funcModule = $"{settings.VBAPredefined.Module}.";
 			var predefinedList = children.Where(x => Util.Contains(x.GetText(), traget_list));
 			foreach (var item in predefinedList) {
 				var ct = item.Payload as CommonToken;
 				var s = ct.Column;
-				rewriteVBA.AddChange(ct.Line - 1, (s, s), "ExcelVBAFunctions.", s);
+				//rewriteVBA.AddChange(ct.Line - 1, (s, s), "ExcelVBAFunctions.", s);
+				rewriteVBA.AddChange(ct.Line - 1, (s, s), funcModule, s);
 			}
 			// TODO
 			var lineInputItems = children.Where(
@@ -392,20 +400,6 @@ namespace VBAAntlr {
 				var e = s + ct.Text.Length;
 				rewriteVBA.AddChange(ct.Line - 1, (s, e), "Object ", s, false);
 			}
-		}
-		private bool GetVariant(VBAParser.IdentifierContext context) {
-			const string val = "variant";
-			if(context == null) {
-				return false;
-			}
-			if (!Util.Eq(context.GetText(), val)){
-				return false;
-			}
-			var st = context.Start;
-			var s = st.Column;
-			var e = s + context.GetText().Length;
-			rewriteVBA.AddChange(st.Line - 1, (s, e), "Object ", s, false);
-			return true;
 		}
 	}
 }

@@ -267,7 +267,6 @@ End Sub";
 				item.End = (item.End.Item1 + 3, item.End.Item2);
 			}
 			var vbaca = new VBACodeAnalysis.VBACodeAnalysis();
-			vbaca.setSetting(new RewriteSetting());
 			var vbCode = vbaca.Rewrite("test", code);
 			vbaca.AddDocument("test", vbCode);
 			var diagnosticParams = await vbaca.GetDiagnostics("test");
@@ -440,7 +439,6 @@ End Sub";
 				item.End = (item.End.Item1 + 3, item.End.Item2);
 			}
 			var vbaca = new VBACodeAnalysis.VBACodeAnalysis();
-			vbaca.setSetting(new RewriteSetting());
 			var vbModule = vbaca.Rewrite("m1", module);
 			var vbCode = vbaca.Rewrite("test", code);
 			vbaca.AddDocument("m1", vbModule);

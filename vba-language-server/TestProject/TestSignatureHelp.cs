@@ -43,7 +43,6 @@ Sub Main()
 End Sub
 ";
 			var vbaca = new VBACodeAnalysis.VBACodeAnalysis();
-			vbaca.setSetting(new RewriteSetting());
 			vbaca.AddDocument("mod1", mod1);
 			vbaca.AddDocument(modName, mod2);
 			var actRet = 
@@ -89,7 +88,6 @@ End Module";
 			var code = "t.Add(";
 			var mod1Code = GetTestCode(code);
 			var vbaca = new VBACodeAnalysis.VBACodeAnalysis();
-			vbaca.setSetting(new RewriteSetting());
 			vbaca.AddDocument(class1Name, class1Code);
 			vbaca.AddDocument(mod1Name, mod1Code);
 			var (_, act) = await vbaca.GetSignatureHelp(mod1Name, 5, code.Length);
@@ -130,7 +128,6 @@ End Module";
 			var mod1Name = "test_module1.bas";
 			var mod1Code = GetTestCode(code);
 			var vbaca = new VBACodeAnalysis.VBACodeAnalysis();
-			vbaca.setSetting(new RewriteSetting());
 			vbaca.AddDocument(class1Name, class1Code);
 			vbaca.AddDocument(mod1Name, mod1Code);
 			var (_, act) = await vbaca.GetSignatureHelp(mod1Name, 5, code.Length);
@@ -169,7 +166,6 @@ test.SigTest(
 End Sub
 End Module";
 			var vbaca = new VBACodeAnalysis.VBACodeAnalysis();
-			vbaca.setSetting(new RewriteSetting());
 			vbaca.AddDocument(class1Name, class1Code);
 			vbaca.AddDocument(class2Name, class2Code);
 			vbaca.AddDocument(mod1Name, mod1Code);

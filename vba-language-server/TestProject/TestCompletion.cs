@@ -15,7 +15,6 @@ namespace TestProject {
             var mod1Name = "test_module1.bas";
             var mod1Code = Helper.getCode(mod1Name);
             var vbaca = new VBACodeAnalysis.VBACodeAnalysis();
-            vbaca.setSetting(new RewriteSetting());
             vbaca.AddDocument(class1Name, class1Code);
             vbaca.AddDocument(mod1Name, mod1Code);
             var items = await vbaca.GetCompletions(mod1Name, 11, 6);
@@ -50,7 +49,6 @@ namespace TestProject {
             var mod1Name = "test_module1.bas";
             var mod1Code = Helper.getCode(mod1Name);
             var vbaca = new VBACodeAnalysis.VBACodeAnalysis();
-            vbaca.setSetting(new RewriteSetting());
             vbaca.AddDocument(class1Name, class1Code);
             vbaca.AddDocument(mod1Name, mod1Code);
 
@@ -80,7 +78,6 @@ namespace TestProject {
 
             var class2Code = Helper.getCode("test_class2.cls");
             vbaca.ChangeDocument(class1Name, class2Code);
-            vbaca.setSetting(new RewriteSetting());
             var items2 = await vbaca.GetCompletions(mod1Name, 11,6);
             var exp2 = new List<VBACompletionItem>() {
                 new(){
@@ -113,7 +110,6 @@ namespace TestProject {
             var mod1Name = "test_module1.bas";
             var mod1Code = Helper.getCode(mod1Name);
             var vbaca = new VBACodeAnalysis.VBACodeAnalysis();
-            vbaca.setSetting(new RewriteSetting());
             vbaca.AddDocument(class1Name, class1Code);
             vbaca.AddDocument(mod1Name, mod1Code);
             var items = await vbaca.GetCompletions(mod1Name, 11,6);

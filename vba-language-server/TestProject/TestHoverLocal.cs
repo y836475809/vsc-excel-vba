@@ -8,7 +8,6 @@ namespace TestProject {
 	public class TestHoverLocal {
         private VBAHover GetItem(string code, int chara) {
             var vbaca = new VBACodeAnalysis.VBACodeAnalysis();
-            vbaca.setSetting(new RewriteSetting());
             vbaca.AddDocument("m1", code);
             var srcLine = 11;
             return vbaca.GetHover("m1", srcLine, chara).Result;
@@ -16,7 +15,6 @@ namespace TestProject {
 
 		private VBAHover GetItem(string code, int line, int chara) {
 			var vbaca = new VBACodeAnalysis.VBACodeAnalysis();
-			vbaca.setSetting(new RewriteSetting());
 			vbaca.AddDocument("m1", code);
 			return vbaca.GetHover("m1", line, chara).Result;
 		}

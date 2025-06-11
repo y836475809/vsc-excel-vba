@@ -12,7 +12,6 @@ namespace TestProject {
 			var name = "test";
 			var vbacode = Helper.getCode($"test_property_diagnostics1.bas");
 			var vbaca = new VBACodeAnalysis.VBACodeAnalysis();
-			vbaca.setSetting(new RewriteSetting());
 			var vbCode = vbaca.Rewrite(name, vbacode);
 			vbaca.AddDocument(name, vbCode);
 			var diagnostics = await vbaca.GetDiagnostics(name);
@@ -24,7 +23,6 @@ namespace TestProject {
 			var name = "test";
 			var vbacode = Helper.getCode($"test_property_diagnostics2.bas");
 			var vbaca = new VBACodeAnalysis.VBACodeAnalysis();
-			vbaca.setSetting(new RewriteSetting());
 			var vbCode = vbaca.Rewrite(name, vbacode);
 			vbaca.AddDocument(name, vbCode);
 			var diagnostics = await vbaca.GetDiagnostics(name);

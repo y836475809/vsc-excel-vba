@@ -32,13 +32,10 @@ namespace VBACodeAnalysis {
                 MetadataReference.CreateFromFile(typeof(object).Assembly.Location)
             });
             project = workspace.AddProject(projectInfo);
-
             doc_id_dict = [];
-        }
 
-		public void setSetting(RewriteSetting rewriteSetting) {
-            _preprocVBA = new PreprocVBA();
-        }
+			_preprocVBA = new PreprocVBA();
+		}
 
         public string Rewrite(string name, string vbaCode) {
             return _preprocVBA.Rewrite(name, vbaCode);

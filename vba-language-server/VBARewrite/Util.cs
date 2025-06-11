@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace VBAAntlr {
+namespace VBARewrite {
 	internal class Util {
 		public static bool Contains(string value, List<string> list) {
 			return list.Contains(value, StringComparer.OrdinalIgnoreCase);

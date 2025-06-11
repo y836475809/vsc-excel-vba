@@ -11,6 +11,7 @@ using Antlr4.Runtime;
 using Antlr4.Runtime.Atn;
 using Microsoft.CodeAnalysis;
 using VBAAntlr;
+using VBARewrite;
 
 
 namespace VBACodeAnalysis {

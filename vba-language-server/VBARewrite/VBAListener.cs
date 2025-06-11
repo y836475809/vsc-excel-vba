@@ -8,11 +8,10 @@ using System.Threading.Tasks;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Misc;
 using Antlr4.Runtime.Tree;
-using AntlrTemplate;
-using static VBAAntlr.VBAParser;
+using VBAAntlr;
 
 
-namespace VBAAntlr {
+namespace VBARewrite {
 	public enum ModuleType {
 		Cls,
 		Bas,

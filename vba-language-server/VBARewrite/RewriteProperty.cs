@@ -9,10 +9,9 @@ using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
-using VBAAntlr;
 using static VBAAntlr.VBAParser;
 
-namespace AntlrTemplate {
+namespace VBARewrite {
 	internal class PropertyDiagnostic : IPropertyDiagnostic {
 		public string Id { get; set; }
 		public string Code { get; set; }

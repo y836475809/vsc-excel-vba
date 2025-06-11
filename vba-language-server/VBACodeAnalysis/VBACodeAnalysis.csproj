@@ -13,8 +13,8 @@
   </ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\VBAAntlr\VBAAntlr.csproj" />
 		<ProjectReference Include="..\VBADocumentSymbol\VBADocumentSymbol.csproj" />
+		<ProjectReference Include="..\VBARewrite\VBARewrite.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>

@@ -5,7 +5,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace AntlrTemplate {
+namespace VBARewrite {
 	public class VBAFunction {
 		public string Module { get; set; }
 		public List<string> Targets { get; set; }

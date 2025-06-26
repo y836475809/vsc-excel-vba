@@ -15,13 +15,14 @@ using System.Reflection.Emit;
 using Microsoft.CodeAnalysis.Elfie.Model;
 using Microsoft.VisualBasic;
 using VBADocumentSymbol;
+using VBARewrite;
 
 namespace VBACodeAnalysis {
     public class VBACodeAnalysis {
         private AdhocWorkspace workspace;
         private Project project;
         private Dictionary<string, DocumentId> doc_id_dict;
-		private PreprocVBA _preprocVBA;
+		private VBARewriter vbaRewriter;
 
         public VBACodeAnalysis() {
             var host = MefHostServices.Create(MefHostServices.DefaultAssemblies);
@@ -34,11 +35,11 @@ namespace VBACodeAnalysis {
             project = workspace.AddProject(projectInfo);
             doc_id_dict = [];
 
-			_preprocVBA = new PreprocVBA();
+			vbaRewriter = new VBARewriter();
 		}
 
         public string Rewrite(string name, string vbaCode) {
-            return _preprocVBA.Rewrite(name, vbaCode);
+            return vbaRewriter.Rewrite(name, vbaCode);
 		}
 
 		public void AddDocument(string name, string text, bool applyChanges= true) {
@@ -68,7 +69,7 @@ namespace VBACodeAnalysis {
                 var docId = doc_id_dict[name];
                 var doc = solution.GetDocument(docId);
 				var text = doc.GetTextAsync().Result; 
-				var rewriteCode = _preprocVBA.Rewrite(name, text.ToString());
+				var rewriteCode = vbaRewriter.Rewrite(name, text.ToString());
 				solution = solution.WithDocumentText(docId, SourceText.From(rewriteCode));
 			}
             workspace.TryApplyChanges(solution);
@@ -111,7 +112,7 @@ namespace VBACodeAnalysis {
         }
 
         public int GetCharaDiff(string name, int line, int chara) {
-            var colShift = _preprocVBA.GetColShift(name, line, chara);
+            var colShift = vbaRewriter.GetColShift(name, line, chara);
             return colShift;
 		}
 
@@ -237,7 +238,7 @@ namespace VBACodeAnalysis {
 				}
 				var startLinePos = tree.GetLineSpan(span.Value).StartLinePosition;
                 var endLinePos = tree.GetLineSpan(span.Value).EndLinePosition;
-                var mapLineIndex = _preprocVBA.GetReMapLineIndex(tree.FilePath, startLinePos.Line);
+                var mapLineIndex = vbaRewriter.GetReMapLineIndex(tree.FilePath, startLinePos.Line);
                 if (mapLineIndex >= 0) {
 					vbaLocations.Add(new() {
 						Uri = new Uri(tree.FilePath),
@@ -569,10 +570,10 @@ namespace VBACodeAnalysis {
 			}
 			var doc = workspace.CurrentSolution.GetDocument(docId);
 			var diagnosticProvider = new VBADiagnosticProvider();
-			diagnosticProvider.IgnorePropertyDiagnostics = _preprocVBA.GetIgnorePropertyDiagnostics(name);
-            diagnosticProvider.IgnoreLineDiagnosticsSet = _preprocVBA.GetIgnoreLineDiagnosticsSet(name);
-			diagnosticProvider.ignoreDs = _preprocVBA.GetIgnoreDiagnostics(name);
-			var prepDiagnosticList = _preprocVBA.GetDiagnostics(name);
+			diagnosticProvider.IgnorePropertyDiagnostics = vbaRewriter.GetIgnorePropertyDiagnostics(name);
+            diagnosticProvider.IgnoreLineDiagnosticsSet = vbaRewriter.GetIgnoreLineDiagnosticsSet(name);
+			diagnosticProvider.ignoreDs = vbaRewriter.GetIgnoreDiagnostics(name);
+			var prepDiagnosticList = vbaRewriter.GetDiagnostics(name);
 			var diagnosticList = await diagnosticProvider.GetDiagnostics(doc);
 			var items = diagnosticList.Concat(prepDiagnosticList);
 			return [..items];

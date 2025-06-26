@@ -8,10 +8,11 @@ using System.Text;
 using System.Threading.Tasks;
 using TestProject;
 using VBACodeAnalysis;
+using VBARewrite;
 using Xunit;
 
-namespace TestPreprocVBA {
-	public class TestPreprocVBADiagnostic {
+namespace TestProject {
+	public class TestRewriteVBADiagnostic {
 		[Theory]
 		[InlineData("Open fp For Output As #1", 4, "Open")]
 		[InlineData("Open fp For Output Access Read As #1", 4, "Open")]
@@ -34,7 +35,7 @@ namespace TestPreprocVBA {
 		[InlineData("Input #1, v1, v2", 5, "Input")]
 		[InlineData("Line Input #1, v1", 10, "Line_Input")]
 		public void TestIgnoreDiagnostics(string code, int EndCol, string text) {
-			var pp = new TestPreprocVBA();
+			var pp = new VBARewriter();
 			pp.Rewrite("test", code);
 			var ignores = pp.GetIgnoreDiagnostics("test");
 			Assert.Single(ignores);

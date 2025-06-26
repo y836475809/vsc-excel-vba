@@ -5,19 +5,7 @@ using TestProject;
 using VBACodeAnalysis;
 using Xunit;
 
-namespace TestPreprocVBA {
-	using ColumnShiftDict = Dictionary<int, List<ColumnShift>>;
-	using LineReMapDict = Dictionary<int, int>;
-
-	class TestPreprocVBA : PreprocVBA {
-		public Dictionary<string, ColumnShiftDict> ColDict {
-			get { return _fileColShiftDict; }
-		}
-		public Dictionary<string, LineReMapDict> LineDict {
-			get { return _fileLineReMapDict; }
-		}
-	}
-
+namespace TestProject {
 	public class TestRewriteVBA {
 		[Fact]
 		public void TestType() {
@@ -33,7 +21,7 @@ End {0}
 End {0}
 ";
 			var code = string.Format(codeFmt, "Type", "");
-			var pp = new TestPreprocVBA();
+			var pp = new TestVBARewriter();
 			var actCode = pp.Rewrite("test", code);
 			var v = "Public ";
 			var preCode = string.Format(codeFmt, "Structure", v);
@@ -49,7 +37,7 @@ End {0}
 				{7, new List<ColumnShift>{ new(7, 5, 5) } },
 				{8, new List<ColumnShift>{ new(8, 4, v.Length) } },
 			};
-			var actColDict = pp.ColDict["test"];
+			var actColDict = pp.ColDict("test");
 			Helper.AssertColumnShiftDict(preColDict, actColDict);
 		}
 
@@ -65,7 +53,7 @@ Public {0} type_pub
 End {0}
 ";
 			var code = string.Format(codeFmt, "Type", "");
-			var pp = new TestPreprocVBA();
+			var pp = new TestVBARewriter();
 			var actCode = pp.Rewrite("test", code);
 			var v = "Public ";
 			var preCode = string.Format(codeFmt, "Structure", v);
@@ -77,7 +65,7 @@ End {0}
 				{3, new List<ColumnShift>{ new(3, 4, v.Length) } },
 				{4, new List<ColumnShift>{ new(4, 4, v.Length) } },
 			};
-			var actColDict = pp.ColDict["test"];
+			var actColDict = pp.ColDict("test");
 			Helper.AssertColumnShiftDict(preColDict, actColDict);
 		}
 
@@ -113,12 +101,12 @@ Sub sub1() As int
 End Sub
 ";
 			var code = string.Format(codeFmt, "#");
-			var pp = new TestPreprocVBA();
+			var pp = new TestVBARewriter();
 			var actCode = pp.Rewrite("test", code);
 			var preCode = string.Format(codeFmt, " ");
 			Helper.AssertCode(preCode, actCode);
 
-			var actColDict = pp.ColDict["test"];
+			var actColDict = pp.ColDict("test");
 			Assert.Empty(actColDict);
 		}
 
@@ -155,7 +143,7 @@ Private Sub R__Name2(n As String)
     s1 =  n
 End Sub
 WriteOnly Property Name2 As String";
-			var pp = new TestPreprocVBA();
+			var pp = new TestVBARewriter();
 			var actCode = pp.Rewrite("test", code);
 			Helper.AssertCode(preCode, actCode);
 		}
@@ -172,12 +160,12 @@ Sub sub1() As {0}
 End Sub
 ";
 			var code = string.Format(codeFmt, "Variant");
-			var pp = new TestPreprocVBA();
+			var pp = new TestVBARewriter();
 			var actCode = pp.Rewrite("test", code);
 			var preCode = string.Format(codeFmt, "Object ");
 			Helper.AssertCode(preCode, actCode);
 
-			var actColDict = pp.ColDict["test"];
+			var actColDict = pp.ColDict("test");
 			Assert.Empty(actColDict);
 		}
 
@@ -195,7 +183,7 @@ End {0}
 End {0}
 ";
 			var code = string.Format(codeFmt, "Type", "Variant", "");
-			var pp = new TestPreprocVBA();
+			var pp = new TestVBARewriter();
 			var actCode = pp.Rewrite("test", code);
 			var v = "Public ";
 			var preCode = string.Format(codeFmt, "Structure", "Object ", v);
@@ -211,7 +199,7 @@ End {0}
 				{7, new List<ColumnShift>{ new(7, 5, 5) } },
 				{8, new List<ColumnShift>{ new(8, 4, v.Length) } },
 			};
-			var actColDict = pp.ColDict["test"];
+			var actColDict = pp.ColDict("test");
 			Helper.AssertColumnShiftDict(preColDict, actColDict);
 		}
 
@@ -238,7 +226,7 @@ Private Sub R__Name2(n As Object )
     Dim s1 As Object 
 End Sub
 WriteOnly Property Name2 As Object ";
-			var pp = new TestPreprocVBA();
+			var pp = new TestVBARewriter();
 			var actCode = pp.Rewrite("test", code);
 			Helper.AssertCode(preCode, actCode);
 		}
@@ -268,7 +256,7 @@ Dim a As New Range
 a = New Range
 ";
 			var code = string.Format(codeFmt, "");
-			var pp = new TestPreprocVBA();
+			var pp = new TestVBARewriter();
 			var actCode = pp.Rewrite("test", code);
 			var preCode = string.Format(codeFmt, "f.");
 			Helper.AssertCode(preCode, actCode);
@@ -286,7 +274,7 @@ a = New Range
 					new(16, 19, 2),
 				} },
 			};
-			var actColDict = pp.ColDict["test"];
+			var actColDict = pp.ColDict("test");
 			Helper.AssertColumnShiftDict(preColDict, actColDict);
 		}
 
@@ -301,7 +289,7 @@ Call func(0, 1)
 Call sub(0, 1)
 ";
 			var code = string.Format(codeFmt, "");
-			var pp = new TestPreprocVBA();
+			var pp = new TestVBARewriter();
 			var actCode = pp.Rewrite("test", code);
 			var preText = "ExcelVBAFunctions.";
 			var preCode = string.Format(codeFmt, preText);
@@ -313,7 +301,7 @@ Call sub(0, 1)
 				{2, new List<ColumnShift>{ new(2, 4, colshift) } },
 				{3, new List<ColumnShift>{ new(3, 4, colshift) } },
 			};
-			var actColDict = pp.ColDict["test"];
+			var actColDict = pp.ColDict("test");
 			Helper.AssertColumnShiftDict(preColDict, actColDict);
 		}
 
@@ -333,7 +321,7 @@ Attribute VB_Exposed = False
 Dim a As long";
 			{
 				var code = string.Format(codeFmt, "Option Explicit");
-				var pp = new PreprocVBA();
+				var pp = new TestVBARewriter();
 				var actCode = pp.Rewrite("test", code);
 				var preCode = $@"Option Explicit On
 Public Class Person
@@ -346,7 +334,7 @@ End Class";
 			}
 			{
 				var code = string.Format(codeFmt, "");
-				var pp = new PreprocVBA();
+				var pp = new TestVBARewriter();
 				var actCode = pp.Rewrite("test", code);
 				var preCode = $@"Public Class Person
 {string.Concat(Enumerable.Repeat("\r\n", 7))}
@@ -365,7 +353,7 @@ End Class";
 Dim a As long";
 			{
 				var code = string.Format(codeFmt, "Option Explicit");
-				var pp = new PreprocVBA();
+				var pp = new TestVBARewriter();
 				var actCode = pp.Rewrite("test", code);
 				var preCode = $@"Option Explicit On
 Public Module テスト
@@ -375,7 +363,7 @@ End Module";
 			}
 			{
 				var code = string.Format(codeFmt, "");
-				var pp = new PreprocVBA();
+				var pp = new TestVBARewriter();
 				var actCode = pp.Rewrite("test", code);
 				var preCode = $@"Public Module テスト
 
@@ -393,7 +381,7 @@ End Module";
 		[InlineData("Open fp5 For Output Access Read Lock Read As{0}1")]
 		[InlineData("Open fp6 For Output Access Read Write Shared As{0}1")]
 		public void TestOpen1(string code) {
-			var pp = new TestPreprocVBA();
+			var pp = new TestVBARewriter();
 			var actCode = pp.Rewrite("test", string.Format(code, "  #"));
 			var preCode = string.Format(code, "  ,");
 			Helper.AssertCode(preCode, actCode);
@@ -407,7 +395,7 @@ End Module";
 		[InlineData("Open fp5 For Output Access Read Lock Read As{0}fn")]
 		[InlineData("Open fp6 For Output Access Read Write Shared As{0}fn")]
 		public void TestOpen2(string code) {
-			var pp = new TestPreprocVBA();
+			var pp = new TestVBARewriter();
 			var actCode = pp.Rewrite("test", string.Format(code, "  "));
 			var preCode = string.Format(code, " ,");
 			Helper.AssertCode(preCode, actCode);

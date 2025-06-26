@@ -13,7 +13,7 @@ using VBARewrite;
 namespace VBACodeAnalysis {
 	public class VBADiagnosticProvider {
         public List<VBADiagnostic> ignoreDs;
-        private List<IPropertyDiagnostic> ignoerPropertyDiagnostics;
+        private List<PropertyDiagnostic> ignoerPropertyDiagnostics;
 		private HashSet<int> ignoerLineDiagnosticsSet;
 		private Dictionary<string, string> _errorMsgDict;
 
@@ -31,7 +31,7 @@ namespace VBACodeAnalysis {
 			};
 		}
 
-        public List<IPropertyDiagnostic> IgnorePropertyDiagnostics {
+        public List<PropertyDiagnostic> IgnorePropertyDiagnostics {
             set {
                 ignoerPropertyDiagnostics = value;
             }

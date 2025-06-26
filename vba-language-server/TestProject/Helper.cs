@@ -1,6 +1,7 @@
-﻿global using ColumnShiftDict = System.Collections.Generic.Dictionary<int, System.Collections.Generic.List<VBACodeAnalysis.ColumnShift>>;
-global using LineShiftList = System.Collections.Generic.List<(int, int)>;
-global using LineReMapDict = System.Collections.Generic.Dictionary<int, int>;
+﻿global using ColumnShift = VBARewrite.ColumnShift;
+global using ColumnShiftDict = System.Collections.Generic.Dictionary<int, System.Collections.Generic.List<VBARewrite.ColumnShift>>;
+global using LineMapDict = System.Collections.Generic.Dictionary<int, int>;
+global using VBADiagnostic = VBARewrite.VBADiagnostic;
 
 using System;
 using System.Collections.Generic;
@@ -13,15 +14,16 @@ using Microsoft.CodeAnalysis.Text;
 using Xunit;
 using System.Linq;
 using System.Text;
+using VBARewrite;
 
 namespace TestProject {
-	class TestPreprocVBA : PreprocVBA {
-		public Dictionary<string, ColumnShiftDict> ColDict {
-			get { return _fileColShiftDict; }
+	class TestVBARewriter : VBARewriter {
+		public ColumnShiftDict ColDict(string name) {
+			return vbCodeDict[name].ColShiftDict;
 		}
 
-		public Dictionary<string, LineReMapDict> LineDict {
-			get { return _fileLineReMapDict; }
+		public LineMapDict LineMapDict(string name) {
+			return vbCodeDict[name].LineMapDict;
 		}
 	}
 

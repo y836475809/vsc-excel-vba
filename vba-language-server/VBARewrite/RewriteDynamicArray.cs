@@ -19,13 +19,15 @@ namespace VBARewrite {
 		}
 	}
 
-	internal class RewriteDynamicArray {
+	internal class ChangeVBADynamicArray {
+		public List<ChangeData> ChangeDataList { get; set; }
 		private Dictionary<string, DimStmtContext> FieldDimDict;
 		private Dictionary<string, DimStmtContext> DimDict;
 		private Dictionary<string, List<RedimStmtContext>> ReDimStmtsDict;
 		private List<Dictionary<string, DynamicArray>> DynaArrayDictList;
 
-		public RewriteDynamicArray() {
+		public ChangeVBADynamicArray() {
+			ChangeDataList = [];
 			FieldDimDict = [];
 			DimDict = [];
 			ReDimStmtsDict = [];
@@ -74,7 +76,7 @@ namespace VBARewrite {
 			ReDimStmtsDict.Clear();
 		}
 
-		public void Rewrite(IRewriteVBA rewriteVBA) {
+		public void Change() {
 			foreach (var (dimName, stmt) in FieldDimDict) {
 				foreach (var DynaArrayDict in DynaArrayDictList) {
 					if (DynaArrayDict.TryGetValue(dimName, out DynamicArray da)) {
@@ -107,19 +109,19 @@ namespace VBARewrite {
 						if (asType != null) {
 							asTypeClause = $" {asType}";
 						}
-						rewriteVBA.AddChange(
+						ChangeDataList.Add(new(
 							reDimStmt.Start.Line - 1,
 							(reDimStmt.Start.Column, reDimStmt.Start.Column),
 							$"Dim {varName}({c}){asTypeClause}:",
-							reDimStmt.Start.Column);
+							reDimStmt.Start.Column));
 						if (asTypeClause != "") {
 							var asStmt = reDimStmt.asTypeClause();
 							var asText = asStmt.GetText();
 							var sc = asStmt.Start.Column;
 							var ec = sc + asText.Length;
-							rewriteVBA.AddChange(
+							ChangeDataList.Add(new(
 								asStmt.Start.Line - 1,
-								(sc, ec), new string(' ', asText.Length), sc);
+								(sc, ec), new string(' ', asText.Length), sc));
 						}
 					}
 					if (dimStmt != null && reDimStmts.Count > 0) {
@@ -135,9 +137,9 @@ namespace VBARewrite {
 							c = new string(',', redimToArgs.Length - 1);
 						}
 						var sc = dimStmt.LPAREN().Symbol.Column + 1;
-						rewriteVBA.AddChange(
+						ChangeDataList.Add(new(
 							dimStmt.Start.Line - 1,
-							(sc, sc), $"{c}", sc);
+							(sc, sc), $"{c}", sc));
 					}
 				}
 			}

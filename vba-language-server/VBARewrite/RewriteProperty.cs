@@ -12,14 +12,7 @@ using System.Xml.Linq;
 using static VBAAntlr.VBAParser;
 
 namespace VBARewrite {
-	internal class PropertyDiagnostic : IPropertyDiagnostic {
-		public string Id { get; set; }
-		public string Code { get; set; }
-		public string Severity { get; set; }
-		public int Line { get; set; }
-	}
-
-	public enum PropertyType {
+	internal enum PropertyType {
 		End,
 		Get,
 		Set
@@ -56,10 +49,17 @@ namespace VBARewrite {
 		}
 	}
 
-	internal class RewriteProperty {
+	internal class ChangeVBAProperty {
+		public List<ChangeData> ChangeDataList { get; set; }
+		public List<PropertyMember> PropertyMembers { get; set; }
+		public List<PropertyDiagnostic> IgnorePropDiags { get; set; }
+
 		private List<PropertyData> PropDataList;
 
-		public RewriteProperty() {
+		public ChangeVBAProperty() {
+			ChangeDataList = [];
+			PropertyMembers = [];
+			IgnorePropDiags = [];
 			PropDataList = [];
 		}
 
@@ -103,25 +103,25 @@ namespace VBARewrite {
 			}
 		}
 
-		public void Rewrite(IRewriteVBA rewriteVBA) {
+		public void Change() {
 			foreach (var propData in PropDataList) {
 				if (propData.Name == null) {
 					continue;
 				}
 				var dataType = propData.DataType();
 				if (dataType == PropertyDataType.GetSet) {
-					RewriteGetSetProp(rewriteVBA, propData);
+					RewriteGetSetProp(propData);
 				}
 				if (dataType == PropertyDataType.Get) {
-					RewriteGetProp(rewriteVBA, propData);
+					RewriteGetProp(propData);
 				}
 				if (dataType == PropertyDataType.Set) {
-					RewriteSetProp(rewriteVBA, propData);
+					RewriteSetProp(propData);
 				}
 			}
 		}
 
-		private void RewriteGetSetProp(IRewriteVBA rewriteVBA, PropertyData propertyData) {
+		private void RewriteGetSetProp(PropertyData propertyData) {
 			var getPropStmt = propertyData.GetStmt;
 
 			{
@@ -129,33 +129,32 @@ namespace VBARewrite {
 				var rangeStartCol = getSym.Column;
 				var rangeEndCol = rangeStartCol + getSym.Text.Length + 1;
 				var startCol = getPropStmt.identifier().Start.Column;
-				rewriteVBA.AddChange(getSym.Line - 1,
-					(rangeStartCol, rangeEndCol), "", startCol);
+				ChangeDataList.Add(new (getSym.Line - 1,
+					(rangeStartCol, rangeEndCol), "", startCol));
 			}
 
-			RewriteVariant(rewriteVBA, getPropStmt);
+			RewriteVariant(getPropStmt);
 
 			{
 				var startLine = getPropStmt.Start.Line - 1;
 				var rangeCol = getPropStmt.Start.Column + getPropStmt.GetText().Length;
 				var startCol = rangeCol;
-				rewriteVBA.AddChange(startLine,
-					(rangeCol, rangeCol), 
-					" : Set : End Set : Get", startCol, false);
+				ChangeDataList.Add(new(startLine,
+					(rangeCol, rangeCol),
+					" : Set : End Set : Get", startCol, false));
 
-				AddIgnoreDiagnostic(rewriteVBA, "Set", startLine);
-				AddIgnoreDiagnostic(rewriteVBA, "Get", startLine);
+				AddIgnoreDiagnostic("Set", startLine);
+				AddIgnoreDiagnostic("Get", startLine);
 
 				var getPropEndStmt = propertyData.GetEndStmt;
-				rewriteVBA.AddChange(getPropEndStmt.Start.Line - 1,
-					"End Get : End Property");
+				ChangeDataList.Add(new(getPropEndStmt.Start.Line - 1,
+					"End Get : End Property"));
 			}
 
-			RewriteSet(rewriteVBA, 
-				propertyData.SetStmt, propertyData.SetEndStmt);
+			RewriteSet(propertyData.SetStmt, propertyData.SetEndStmt);
 		}
 
-		private void RewriteGetProp(IRewriteVBA rewriteVBA, PropertyData propertyData) {
+		private void RewriteGetProp(PropertyData propertyData) {
 			var getPropStmt = propertyData.GetStmt;
 			var propStartLine = getPropStmt.Start.Line;
 
@@ -164,34 +163,32 @@ namespace VBARewrite {
 				var getSym = getPropStmt.GET().Symbol;
 				var rangeEndCol = getSym.Column + getSym.Text.Length;
 				var startCol = getPropStmt.identifier().Start.Column;
-				rewriteVBA.AddChange(propStartLine - 1,
+				ChangeDataList.Add(new(propStartLine - 1,
 					(rangeStartCol, rangeEndCol),
-					"ReadOnly Property", startCol);
+					"ReadOnly Property", startCol));
 			}
 
-			RewriteVariant(rewriteVBA, getPropStmt);
+			RewriteVariant(getPropStmt);
 
 			{
 				var startCol = getPropStmt.Start.Column;
 				var rangeCol = startCol + getPropStmt.GetText().Length;
-				rewriteVBA.AddChange(propStartLine - 1,
-					(rangeCol, rangeCol), " : Get", rangeCol, false);
-
-				AddIgnoreDiagnostic(rewriteVBA, "Get", propStartLine - 1);
+				ChangeDataList.Add(new(propStartLine - 1,
+					(rangeCol, rangeCol), " : Get", rangeCol, false));
+				AddIgnoreDiagnostic("Get", propStartLine - 1);
 			}
 
 			var propEndStmt = propertyData.GetEndStmt;
-			rewriteVBA.AddChange(propEndStmt.Start.Line - 1, 
-				"End Get : End Property");
+			ChangeDataList.Add(new(propEndStmt.Start.Line - 1,
+				"End Get : End Property"));
 		}
 
-		private void RewriteSetProp(IRewriteVBA rewriteVBA, PropertyData propertyData) {
+		private void RewriteSetProp(PropertyData propertyData) {
 			var setPropStmt = propertyData.SetStmt;
 			var startLine = setPropStmt.Start.Line;
 
 			{
-				RewriteSet(rewriteVBA,
-					propertyData.SetStmt, propertyData.SetEndStmt);
+				RewriteSet(propertyData.SetStmt, propertyData.SetEndStmt);
 
 				var propAsType = "";
 				var argList = setPropStmt.argList();
@@ -224,20 +221,21 @@ namespace VBARewrite {
 				}
 
 				var propName = setPropStmt.identifier().GetText();
-				rewriteVBA.AddPropertyMember(
+				PropertyMembers.Add(new (
 					$"{porpVisibility}WriteOnly Property {propName}{propAsType}{propDim}",
-					startLine - 1);
+					startLine - 1
+				));
 			}
 		}
 
-		private void RewriteSet(IRewriteVBA rewriteVBA, 
+		private void RewriteSet( 
 			PropertySetStmtContext setPropStmt,
 			EndPropertyStmtContext setPropEndStmt) {
 			var rangeStartCol = setPropStmt.Start.Column;
 			var rangeEndCol = setPropStmt.identifier().Start.Column;
-			rewriteVBA.AddChange(setPropStmt.Start.Line - 1,
+			ChangeDataList.Add(new(setPropStmt.Start.Line - 1,
 				(rangeStartCol, rangeEndCol),
-				"Private Sub R__", rangeEndCol);
+				"Private Sub R__", rangeEndCol));
 
 			var argList = setPropStmt.argList();
 			foreach (var arg in argList.arg()) {
@@ -249,17 +247,17 @@ namespace VBARewrite {
 				var asType = asTypeIdent.GetText();
 				if (Util.Eq(asType, "variant")) {
 					var startCol = asTypeIdent.Start.Column;
-					rewriteVBA.AddChange(asTypeClause.Start.Line - 1,
+					ChangeDataList.Add(new(asTypeClause.Start.Line - 1,
 						(startCol, startCol + asType.Length),
-						"Object ", startCol, false);
+						"Object ", startCol, false));
 				}
 			}
 
-			rewriteVBA.AddChange(
-				setPropEndStmt.Start.Line - 1, "End Sub");
+			ChangeDataList.Add(new(
+				setPropEndStmt.Start.Line - 1, "End Sub"));
 		}
 
-		private void RewriteVariant(IRewriteVBA rewriteVBA, PropertyGetStmtContext context) {
+		private void RewriteVariant(PropertyGetStmtContext context) {
 			var asType = context.asTypeClause()?.identifier();
 			if (asType == null) {
 				return;
@@ -270,18 +268,15 @@ namespace VBARewrite {
 			}
 			var start = asType.Start;
 			var startCol = start.Column;
-			rewriteVBA.AddChange(start.Line - 1,
+			ChangeDataList.Add(new(start.Line - 1,
 				(startCol, startCol + text.Length),
-				"Object ", startCol, false);
+				"Object ", startCol, false));
 		}
 
-		private void AddIgnoreDiagnostic(IRewriteVBA rewriteVBA, string code, int line) {
-			rewriteVBA.AddIgnoreDiagnostic(new PropertyDiagnostic {
-				Id = "BC32009",
-				Code = code,
-				Severity = "Error",
-				Line = line
-			});
+		private void AddIgnoreDiagnostic(string code, int line) {
+			IgnorePropDiags.Add(new(
+				"BC32009", code, "Error", line
+			));		
 		}
 	}
 }

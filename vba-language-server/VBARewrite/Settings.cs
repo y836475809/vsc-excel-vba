@@ -6,17 +6,17 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace VBARewrite {
-	public class VBAFunction {
+	internal class VBAFunction {
 		public string Module { get; set; }
 		public List<string> Targets { get; set; }
 	}
 
-	public class VBAPredefined {
+	internal class VBAPredefined {
 		public string Module { get; set; }
 		public List<string> Targets { get; set; }
 	}
 
-	public class Settings {
+	internal class Settings {
 		public VBAFunction VBAFunction { get; set; }
 		public VBAPredefined VBAPredefined { get; set; }
 

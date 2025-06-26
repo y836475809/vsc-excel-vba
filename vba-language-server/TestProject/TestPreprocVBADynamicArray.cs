@@ -5,24 +5,11 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using TestProject;
 using VBACodeAnalysis;
+using VBARewrite;
 using Xunit;
 
-namespace TestPreprocVBADynamicArray {
-	using static Antlr4.Runtime.Atn.SemanticContext;
-	using static System.Runtime.InteropServices.JavaScript.JSType;
-	using ColumnShiftDict = Dictionary<int, List<ColumnShift>>;
-	using LineReMapDict = Dictionary<int, int>;
-
-	class TestPreprocVBA : PreprocVBA {
-		public Dictionary<string, ColumnShiftDict> ColDict {
-			get { return _fileColShiftDict; }
-		}
-		public Dictionary<string, LineReMapDict> LineDict {
-			get { return _fileLineReMapDict; }
-		}
-	}
-
-	public class TestRewriteDynamicArray {
+namespace TestProject {
+	public class TestRewriteVBADynamicArray {
 		private string GetCode(string[] lines) {
 			var code = string.Join("\r\n", lines);
 			return $"\r\n{code}\r\n";
@@ -30,7 +17,7 @@ namespace TestPreprocVBADynamicArray {
 
 		[Fact]
 		public void TestReDimNotDim() {
-			var pp = new TestPreprocVBA();
+			var pp = new VBARewriter();
 			var actCode = pp.Rewrite("test", GetCode([
 				"Sub sub1()",
 				"ReDim ary(2)",
@@ -49,7 +36,7 @@ namespace TestPreprocVBADynamicArray {
 
 		[Fact]
 		public void TestReDimNotDim2() {
-			var pp = new TestPreprocVBA();
+			var pp = new VBARewriter();
 			var actCode = pp.Rewrite("test", GetCode([
 				"Sub sub1()",
 				"ReDim ary(2, 2)",
@@ -68,7 +55,7 @@ namespace TestPreprocVBADynamicArray {
 
 		[Fact]
 		public void TestReDimAsNotDim() {
-			var pp = new TestPreprocVBA();
+			var pp = new VBARewriter();
 			var actCode = pp.Rewrite("test", GetCode([
 				"Sub sub1()",
 				"ReDim ary(2) As Long",
@@ -87,7 +74,7 @@ namespace TestPreprocVBADynamicArray {
 
 		[Fact]
 		public void TestReDimAsNotDim2() {
-			var pp = new TestPreprocVBA();
+			var pp = new VBARewriter();
 			var actCode = pp.Rewrite("test", GetCode([
 				"Sub sub1()",
 				"ReDim ary(2, 3) As Long",
@@ -106,7 +93,7 @@ namespace TestPreprocVBADynamicArray {
 
 		[Fact]
 		public void TestReDimDimension() {
-			var pp = new TestPreprocVBA();
+			var pp = new VBARewriter();
 			var actCode = pp.Rewrite("test", GetCode([
 				"Sub sub1()",
 				"Dim ary() As Long",
@@ -127,8 +114,8 @@ namespace TestPreprocVBADynamicArray {
 
 		[Fact]
 		public void TestFieldReDimDimension() {
-			var preprocVBA = new TestPreprocVBA();
-			var actCode = preprocVBA.Rewrite("test", Helper.getCode("test_dynamic_array1.bas"));
+			var rewriter = new TestVBARewriter();
+			var actCode = rewriter.Rewrite("test", Helper.getCode("test_dynamic_array1.bas"));
 			var expCode = Helper.getCode($"test_dynamic_array1_exp.bas");
 			Helper.AssertCode(expCode, actCode);
 
@@ -142,7 +129,7 @@ namespace TestPreprocVBADynamicArray {
 					{19, new (){ new(19, 12, 1) } },
 					{21, new (){ new(21, 1, 22) } },
 				};
-			var actColDict = preprocVBA.ColDict["test"];
+			var actColDict = rewriter.ColDict("test");
 			Helper.AssertColumnShiftDict(expColDict, actColDict);
 		}
 	}

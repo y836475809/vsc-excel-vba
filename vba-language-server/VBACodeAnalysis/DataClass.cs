@@ -39,22 +39,4 @@ namespace VBACodeAnalysis {
 		public (int, int) Start { get; set; }
 		public List<VBContent> Contents { get; set; }
 	}
-
-	public class VBADiagnostic {
-		public string ID { get; set; }
-		public string Code { get; set; }
-		public string Severity { get; set; }
-		public string Message { get; set; }
-		public (int, int) Start { get; set; }
-		public (int, int) End { get; set; }
-
-		public bool Eq(VBADiagnostic obj) {
-			return this.ID == obj.ID
-				&& this.Severity == obj.Severity
-				&& this.Start.Item1 == obj.Start.Item1
-				&& this.Start.Item2 == obj.Start.Item2
-				&& this.End.Item1 == obj.End.Item1
-				&& this.End.Item2 == obj.End.Item2;
-		}
-	}
 }

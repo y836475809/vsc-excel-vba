@@ -3,12 +3,12 @@ using VBACodeAnalysis;
 using Xunit;
 
 namespace TestProject {
-	public class TestRewritwLetSet() {
+	public class TestRewriteVBALetSet() {
 		[Fact]
 		public void TestRewrite() {
 			var code = Helper.getCode("test_letset1.bas");
-			var preprocVBA = new TestPreprocVBA();
-			var actCode = preprocVBA.Rewrite("test", code);
+			var rewriter = new TestVBARewriter();
+			var actCode = rewriter.Rewrite("test", code);
 			var expCode = Helper.getCode($"test_letset1_exp.bas");
 			Helper.AssertCode(expCode, actCode);
 
@@ -17,13 +17,13 @@ namespace TestProject {
 					{19, new (){ new(19, 13, 2) } },
 					{24, new (){ new(24, 13, 2) } },
 				};
-			var actColDict = preprocVBA.ColDict["test"];
+			var actColDict = rewriter.ColDict("test");
 			Helper.AssertColumnShiftDict(expColDict, actColDict);
 
-			var expLineMapDict = new LineReMapDict {
+			var expLineMapDict = new LineMapDict {
 					{ 28, 24 }
 				};
-			var actLineDict = preprocVBA.LineDict["test"];
+			var actLineDict = rewriter.LineMapDict("test");
 			Helper.AssertDict(actLineDict, expLineMapDict);
 		}
 	}

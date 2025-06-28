@@ -478,3 +478,5 @@ $RECYCLE.BIN/
 
 .antlr
 tmp/
+TestProject/prof_code/*.bas
+TestProject/prof_code/*.cls

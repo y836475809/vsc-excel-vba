@@ -4,8 +4,10 @@ using Microsoft.CodeAnalysis.VisualBasic;
 using Microsoft.CodeAnalysis.VisualBasic.Syntax;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using VBAAntlr;
 using VBARewrite;
@@ -18,7 +20,9 @@ namespace VBACodeAnalysis {
 		private Dictionary<string, string> _errorMsgDict;
 
         public VBADiagnosticProvider() {
-            ignoreDs = [];
+            SetCulture();
+
+			ignoreDs = [];
             ignoerPropertyDiagnostics = [];
             ignoerLineDiagnosticsSet = [];
 			_errorMsgDict = new Dictionary<string, string> {
@@ -31,7 +35,13 @@ namespace VBACodeAnalysis {
 			};
 		}
 
-        public List<PropertyDiagnostic> IgnorePropertyDiagnostics {
+        private void SetCulture() {
+			var cc = CultureInfo.CurrentCulture;
+			Thread.CurrentThread.CurrentCulture = cc;
+			Thread.CurrentThread.CurrentUICulture = cc;
+		}
+
+		public List<PropertyDiagnostic> IgnorePropertyDiagnostics {
             set {
                 ignoerPropertyDiagnostics = value;
             }
